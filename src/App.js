@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
 function useWindowSize() {
@@ -598,24 +598,31 @@ function App() {
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Chart baseline (nilai non-crypto konstan)
-  const valStableUSD       = assets.filter(a => a.type === 'stable').reduce((s, a) => s + a.avg * a.jumlah, 0);
-  const valSahamIDR        = assets.filter(a => a.type === 'saham').reduce((s, a) => s + (hargaSaham[a.ticker] ?? 0) * a.jumlah, 0);
-  const valCashIDR         = assets.filter(a => a.type === 'cash_idr').reduce((s, a) => s + a.jumlah, 0);
-  const baselineNonCrypto  = valStableUSD + valSahamIDR / kursIdr + valCashIDR / kursIdr;
+  // Chart baseline — pakai useRef agar tidak trigger re-fetch saat harga berubah
+  const valStableUSD      = assets.filter(a => a.type === 'stable').reduce((s, a) => s + a.avg * a.jumlah, 0);
+  const valSahamIDR       = assets.filter(a => a.type === 'saham').reduce((s, a) => s + (hargaSaham[a.ticker] ?? 0) * a.jumlah, 0);
+  const valCashIDR        = assets.filter(a => a.type === 'cash_idr').reduce((s, a) => s + a.jumlah, 0);
+  const baselineNonCrypto = valStableUSD + valSahamIDR / kursIdr + valCashIDR / kursIdr;
 
-  // Chart historis dari CoinGecko
+  const baselineRef = useRef(baselineNonCrypto);
+  baselineRef.current = baselineNonCrypto;
+
+  // Chart historis — hanya re-fetch saat period atau assets berubah, BUKAN saat harga update
   useEffect(() => {
     const fetchChart = async () => {
       const cryptoAssets = assets.filter(a => a.type === 'crypto' && a.simbol);
       try {
         const results = await Promise.all(
-          cryptoAssets.map(a => fetch(`https://api.coingecko.com/api/v3/coins/${a.simbol}/market_chart?vs_currency=usd&days=${period.days}`).then(r => r.json()))
+          cryptoAssets.map(a =>
+            fetch(`https://api.coingecko.com/api/v3/coins/${a.simbol}/market_chart?vs_currency=usd&days=${period.days}`)
+              .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+          )
         );
         const base = results[0]?.prices ?? [];
+        const baseline = baselineRef.current;
         const combined = base.map((pt, i) => [
           pt[0],
-          cryptoAssets.reduce((s, a, j) => s + (results[j]?.prices?.[i]?.[1] ?? 0) * a.jumlah, 0) + baselineNonCrypto,
+          cryptoAssets.reduce((s, a, j) => s + (results[j]?.prices?.[i]?.[1] ?? 0) * a.jumlah, 0) + baseline,
         ]);
         setChartData(combined);
         if (combined.length >= 2) {
@@ -625,7 +632,7 @@ function App() {
       } catch { setChartData([]); }
     };
     fetchChart();
-  }, [period, assets, baselineNonCrypto]);
+  }, [period, assets]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSave(id, avgBaru, jumlahBaru) {
     setAssets(prev => prev.map(a => a.id === id ? { ...a, avg: avgBaru, jumlah: jumlahBaru } : a));
