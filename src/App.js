@@ -300,7 +300,7 @@ function App() {
     // Refresh tiap 60 detik (CoinGecko rate limit = 30 req/menit)
     const interval = setInterval(fetchAll, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [hargaSaham]);
 
   // Chart baseline (nilai non-crypto konstan)
   const valStableUSD       = assets.filter(a => a.type === 'stable').reduce((s, a) => s + a.avg * a.jumlah, 0);
