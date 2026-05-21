@@ -35,40 +35,44 @@ const formatIDR = (val) => 'Rp ' + val.toLocaleString('id-ID', { maximumFraction
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#64748b', '#84cc16'];
 
 // ============================================
-// HELPER: Fetch saham Yahoo Finance (multi-proxy fallback)
+// HELPER: Fetch Yahoo Finance (parallel proxies, pakai yang pertama berhasil)
 // ============================================
 async function fetchYahooPrice(symbol) {
-  const rawUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-  const parseYahoo = (data) => {
-    const meta  = data.chart.result[0].meta;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
+
+  const parse = (data) => {
+    const meta = data?.chart?.result?.[0]?.meta;
+    if (!meta?.regularMarketPrice) throw new Error('no data');
     const price = meta.regularMarketPrice;
     const prev  = meta.chartPreviousClose || meta.previousClose || price;
     return { price, change: prev ? ((price - prev) / prev) * 100 : 0 };
   };
 
-  // Proxy 1: corsproxy.io
-  try {
-    const res  = await fetch(`https://corsproxy.io/?${encodeURIComponent(rawUrl)}`);
-    const data = await res.json();
-    if (data?.chart?.result?.[0]) return parseYahoo(data);
-  } catch {}
+  const deadline = (ms) => new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms));
 
-  // Proxy 2: allorigins.win
-  try {
-    const res   = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rawUrl)}`);
+  const attempt = async (fetchFn) => {
+    const res  = await Promise.race([fetchFn(), deadline(7000)]);
+    const json = await res.json();
+    return parse(json);
+  };
+
+  const attemptWrapped = async (fetchFn) => {
+    const res   = await Promise.race([fetchFn(), deadline(7000)]);
     const outer = await res.json();
-    const data  = JSON.parse(outer.contents);
-    if (data?.chart?.result?.[0]) return parseYahoo(data);
-  } catch {}
+    return parse(JSON.parse(outer.contents));
+  };
 
-  // Proxy 3: thingproxy
   try {
-    const res  = await fetch(`https://thingproxy.freeboard.io/fetch/${rawUrl}`);
-    const data = await res.json();
-    if (data?.chart?.result?.[0]) return parseYahoo(data);
-  } catch {}
-
-  return null;
+    // Semua proxy dicoba PARALEL — pakai yang pertama berhasil
+    return await Promise.any([
+      attempt(() => fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`)),
+      attemptWrapped(() => fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`)),
+      attempt(() => fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`)),
+      attempt(() => fetch(`https://thingproxy.freeboard.io/fetch/${url}`)),
+    ]);
+  } catch {
+    return null;
+  }
 }
 
 // ============================================
