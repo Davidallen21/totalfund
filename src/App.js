@@ -557,7 +557,7 @@ function App() {
 
       // 2. MARKET DATA via Python backend (no CORS issue, lebih reliable)
       try {
-        const res  = await fetch('http://localhost:8000/api/market-data');
+        const res  = await fetch('/api/market-data');
         const data = await res.json();
 
         // IDX stock prices
@@ -614,7 +614,7 @@ function App() {
       try {
         const results = await Promise.all(
           cryptoAssets.map(a =>
-            fetch(`http://localhost:8000/api/chart?simbol=${a.simbol}&days=${period.days}`)
+            fetch(`/api/chart?simbol=${a.simbol}&days=${period.days}`)
               .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
           )
         );
