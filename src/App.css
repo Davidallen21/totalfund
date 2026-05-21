@@ -1,38 +1,302 @@
-.App {
-  text-align: center;
-}
+/* =========================================
+   RESET & BASE
+   ========================================= */
+* { box-sizing: border-box; }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
+/* =========================================
+   APP LAYOUT
+   ========================================= */
+.app-wrapper {
+  display: flex;
   min-height: 100vh;
+  background-color: #050505;
+  width: 100%;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.app-sidebar {
+  width: 260px;
+  background-color: #0a0a0a;
+  border-right: 1px solid #1f1f1f;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+}
+
+.app-main {
+  flex: 1;
+  padding: 32px 40px;
+  overflow-y: auto;
+  max-height: 100vh;
+  min-width: 0;
+}
+
+.max-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* =========================================
+   SIDEBAR OVERLAY (mobile)
+   ========================================= */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 49;
+}
+
+/* =========================================
+   HAMBURGER BUTTON
+   ========================================= */
+.hamburger-btn {
+  display: none;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #141414;
+  border: 1px solid #262626;
+  cursor: pointer;
+  color: #a3a3a3;
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
-.App-link {
-  color: #61dafb;
+/* =========================================
+   PAGE HEADER
+   ========================================= */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* =========================================
+   SUMMARY CARDS GRID
+   ========================================= */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* =========================================
+   MARKET SECTION
+   ========================================= */
+.market-section {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 32px;
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+.market-mini-grid {
+  flex: 1.6;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.donut-card {
+  flex: 1;
+  min-width: 300px;
+  background-color: #141414;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border: 1px solid #262626;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* =========================================
+   HOLDINGS TABLE
+   ========================================= */
+.col-headers {
+  display: flex;
+}
+
+.holdings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Desktop asset row */
+.asset-row-desktop {
+  display: flex;
+}
+
+/* Mobile asset row (hidden on desktop) */
+.asset-row-mobile {
+  display: none;
+}
+
+/* =========================================
+   TABLET  (max 1100px)
+   ========================================= */
+@media (max-width: 1100px) {
+  .app-main {
+    padding: 24px 28px;
   }
-  to {
-    transform: rotate(360deg);
+
+  .summary-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .market-section {
+    flex-wrap: wrap;
+  }
+
+  .market-mini-grid {
+    grid-template-columns: repeat(4, 1fr);
+    flex: none;
+    width: 100%;
+  }
+
+  .donut-card {
+    flex: none;
+    width: 100%;
+    min-width: unset;
+  }
+}
+
+/* =========================================
+   MOBILE  (max 768px)
+   ========================================= */
+@media (max-width: 768px) {
+  /* Sidebar becomes fixed overlay */
+  .app-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    width: 260px !important;
+    z-index: 50;
+  }
+
+  .app-sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .sidebar-overlay.sidebar-open {
+    display: block;
+  }
+
+  .hamburger-btn {
+    display: flex;
+  }
+
+  /* Main content */
+  .app-main {
+    padding: 16px;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+  }
+
+  /* Summary cards - single column */
+  .summary-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Market section - stacked */
+  .market-section {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .market-mini-grid {
+    width: 100%;
+    flex: none;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, auto);
+    gap: 8px;
+  }
+
+  .donut-card {
+    width: 100%;
+    min-width: unset;
+    flex: none;
+    justify-content: center;
+  }
+
+  /* Holdings table */
+  .col-headers {
+    display: none;
+  }
+
+  .holdings-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Switch to mobile card layout */
+  .asset-row-desktop {
+    display: none;
+  }
+
+  .asset-row-mobile {
+    display: block;
+    padding: 16px;
+    border-radius: 14px;
+    margin-bottom: 8px;
+    background-color: #141414;
+    border: 1px solid #262626;
+  }
+
+  .asset-row-mobile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .asset-row-mobile-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #1f1f1f;
+    gap: 8px;
+  }
+
+  .asset-row-mobile-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE  (max 480px)
+   ========================================= */
+@media (max-width: 480px) {
+  .app-main {
+    padding: 12px;
+  }
+
+  .market-mini-grid {
+    gap: 6px;
   }
 }
