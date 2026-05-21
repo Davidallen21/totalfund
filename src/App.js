@@ -614,7 +614,7 @@ function App() {
       try {
         const results = await Promise.all(
           cryptoAssets.map(a =>
-            fetch(`https://api.coingecko.com/api/v3/coins/${a.simbol}/market_chart?vs_currency=usd&days=${period.days}`)
+            fetch(`http://localhost:8000/api/chart?simbol=${a.simbol}&days=${period.days}`)
               .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
           )
         );

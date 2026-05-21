@@ -8,8 +8,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -111,6 +110,16 @@ def analisa_sentimen_dan_teknikal():
             "modal": 5000.00, "profit_today": 0.00, "total_trades": 0,
             "current_decision": {"pair": "BTC/USDT", "action": "HOLD", "reason": "Memeriksa jaringan...", "price": "—"}
         }
+
+@app.get("/api/chart")
+def get_chart(simbol: str, days: int = 1):
+    """Fetch CoinGecko chart data server-side (no CORS / rate-limit issue di browser)."""
+    url = f"https://api.coingecko.com/api/v3/coins/{simbol}/market_chart?vs_currency=usd&days={days}"
+    try:
+        res = requests.get(url, timeout=15)
+        return res.json()
+    except Exception:
+        return {"prices": []}
 
 @app.get("/api/bot-status")
 def get_bot_status():
