@@ -34,46 +34,8 @@ const formatUSD = (val) => '$' + val.toLocaleString('en-US', { minimumFractionDi
 const formatIDR = (val) => 'Rp ' + val.toLocaleString('id-ID', { maximumFractionDigits: 0 });
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#64748b', '#84cc16'];
 
-// ============================================
-// HELPER: Fetch Yahoo Finance (parallel proxies, pakai yang pertama berhasil)
-// ============================================
-async function fetchYahooPrice(symbol) {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`;
-
-  const parse = (data) => {
-    const meta = data?.chart?.result?.[0]?.meta;
-    if (!meta?.regularMarketPrice) throw new Error('no data');
-    const price = meta.regularMarketPrice;
-    const prev  = meta.chartPreviousClose || meta.previousClose || price;
-    return { price, change: prev ? ((price - prev) / prev) * 100 : 0 };
-  };
-
-  const deadline = (ms) => new Promise((_, r) => setTimeout(() => r(new Error('timeout')), ms));
-
-  const attempt = async (fetchFn) => {
-    const res  = await Promise.race([fetchFn(), deadline(7000)]);
-    const json = await res.json();
-    return parse(json);
-  };
-
-  const attemptWrapped = async (fetchFn) => {
-    const res   = await Promise.race([fetchFn(), deadline(7000)]);
-    const outer = await res.json();
-    return parse(JSON.parse(outer.contents));
-  };
-
-  try {
-    // Semua proxy dicoba PARALEL — pakai yang pertama berhasil
-    return await Promise.any([
-      attempt(() => fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`)),
-      attemptWrapped(() => fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`)),
-      attempt(() => fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`)),
-      attempt(() => fetch(`https://thingproxy.freeboard.io/fetch/${url}`)),
-    ]);
-  } catch {
-    return null;
-  }
-}
+// fetchYahooPrice tidak lagi dipakai langsung dari browser
+// Semua Yahoo Finance data di-fetch via Python backend (port 8000)
 
 // ============================================
 // KOMPONEN: SIDEBAR
@@ -593,44 +555,35 @@ function App() {
         } catch (e2) { console.warn('Crypto fetch error:', e2); }
       }
 
-      // 2. SEMUA market data via Yahoo Finance (indices + commodities + IDX stocks)
-      //    Jalankan paralel untuk kecepatan maksimal
+      // 2. MARKET DATA via Python backend (no CORS issue, lebih reliable)
       try {
-        const allSymbols = [
-          // IDX Stocks
-          'BBCA.JK', 'BBRI.JK', 'BMRI.JK', 'GOTO.JK',
-          // Indices
-          '^JKSE', '^GSPC', '^IXIC',
-          // Commodities
-          'GC=F',   // Gold
-          'SI=F',   // Silver
-          'BZ=F',   // Brent Oil
-        ];
+        const res  = await fetch('http://localhost:8000/api/market-data');
+        const data = await res.json();
 
-        const results = await Promise.all(allSymbols.map(s => fetchYahooPrice(s)));
-        const [bbca, bbri, bmri, goto_, ihsg, spx, nasdaq, gold, silver, brent] = results;
-
-        // Update IDX stock prices
+        // IDX stock prices
         const stockUpdates = {};
-        if (bbca?.price)  stockUpdates.BBCA = bbca.price;
-        if (bbri?.price)  stockUpdates.BBRI = bbri.price;
-        if (bmri?.price)  stockUpdates.BMRI = bmri.price;
-        if (goto_?.price) stockUpdates.GOTO = goto_.price;
+        ['BBCA','BBRI','BMRI','GOTO'].forEach(t => {
+          if (data[t]?.price) stockUpdates[t] = data[t].price;
+        });
         if (Object.keys(stockUpdates).length > 0) {
           setHargaSaham(prev => ({ ...prev, ...stockUpdates }));
         }
 
-        // Update market data cards
+        // Market overview cards
+        const mk = (key, type) => data[key]
+          ? { price: data[key].price, change: data[key].change, isUp: data[key].change >= 0, type }
+          : null;
+
         setMarketData(prev => ({
           ...prev,
-          ...(ihsg   ? { IHSG:   { price: ihsg.price,   change: ihsg.change,   isUp: ihsg.change   >= 0, type: 'idr' } } : {}),
-          ...(spx    ? { SPX500: { price: spx.price,    change: spx.change,    isUp: spx.change    >= 0, type: 'usd' } } : {}),
-          ...(nasdaq ? { NASDAQ: { price: nasdaq.price, change: nasdaq.change, isUp: nasdaq.change >= 0, type: 'usd' } } : {}),
-          ...(gold   ? { GOLD:   { price: gold.price,   change: gold.change,   isUp: gold.change   >= 0, type: 'usd' } } : {}),
-          ...(silver ? { XAG:    { price: silver.price, change: silver.change, isUp: silver.change >= 0, type: 'usd' } } : {}),
-          ...(brent  ? { BRENT:  { price: brent.price,  change: brent.change,  isUp: brent.change  >= 0, type: 'usd' } } : {}),
+          ...(mk('IHSG',   'idr') ? { IHSG:   mk('IHSG',   'idr') } : {}),
+          ...(mk('SPX500', 'usd') ? { SPX500: mk('SPX500', 'usd') } : {}),
+          ...(mk('NASDAQ', 'usd') ? { NASDAQ: mk('NASDAQ', 'usd') } : {}),
+          ...(mk('GOLD',   'usd') ? { GOLD:   mk('GOLD',   'usd') } : {}),
+          ...(mk('XAG',    'usd') ? { XAG:    mk('XAG',    'usd') } : {}),
+          ...(mk('BRENT',  'usd') ? { BRENT:  mk('BRENT',  'usd') } : {}),
         }));
-      } catch (e) { console.warn('Yahoo Finance batch error:', e); }
+      } catch (e) { console.warn('Backend market-data error (pastikan python bot.py berjalan):', e); }
 
       // 3. KURS USD/IDR
       try {
