@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
+// Di local dev: '' (proxy ke localhost:8000 via package.json proxy)
+// Di Vercel: set REACT_APP_API_URL ke URL backend Vercel kamu
+const API_BASE = process.env.REACT_APP_API_URL || '';
+
 function useWindowSize() {
   const [size, setSize] = useState({ width: window.innerWidth });
   useEffect(() => {
@@ -40,31 +44,40 @@ const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#06b6d4'
 // ============================================
 // KOMPONEN: SIDEBAR
 // ============================================
-function Sidebar({ activePage, setActivePage, onClose }) {
+const NAV_ITEMS = [
+  { key: 'portfolio', label: 'Portfolio Live',  icon: '◈' },
+  { key: 'ai',        label: 'AI Consultant',   icon: '✦' },
+];
+
+function Sidebar({ activePage, setActivePage, onClose, isOpen }) {
   return (
-    <div className="app-sidebar" style={{ backgroundColor: '#0a0a0a', borderRight: '1px solid #1f1f1f' }}>
-      <div style={{ height: 72, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderBottom: '1px solid #1f1f1f' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontWeight: 'bold', fontSize: '18px', flexShrink: 0 }}>D</div>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: 'white', margin: 0 }}>David<span style={{ color: '#4ade80' }}>Hedge</span></h2>
+    <div className={`app-sidebar${isOpen ? ' sidebar-open' : ''}`}>
+      <div className="sidebar-logo-area">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="sidebar-logo-icon">D</div>
+          <span className="sidebar-logo-text">David<span>Hedge</span></span>
         </div>
         {onClose && (
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer', padding: '4px', lineHeight: 1 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px' }}>✕</button>
         )}
       </div>
-      <div style={{ padding: '20px 12px', display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-        {[['portfolio','Portfolio Live'],['news','Market News'],['bot','AI Bot Trading']].map(([key, label]) => (
-          <div key={key}
-            style={{ padding: '13px 16px', backgroundColor: activePage === key ? '#1a1a1a' : 'transparent', color: activePage === key ? 'white' : '#737373', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: activePage === key ? 600 : 500 }}
-            onClick={() => { setActivePage(key); onClose && onClose(); }}
-          >{label}</div>
+
+      <nav className="sidebar-nav">
+        {NAV_ITEMS.map(({ key, label, icon }) => (
+          <div
+            key={key}
+            className={`nav-item${activePage === key ? ' active' : ''}`}
+            onClick={() => { setActivePage(key); onClose?.(); }}
+          >
+            <span className="nav-icon">{icon}</span>
+            {label}
+          </div>
         ))}
-      </div>
-      <div style={{ padding: '20px', borderTop: '1px solid #1f1f1f' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '8px', height: '8px', backgroundColor: '#4ade80', borderRadius: '50%' }}></div>
-          <span style={{ color: '#737373', fontSize: 12, fontWeight: 500 }}>System Online</span>
-        </div>
+      </nav>
+
+      <div className="sidebar-footer">
+        <div className="status-dot" />
+        <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 500 }}>System Online</span>
       </div>
     </div>
   );
@@ -475,6 +488,221 @@ function AddAssetModal({ onSave, onClose }) {
 }
 
 // ============================================
+// KOMPONEN: AI CONSULTANT
+// ============================================
+function renderAIText(text) {
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return escaped
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code style="background:rgba(255,255,255,0.08);padding:2px 7px;border-radius:4px;font-size:0.88em;font-family:monospace">$1</code>')
+    .replace(/^### (.*?)$/gm, '<div style="font-size:14px;font-weight:700;color:#e5e5e5;margin:10px 0 4px">$1</div>')
+    .replace(/^## (.*?)$/gm, '<div style="font-size:15px;font-weight:800;color:#fff;margin:12px 0 6px">$1</div>')
+    .replace(/^- (.*?)$/gm, '<div style="display:flex;gap:8px;margin:3px 0"><span style="color:#4ade80;flex-shrink:0">▸</span><span>$1</span></div>')
+    .replace(/\n\n/g,'<div style="height:10px"></div>')
+    .replace(/\n/g,'<br/>');
+}
+
+const SUGGESTIONS = [
+  'Analisa portfolio saya secara keseluruhan',
+  'Aset mana yang paling menguntungkan?',
+  'Bagaimana kondisi pasar hari ini?',
+  'Rekomendasi rebalancing portfolio saya',
+  'Jelaskan risiko portfolio saya saat ini',
+];
+
+function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, grandTotalIDR, overallPnlUSD, overallPnlPersen, marketData }) {
+  const buildContext = () => {
+    const detail = assets.map(a => {
+      const isCrypto = a.type === 'crypto', isSaham = a.type === 'saham';
+      const harga  = isCrypto ? (hargaMap[a.simbol]?.usd ?? 0) : isSaham ? (hargaSaham[a.ticker] ?? 0) : a.avg;
+      const nilai  = isCrypto || a.type === 'stable' ? harga * a.jumlah : isSaham ? harga * a.jumlah : a.jumlah;
+      const nilaiUSD = (isSaham || a.type === 'cash_idr') ? nilai / kursIdr : nilai;
+      const modal  = a.avg * a.jumlah;
+      const pnl    = !['stable','cash_idr'].includes(a.type) ? nilai - modal : null;
+      const pct    = modal > 0 && pnl !== null ? (pnl / modal * 100).toFixed(1) : null;
+      const qty    = isSaham ? `${a.jumlah/100} Lot` : `${a.jumlah} ${a.ticker}`;
+      return `  • ${a.ticker} (${a.nama}): Harga ${isSaham ? formatIDR(harga) : formatUSD(harga)}, Holdings ${qty}, Nilai ~${formatUSD(nilaiUSD)}${pct !== null ? `, PNL ${pnl >= 0 ? '+' : ''}${pct}%` : ''}`;
+    }).join('\n');
+
+    const mkt = Object.entries(marketData)
+      .map(([k,v]) => `  • ${k}: ${v.type==='usd'?'$':''}${v.price.toLocaleString(undefined,{maximumFractionDigits:2})} (${v.isUp?'+':''}${v.change.toFixed(2)}%)`)
+      .join('\n');
+
+    return `PORTFOLIO (${new Date().toLocaleString('id-ID')})
+Total Net Worth : ${formatUSD(grandTotalUSD)} / ${formatIDR(grandTotalIDR)}
+Overall PNL     : ${overallPnlUSD>=0?'+':''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)
+Kurs USD/IDR    : ${kursIdr.toLocaleString('id-ID')}
+
+DETAIL ASET:
+${detail}
+
+DATA PASAR REALTIME:
+${mkt}`;
+  };
+
+  const welcome = `Halo! Saya **DavidHedge AI**, konsultan keuangan personal kamu. ✦
+
+Portfolio kamu saat ini senilai **${formatUSD(grandTotalUSD)}** dengan PNL **${overallPnlUSD>=0?'+':''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)**.
+
+Tanyakan apa saja tentang portfolio, pasar, atau strategi investasimu!`;
+
+  const [messages, setMessages] = useState([{ role: 'ai', text: welcome }]);
+  const [input, setInput]       = useState('');
+  const [loading, setLoading]   = useState(false);
+  const bottomRef               = useRef(null);
+  const inputRef                = useRef(null);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+
+  const send = async (text) => {
+    const msg = text || input.trim();
+    if (!msg || loading) return;
+    setInput('');
+    setMessages(prev => [...prev, { role: 'user', text: msg }]);
+    setLoading(true);
+    try {
+      const history = messages.slice(-8).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
+      const res  = await fetch(`${API_BASE}/api/ai-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, context: buildContext(), history }),
+      });
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'ai', text: data.response || 'Maaf, terjadi kesalahan.' }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'ai', text: '⚠️ Tidak bisa terhubung ke server. Pastikan backend berjalan dan **GROQ_API_KEY** sudah dikonfigurasi.' }]);
+    }
+    setLoading(false);
+    inputRef.current?.focus();
+  };
+
+  const isWelcome = messages.length === 1;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', borderRadius: '20px', border: '1px solid #262626', backgroundColor: '#141414', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #1f1f1f', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(74,222,128,0.3)', flexShrink: 0 }}>✦</div>
+          <div>
+            <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '15px', letterSpacing: '-0.3px' }}>DavidHedge AI</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+              <div className="status-dot" style={{ width: 6, height: 6 }} />
+              <span style={{ color: '#6b7280', fontSize: '12px' }}>Online · Data portfolio real-time</span>
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <span style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>Groq · llama-3.3-70b</span>
+        </div>
+      </div>
+
+      {/* ── Content area ── */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
+
+        {/* Welcome state */}
+        {isWelcome && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60%', textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 8px 28px rgba(74,222,128,0.25)', marginBottom: 20 }}>✦</div>
+            <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '22px', letterSpacing: '-0.5px', marginBottom: 8 }}>DavidHedge AI</div>
+            <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: 28, maxWidth: 420, lineHeight: 1.6 }}>
+              Konsultan keuangan personal kamu berbasis AI dengan akses data portfolio &amp; pasar secara real-time.
+            </div>
+
+            {/* Portfolio snapshot */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%', maxWidth: 480, marginBottom: 28 }}>
+              <div style={{ background: '#1a1a1a', border: '1px solid #262626', borderRadius: '14px', padding: '16px 20px', textAlign: 'left' }}>
+                <div style={{ color: '#6b7280', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Net Worth</div>
+                <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>{formatUSD(grandTotalUSD)}</div>
+                <div style={{ color: '#525252', fontSize: '12px', marginTop: 2 }}>{formatIDR(grandTotalIDR)}</div>
+              </div>
+              <div style={{ background: '#1a1a1a', border: '1px solid #262626', borderRadius: '14px', padding: '16px 20px', textAlign: 'left' }}>
+                <div style={{ color: '#6b7280', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Overall PNL</div>
+                <div style={{ color: overallPnlUSD >= 0 ? '#4ade80' : '#f87171', fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>{overallPnlUSD >= 0 ? '+' : ''}{formatUSD(overallPnlUSD)}</div>
+                <div style={{ color: overallPnlUSD >= 0 ? '#166534' : '#991b1b', fontSize: '12px', marginTop: 2, fontWeight: 600 }}>{overallPnlPersen >= 0 ? '+' : ''}{overallPnlPersen.toFixed(2)}%</div>
+              </div>
+            </div>
+
+            {/* Suggestions */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 560 }}>
+              {SUGGESTIONS.map((s, i) => (
+                <button key={i} onClick={() => send(s)} style={{ background: '#1a1a1a', color: '#a3a3a3', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background='rgba(74,222,128,0.08)'; e.currentTarget.style.color='#4ade80'; e.currentTarget.style.borderColor='rgba(74,222,128,0.2)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background='#1a1a1a'; e.currentTarget.style.color='#a3a3a3'; e.currentTarget.style.borderColor='#2a2a2a'; }}
+                >{s}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Chat messages */}
+        {!isWelcome && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {messages.map((msg, i) => (
+              <div key={i} style={{ display: 'flex', gap: '10px', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-start' }}>
+                {msg.role === 'ai' && (
+                  <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #4ade80, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0, boxShadow: '0 2px 8px rgba(74,222,128,0.2)' }}>✦</div>
+                )}
+                <div style={{
+                  maxWidth: '74%',
+                  padding: '13px 17px',
+                  borderRadius: msg.role === 'ai' ? '2px 14px 14px 14px' : '14px 2px 14px 14px',
+                  background: msg.role === 'ai' ? '#1a1a1a' : 'linear-gradient(135deg, #166534 0%, #14532d 100%)',
+                  border: msg.role === 'ai' ? '1px solid #262626' : '1px solid rgba(74,222,128,0.2)',
+                  color: '#e5e5e5', fontSize: '14px', lineHeight: '1.7',
+                  boxShadow: msg.role === 'user' ? '0 4px 14px rgba(74,222,128,0.1)' : 'none',
+                }}>
+                  {msg.role === 'ai'
+                    ? <div dangerouslySetInnerHTML={{ __html: renderAIText(msg.text) }} />
+                    : <span style={{ fontWeight: 500 }}>{msg.text}</span>}
+                </div>
+                {msg.role === 'user' && (
+                  <div style={{ width: 30, height: 30, borderRadius: '9px', background: '#1a1a1a', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0, color: '#737373' }}>◈</div>
+                )}
+              </div>
+            ))}
+            {loading && (
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #4ade80, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>✦</div>
+                <div style={{ padding: '13px 17px', borderRadius: '2px 14px 14px 14px', background: '#1a1a1a', border: '1px solid #262626', display: 'flex', gap: '5px', alignItems: 'center' }}>
+                  {[0,1,2].map(j => <div key={j} style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4ade80', animation: `bounce 1.2s ease-in-out ${j*0.2}s infinite` }} />)}
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef} />
+          </div>
+        )}
+      </div>
+
+      {/* ── Input bar ── */}
+      <div style={{ padding: '16px 24px', borderTop: '1px solid #1f1f1f', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px' }}>
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+            placeholder="Tanya tentang portfolio, pasar, atau strategi investasimu..."
+            disabled={loading}
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e5e5e5', fontSize: '14px', fontFamily: 'inherit' }}
+          />
+          <button
+            onClick={() => send()}
+            disabled={loading || !input.trim()}
+            style={{ width: '36px', height: '36px', borderRadius: '9px', background: input.trim() ? 'linear-gradient(135deg, #4ade80, #06b6d4)' : 'rgba(255,255,255,0.05)', border: 'none', color: input.trim() ? '#000' : '#4b5563', fontSize: '15px', fontWeight: 700, cursor: input.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: input.trim() ? '0 4px 12px rgba(74,222,128,0.3)' : 'none' }}
+          >▶</button>
+        </div>
+        <div style={{ color: '#374151', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
+          AI dapat membuat kesalahan · Verifikasi sebelum mengambil keputusan investasi
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // KOMPONEN UTAMA: APP
 // ============================================
 function App() {
@@ -491,19 +719,19 @@ function App() {
   const [sidebarOpen, setSidebarOpen]     = useState(false);
   const { width } = useWindowSize();
 
-  const [hargaSaham, setHargaSaham] = useState({
-    BBCA: 9450, BBRI: 4620, BMRI: 6350, GOTO: 68
-  });
+  const [hargaSaham, setHargaSaham] = useState({});
+  const [cryptoLoaded, setCryptoLoaded] = useState(false);
+  const [marketLoaded, setMarketLoaded] = useState(false);
 
   const [marketData, setMarketData] = useState({
-    BTC:    { price: 0,       change: 0,     isUp: true,  type: 'usd' },
-    ETH:    { price: 0,       change: 0,     isUp: true,  type: 'usd' },
-    GOLD:   { price: 3320.5,  change: 0,     isUp: true,  type: 'usd' },
-    XAG:    { price: 33.15,   change: 0,     isUp: true,  type: 'usd' },
-    SPX500: { price: 5310.50, change: 0.22,  isUp: true,  type: 'usd' },
-    NASDAQ: { price: 16820.1, change: 0.54,  isUp: true,  type: 'usd' },
-    IHSG:   { price: 7215.30, change: 0.12,  isUp: true,  type: 'idr' },
-    BRENT:  { price: 82.95,   change: -0.85, isUp: false, type: 'usd' },
+    BTC:    { price: 0, change: 0, isUp: true,  type: 'usd' },
+    ETH:    { price: 0, change: 0, isUp: true,  type: 'usd' },
+    GOLD:   { price: 0, change: 0, isUp: true,  type: 'usd' },
+    XAG:    { price: 0, change: 0, isUp: true,  type: 'usd' },
+    SPX500: { price: 0, change: 0, isUp: true,  type: 'usd' },
+    NASDAQ: { price: 0, change: 0, isUp: true,  type: 'usd' },
+    IHSG:   { price: 0, change: 0, isUp: true,  type: 'idr' },
+    BRENT:  { price: 0, change: 0, isUp: false, type: 'usd' },
   });
 
   // ── FETCH SEMUA DATA REALTIME ──
@@ -537,6 +765,7 @@ function App() {
           BTC: { price: btcPrice, change: btcChange, isUp: btcChange >= 0, type: 'usd' },
           ETH: { price: ethPrice, change: ethChange, isUp: ethChange >= 0, type: 'usd' },
         }));
+        if (btcPrice > 0) setCryptoLoaded(true);
       } catch (e) {
         // Fallback ke CoinGecko jika Binance gagal
         try {
@@ -552,12 +781,13 @@ function App() {
             BTC: { price: btcPrice, change: btcChange, isUp: btcChange >= 0, type: 'usd' },
             ETH: { price: ethPrice, change: ethChange, isUp: ethChange >= 0, type: 'usd' },
           }));
+          if (btcPrice > 0) setCryptoLoaded(true);
         } catch (e2) { console.warn('Crypto fetch error:', e2); }
       }
 
       // 2. MARKET DATA via Python backend (no CORS issue, lebih reliable)
       try {
-        const res  = await fetch('/api/market-data');
+        const res  = await fetch(`${API_BASE}/api/market-data`);
         const data = await res.json();
 
         // IDX stock prices
@@ -583,6 +813,7 @@ function App() {
           ...(mk('XAG',    'usd') ? { XAG:    mk('XAG',    'usd') } : {}),
           ...(mk('BRENT',  'usd') ? { BRENT:  mk('BRENT',  'usd') } : {}),
         }));
+        setMarketLoaded(true);
       } catch (e) { console.warn('Backend market-data error (pastikan python bot.py berjalan):', e); }
 
       // 3. KURS USD/IDR
@@ -614,7 +845,7 @@ function App() {
       try {
         const results = await Promise.all(
           cryptoAssets.map(a =>
-            fetch(`/api/chart?simbol=${a.simbol}&days=${period.days}`)
+            fetch(`${API_BASE}/api/chart?simbol=${a.simbol}&days=${period.days}`)
               .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
           )
         );
@@ -679,18 +910,30 @@ function App() {
   }).filter(d => d.val > 0).sort((a, b) => b.val - a.val);
 
   const renderSingleCard = (key, displayName) => {
-    const data = marketData[key];
+    const data     = marketData[key];
+    const isLoaded = data.price > 0;
+    const isCrypto = key === 'BTC' || key === 'ETH';
+    const loaded   = isCrypto ? cryptoLoaded : marketLoaded;
+
     return (
       <div style={styles.marketCardMini} key={key}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#a3a3a3', fontWeight: '700', fontSize: '13px' }}>{displayName}</span>
-          <span style={{ color: data.isUp ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 'bold' }}>
-            {data.isUp ? '+' : ''}{data.change.toFixed(2)}%
-          </span>
+          <span style={{ color: '#a3a3a3', fontWeight: 700, fontSize: '13px' }}>{displayName}</span>
+          {loaded && isLoaded
+            ? <span style={{ color: data.isUp ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, background: data.isUp ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                {data.isUp ? '+' : ''}{data.change.toFixed(2)}%
+              </span>
+            : <div className="skeleton" style={{ width: 42, height: 16 }} />
+          }
         </div>
-        <div style={{ color: 'white', fontWeight: '800', fontSize: '16px', marginTop: '6px' }}>
-          {data.type === 'usd' ? '$' : ''}{data.price > 0 ? data.price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '—'}
-        </div>
+        {loaded && isLoaded
+          ? <div style={{ color: 'white', fontWeight: 800, fontSize: '18px', marginTop: '6px', letterSpacing: '-0.5px' }}>
+              {data.type === 'usd' ? '$' : ''}{data.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            </div>
+          : <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="skeleton" style={{ width: '80%', height: 20 }} />
+            </div>
+        }
       </div>
     );
   };
@@ -698,18 +941,19 @@ function App() {
   return (
     <div className="app-wrapper">
       <div className={`sidebar-overlay${sidebarOpen ? ' sidebar-open' : ''}`} onClick={() => setSidebarOpen(false)} />
-      <Sidebar activePage={activePage} setActivePage={setActivePage} onClose={() => setSidebarOpen(false)} />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} onClose={() => setSidebarOpen(false)} isOpen={sidebarOpen} />
 
       <div className="app-main">
         <div className="max-container">
 
           <div className="page-header">
             <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
-            <h1 style={{ color: 'white', fontSize: width < 480 ? '22px' : '28px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>
-              {activePage === 'portfolio' && 'Overview'}
-              {activePage === 'news'      && 'Market Intelligence'}
-              {activePage === 'bot'       && 'AI Algo Engine'}
-            </h1>
+            <div>
+              <h1 className="page-title">
+                {activePage === 'portfolio' && 'Overview'}
+                {activePage === 'ai'        && 'AI Consultant'}
+              </h1>
+            </div>
           </div>
 
           {activePage === 'portfolio' && (
@@ -722,38 +966,58 @@ function App() {
                     <span style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500 }}>Total Net Worth</span>
                     <span style={{ color: '#4ade80', fontSize: '12px', backgroundColor: 'rgba(74,222,128,0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
                   </div>
-                  <div style={{ color: 'white', fontSize: '36px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(grandTotalUSD)}</div>
-                  <div style={{ color: '#737373', fontSize: '18px', fontWeight: 500, marginTop: '4px' }}>{formatIDR(grandTotalIDR)}</div>
+                  {cryptoLoaded
+                    ? <>
+                        <div style={{ color: 'white', fontSize: '36px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(grandTotalUSD)}</div>
+                        <div style={{ color: '#737373', fontSize: '18px', fontWeight: 500, marginTop: '4px' }}>{formatIDR(grandTotalIDR)}</div>
+                      </>
+                    : <>
+                        <div className="skeleton" style={{ width: '70%', height: 38, marginBottom: 8 }} />
+                        <div className="skeleton" style={{ width: '50%', height: 22 }} />
+                      </>
+                  }
                 </div>
 
                 <div style={styles.summaryCard}>
                   <span style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500, display: 'block', marginBottom: '12px' }}>Overall PNL (All Assets)</span>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                    <div style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '30px', fontWeight: 800, letterSpacing: '-1px' }}>
-                      {isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}
-                    </div>
-                    <span style={{ backgroundColor: isOverallProfit ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)', color: isOverallProfit ? '#4ade80' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' }}>
-                      {isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%
-                    </span>
-                  </div>
-                  <div style={{ color: isOverallProfit ? '#166534' : '#991b1b', fontSize: '14px', fontWeight: 600, marginTop: '4px' }}>
-                    {isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}
-                  </div>
-                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #262626', display: 'flex', gap: '16px' }}>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ color: '#737373', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Kripto (USD)</span>
-                      <span style={{ color: pnlCryptoUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '14px', fontWeight: 'bold' }}>
-                        {pnlCryptoUSD >= 0 ? '+' : ''}{formatUSD(pnlCryptoUSD)}
-                      </span>
-                    </div>
-                    <div style={{ width: '1px', backgroundColor: '#262626' }}></div>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ color: '#737373', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Saham (IDR)</span>
-                      <span style={{ color: pnlSahamIDR >= 0 ? '#4ade80' : '#f87171', fontSize: '14px', fontWeight: 'bold' }}>
-                        {pnlSahamIDR >= 0 ? '+' : ''}{formatIDR(pnlSahamIDR)}
-                      </span>
-                    </div>
-                  </div>
+                  {cryptoLoaded
+                    ? <>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                          <div style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '30px', fontWeight: 800, letterSpacing: '-1px' }}>
+                            {isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}
+                          </div>
+                          <span style={{ backgroundColor: isOverallProfit ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)', color: isOverallProfit ? '#4ade80' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontSize: '13px', fontWeight: 'bold' }}>
+                            {isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div style={{ color: isOverallProfit ? '#166534' : '#991b1b', fontSize: '14px', fontWeight: 600, marginTop: '4px' }}>
+                          {isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}
+                        </div>
+                        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #262626', display: 'flex', gap: '16px' }}>
+                          <div style={{ flex: 1 }}>
+                            <span style={{ color: '#737373', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Kripto (USD)</span>
+                            <span style={{ color: pnlCryptoUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '14px', fontWeight: 'bold' }}>
+                              {pnlCryptoUSD >= 0 ? '+' : ''}{formatUSD(pnlCryptoUSD)}
+                            </span>
+                          </div>
+                          <div style={{ width: '1px', backgroundColor: '#262626' }} />
+                          <div style={{ flex: 1 }}>
+                            <span style={{ color: '#737373', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Saham (IDR)</span>
+                            <span style={{ color: pnlSahamIDR >= 0 ? '#4ade80' : '#f87171', fontSize: '14px', fontWeight: 'bold' }}>
+                              {pnlSahamIDR >= 0 ? '+' : ''}{formatIDR(pnlSahamIDR)}
+                            </span>
+                          </div>
+                        </div>
+                      </>
+                    : <>
+                        <div className="skeleton" style={{ width: '60%', height: 34, marginBottom: 8 }} />
+                        <div className="skeleton" style={{ width: '40%', height: 18, marginBottom: 20 }} />
+                        <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                          <div className="skeleton" style={{ flex: 1, height: 36, borderRadius: 8 }} />
+                          <div className="skeleton" style={{ flex: 1, height: 36, borderRadius: 8 }} />
+                        </div>
+                      </>
+                  }
                 </div>
 
                 <div style={{ ...styles.summaryCard, display: 'flex', flexDirection: 'column' }}>
@@ -800,76 +1064,58 @@ function App() {
               </div>
 
               {/* TABEL ASET */}
-              <div style={{ backgroundColor: '#141414', borderRadius: '16px', border: '1px solid #262626', overflow: 'hidden' }}>
+              <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', background: 'linear-gradient(180deg, #0f1014 0%, #0c0e12 100%)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
 
                 {/* Header */}
-                <div className="holdings-header" style={{ padding: '20px 28px', borderBottom: '1px solid #1f1f1f' }}>
+                <div className="holdings-header" style={{ padding: '22px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
                   <div>
-                    <h3 style={{ color: 'white', fontSize: '18px', fontWeight: 800, margin: 0 }}>Holdings</h3>
-                    <span style={{ color: '#737373', fontSize: '13px' }}>{assets.length} aset terdaftar</span>
+                    <h3 style={{ color: '#fff', fontSize: '17px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>Holdings</h3>
+                    <span style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px', display: 'block' }}>{assets.length} aset terdaftar</span>
                   </div>
-                  <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '10px 18px', fontSize: '13px', fontWeight: 800, cursor: 'pointer' }}>
-                    + Tambah Aset
-                  </button>
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', color: '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(74,222,128,0.25)', letterSpacing: '-0.2px' }}
+                  >+ Tambah Aset</button>
                 </div>
 
                 {/* Column Headers */}
-                <div className="col-headers" style={{ alignItems: 'center', padding: '10px 28px', gap: '16px', borderBottom: '1px solid #1a1a1a' }}>
+                <div className="col-headers" style={{ alignItems: 'center', padding: '10px 28px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                   {[['Aset', 2], ['Harga Live', 1.5], ['Holdings / AVG', 1.5], ['Nilai Aset', 1.5], ['Unrealized PNL', 1.5]].map(([h, f]) => (
-                    <div key={h} style={{ flex: f, color: '#737373', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>{h}</div>
+                    <div key={h} style={{ flex: f, color: '#4b5563', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px' }}>{h}</div>
                   ))}
-                  <div style={{ flexShrink: 0, width: '98px' }}></div>
+                  <div style={{ flexShrink: 0, width: '98px' }} />
                 </div>
 
-                <div style={{ padding: '12px 4px 16px' }}>
+                <div style={{ padding: '10px 8px 18px' }}>
 
-                  {/* Crypto */}
-                  {assets.filter(a => a.type === 'crypto').length > 0 && (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 8px 10px' }}>
-                        <span style={{ backgroundColor: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '4px 10px', borderRadius: '6px' }}>Crypto</span>
-                        <div style={{ flex: 1, height: '1px', backgroundColor: '#222228' }}></div>
-                        <span style={{ color: '#525252', fontSize: '11px', fontWeight: 600 }}>{assets.filter(a => a.type === 'crypto').length} aset</span>
+                  {[
+                    { type: 'crypto',   label: 'Crypto',      color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  list: assets.filter(a => a.type === 'crypto') },
+                    { type: 'saham',    label: 'Saham IDX',   color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', list: assets.filter(a => a.type === 'saham') },
+                    { type: 'cashstable', label: 'Cash & Stable', color: '#10b981', bg: 'rgba(16,185,129,0.1)', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
+                  ].map(({ type, label, color, bg, list }) => list.length > 0 && (
+                    <div key={type}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 10px 10px' }}>
+                        <span style={{ backgroundColor: bg, color, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', padding: '4px 10px', borderRadius: '6px' }}>{label}</span>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(255,255,255,0.06), transparent)' }} />
+                        <span style={{ color: '#374151', fontSize: '11px', fontWeight: 600 }}>{list.length} aset</span>
                       </div>
-                      {assets.filter(a => a.type === 'crypto').map(asset => (
-                        <DataRow key={asset.id} asset={asset} hargaLiveUSD={hargaMap[asset.simbol]?.usd} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onEdit={setEditingAsset} onDelete={setDeleteConfirm} />
+                      {list.map(asset => (
+                        <DataRow
+                          key={asset.id} asset={asset}
+                          hargaLiveUSD={asset.type === 'crypto' ? hargaMap[asset.simbol]?.usd : undefined}
+                          hargaLiveIDR={asset.type === 'saham' ? hargaSaham[asset.ticker] : undefined}
+                          kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD}
+                          onEdit={setEditingAsset} onDelete={setDeleteConfirm}
+                        />
                       ))}
-                    </>
-                  )}
-
-                  {/* Saham */}
-                  {assets.filter(a => a.type === 'saham').length > 0 && (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 8px 10px' }}>
-                        <span style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#3b82f6', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '4px 10px', borderRadius: '6px' }}>Saham IDX</span>
-                        <div style={{ flex: 1, height: '1px', backgroundColor: '#222228' }}></div>
-                        <span style={{ color: '#525252', fontSize: '11px', fontWeight: 600 }}>{assets.filter(a => a.type === 'saham').length} aset</span>
-                      </div>
-                      {assets.filter(a => a.type === 'saham').map(asset => (
-                        <DataRow key={asset.id} asset={asset} hargaLiveIDR={hargaSaham[asset.ticker]} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onEdit={setEditingAsset} onDelete={setDeleteConfirm} />
-                      ))}
-                    </>
-                  )}
-
-                  {/* Cash & Stable */}
-                  {assets.filter(a => a.type === 'stable' || a.type === 'cash_idr').length > 0 && (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 8px 10px' }}>
-                        <span style={{ backgroundColor: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', padding: '4px 10px', borderRadius: '6px' }}>Cash & Stable</span>
-                        <div style={{ flex: 1, height: '1px', backgroundColor: '#222228' }}></div>
-                        <span style={{ color: '#525252', fontSize: '11px', fontWeight: 600 }}>{assets.filter(a => a.type === 'stable' || a.type === 'cash_idr').length} aset</span>
-                      </div>
-                      {assets.filter(a => a.type === 'stable' || a.type === 'cash_idr').map(asset => (
-                        <DataRow key={asset.id} asset={asset} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onEdit={setEditingAsset} onDelete={setDeleteConfirm} />
-                      ))}
-                    </>
-                  )}
+                    </div>
+                  ))}
 
                   {assets.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '48px', color: '#333' }}>
-                      <div style={{ fontSize: '32px', marginBottom: '12px' }}>📭</div>
-                      <div style={{ fontSize: '15px', fontWeight: 600 }}>Belum ada aset</div>
-                      <div style={{ fontSize: '13px', marginTop: '4px' }}>Klik "+ Tambah Aset" untuk mulai</div>
+                    <div style={{ textAlign: 'center', padding: '60px 24px' }}>
+                      <div style={{ fontSize: '40px', marginBottom: '16px', opacity: 0.4 }}>◈</div>
+                      <div style={{ color: '#6b7280', fontSize: '15px', fontWeight: 600 }}>Belum ada aset</div>
+                      <div style={{ color: '#374151', fontSize: '13px', marginTop: '6px' }}>Klik "+ Tambah Aset" untuk mulai tracking</div>
                     </div>
                   )}
                 </div>
@@ -877,8 +1123,19 @@ function App() {
             </>
           )}
 
-          {activePage === 'news' && <div style={{ color: 'white', fontSize: '16px', padding: '24px' }}>Modul Market News Sedang Disempurnakan...</div>}
-          {activePage === 'bot'  && <div style={{ color: 'white', fontSize: '16px', padding: '24px' }}>Modul AI Bot Trading Sedang Disempurnakan...</div>}
+          {activePage === 'ai' && (
+            <AIConsultant
+              assets={assets}
+              hargaMap={hargaMap}
+              hargaSaham={hargaSaham}
+              kursIdr={kursIdr}
+              grandTotalUSD={grandTotalUSD}
+              grandTotalIDR={grandTotalIDR}
+              overallPnlUSD={overallPnlUSD}
+              overallPnlPersen={overallPnlPersen}
+              marketData={marketData}
+            />
+          )}
         </div>
       </div>
 

@@ -1,8 +1,12 @@
+import os
 import random
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from groq import Groq
 
 app = FastAPI()
 
@@ -111,6 +115,65 @@ def analisa_sentimen_dan_teknikal():
             "current_decision": {"pair": "BTC/USDT", "action": "HOLD", "reason": "Memeriksa jaringan...", "price": "—"}
         }
 
+## ── AI CONSULTANT ─────────────────────────────────────────────────────────
+
+AI_SYSTEM_PROMPT = """Kamu adalah DavidHedge AI, asisten konsultan keuangan personal yang cerdas, profesional, dan ramah.
+
+Kemampuanmu:
+- Menganalisis portfolio investasi pengguna secara mendalam berdasarkan data real-time
+- Memberikan wawasan pasar terkini (crypto, saham IDX, komoditas, indeks global)
+- Menjelaskan konsep keuangan dengan bahasa yang mudah dipahami
+- Memberikan saran strategis yang actionable berdasarkan kondisi aktual portfolio
+- Membantu identifikasi risiko dan peluang investasi
+
+Panduan respons:
+- Selalu gunakan data portfolio dan pasar yang disertakan dalam analisis
+- Gunakan angka aktual dari data, bukan perkiraan
+- Format respons dengan jelas: gunakan bullet points, section header, dan bold untuk angka penting
+- Respons dalam bahasa yang sama dengan pertanyaan pengguna (Indonesia atau English)
+- Jaga respons tetap concise dan focused (maksimal 400 kata)
+- Tambahkan disclaimer singkat untuk saran investasi: "(ini bukan saran keuangan resmi)"
+- Bersikap positif namun tetap objektif dan realistis"""
+
+class ChatHistoryItem(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    context: str
+    history: Optional[List[ChatHistoryItem]] = []
+
+@app.post("/api/ai-chat")
+def ai_chat(req: ChatRequest):
+    api_key = os.environ.get("GROQ_API_KEY", "")
+    if not api_key:
+        return {"response": "⚠️ **GROQ_API_KEY belum dikonfigurasi.**\n\nTambahkan environment variable `GROQ_API_KEY` di Vercel atau file `.env` kamu.\n\nDapatkan API key gratis di [console.groq.com](https://console.groq.com)"}
+
+    try:
+        client = Groq(api_key=api_key)
+
+        messages = []
+        for h in req.history[-8:]:
+            messages.append({"role": h.role, "content": h.content})
+
+        messages.append({
+            "role": "user",
+            "content": f"Data portfolio dan pasar saat ini:\n{req.context}\n\n---\nPertanyaan: {req.message}"
+        })
+
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "system", "content": AI_SYSTEM_PROMPT}] + messages,
+            max_tokens=1024,
+            temperature=0.7,
+        )
+
+        return {"response": response.choices[0].message.content}
+
+    except Exception as e:
+        return {"response": f"⚠️ Terjadi kesalahan: {str(e)}"}
+
 @app.get("/api/chart")
 def get_chart(simbol: str, days: int = 1):
     """Fetch CoinGecko chart data server-side (no CORS / rate-limit issue di browser)."""
@@ -127,4 +190,6 @@ def get_bot_status():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
