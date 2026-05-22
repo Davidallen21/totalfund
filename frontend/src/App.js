@@ -601,7 +601,7 @@ Tanyakan apa saja tentang portfolio, pasar, atau strategi investasimu!`;
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(74,222,128,0.3)', flexShrink: 0 }}>✦</div>
           <div>
-            <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '15px', letterSpacing: '-0.3px' }}>DavidHedge AI</div>
+            <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '15px', letterSpacing: '-0.3px' }}>TotalFund AI</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
               <div className="status-dot" style={{ width: 6, height: 6 }} />
               <span style={{ color: '#6b7280', fontSize: '12px' }}>Online · Data portfolio real-time</span>
