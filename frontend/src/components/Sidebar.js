@@ -6,7 +6,7 @@ const Sidebar = () => {
       {/* Bagian Logo / Nama */}
       <div className="h-20 flex items-center px-8 border-b border-gray-800">
         <h2 className="text-xl font-bold tracking-wider text-green-400">
-          DAVID<span className="text-white">HEDGE</span>
+          TOTAL<span className="text-white">FUND</span>
         </h2>
       </div>
 

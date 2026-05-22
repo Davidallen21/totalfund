@@ -1,0 +1,31 @@
+# Query: David
+# ContextLines: 1
+
+6 results - 3 files
+
+backend/bot.py:
+  121  
+  122: AI_SYSTEM_PROMPT = """Kamu adalah TotalFund AI, asisten konsultan keuangan personal yang cerdas, profesional, dan ramah.
+  123  
+
+frontend/src/App.js:
+   57            <div className="sidebar-logo-icon">H</div>
+   58:           <span className="sidebar-logo-text">Total<span>Fund</span></span>
+   59          </div>
+
+  557  
+  558:   const welcome = `Halo! Saya **TotalFund AI**, konsultan keuangan personal kamu. ✦
+  559  
+
+  603            <div>
+  604:             <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '15px', letterSpacing: '-0.3px' }}>DavidHedge AI</div>
+  605              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+
+  622              <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 8px 28px rgba(74,222,128,0.25)', marginBottom: 20 }}>✦</div>
+  623:             <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '22px', letterSpacing: '-0.5px', marginBottom: 8 }}>DavidHedge AI</div>
+  624              <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: 28, maxWidth: 420, lineHeight: 1.6 }}>
+
+frontend/src/components/Sidebar.js:
+  8          <h2 className="text-xl font-bold tracking-wider text-green-400">
+  9:           TOTAL<span className="text-white">FUND</span>
+  10          </h2>

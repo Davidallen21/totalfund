@@ -55,7 +55,7 @@ function Sidebar({ activePage, setActivePage, onClose, isOpen }) {
       <div className="sidebar-logo-area">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div className="sidebar-logo-icon">D</div>
-          <span className="sidebar-logo-text">David<span>Hedge</span></span>
+          <span className="sidebar-logo-text">TOTAL<span>FUND</span></span>
         </div>
         {onClose && (
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px' }}>✕</button>

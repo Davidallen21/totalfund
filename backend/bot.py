@@ -119,7 +119,7 @@ def analisa_sentimen_dan_teknikal():
 
 ## ── AI CONSULTANT ─────────────────────────────────────────────────────────
 
-AI_SYSTEM_PROMPT = """Kamu adalah DavidHedge AI, asisten konsultan keuangan personal yang cerdas, profesional, dan ramah.
+AI_SYSTEM_PROMPT = """Kamu adalah TOTALFUND AI, asisten konsultan keuangan personal yang cerdas, profesional, dan ramah.
 
 Kemampuanmu:
 - Menganalisis portfolio investasi pengguna secara mendalam berdasarkan data real-time
