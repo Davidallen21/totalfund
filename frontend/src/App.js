@@ -86,10 +86,24 @@ function Sidebar({ activePage, setActivePage, onClose, isOpen }) {
 // ============================================
 // HELPER: CHARTS
 // ============================================
-function MiniChart({ data, color }) {
-  if (!data || data.length < 2) return (
-    <div style={{ height: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ color: '#555', fontSize: 13 }}>Memuat chart...</span>
+function MiniChart({ data, color, isError }) {
+  if (isError) return (
+    <div style={{ height: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+      <span style={{ fontSize: 20 }}>📡</span>
+      <span style={{ color: '#4b5563', fontSize: 12 }}>Tidak dapat memuat chart</span>
+    </div>
+  );
+  if (!data) return (
+    <div style={{ height: 100, display: 'flex', alignItems: 'flex-end', gap: 3, padding: '8px 4px' }}>
+      {[40,65,50,75,55,80,60,90,70,85,65,95,75,88,72].map((h, i) => (
+        <div key={i} className="skeleton" style={{ flex: 1, height: `${h}%`, borderRadius: 3 }} />
+      ))}
+    </div>
+  );
+  if (data.length < 2) return (
+    <div style={{ height: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+      <span style={{ fontSize: 20 }}>📊</span>
+      <span style={{ color: '#4b5563', fontSize: 12 }}>Data belum tersedia</span>
     </div>
   );
   const W = 400, H = 100;
@@ -713,6 +727,7 @@ function App() {
   const [kursIdr, setKursIdr]           = useState(16200);
   const [period, setPeriod]             = useState(PERIODS[0]);
   const [chartData, setChartData]       = useState(null);
+  const [chartError, setChartError]     = useState(false);
   const [pnlChart, setPnlChart]         = useState(null);
   const [showAddModal, setShowAddModal]   = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -840,8 +855,24 @@ function App() {
 
   // Chart historis — hanya re-fetch saat period atau assets berubah, BUKAN saat harga update
   useEffect(() => {
+    setChartData(null);
+    setChartError(false);
+
     const fetchChart = async () => {
       const cryptoAssets = assets.filter(a => a.type === 'crypto' && a.simbol);
+      const baseline = baselineRef.current;
+
+      const processResults = (results) => {
+        const base = results[0]?.prices ?? [];
+        if (base.length < 2) return null;
+        const combined = base.map((pt, i) => [
+          pt[0],
+          cryptoAssets.reduce((s, a, j) => s + (results[j]?.prices?.[i]?.[1] ?? 0) * a.jumlah, 0) + baseline,
+        ]);
+        return combined;
+      };
+
+      // Coba via backend dulu
       try {
         const results = await Promise.all(
           cryptoAssets.map(a =>
@@ -849,19 +880,35 @@ function App() {
               .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
           )
         );
-        const base = results[0]?.prices ?? [];
-        const baseline = baselineRef.current;
-        const combined = base.map((pt, i) => [
-          pt[0],
-          cryptoAssets.reduce((s, a, j) => s + (results[j]?.prices?.[i]?.[1] ?? 0) * a.jumlah, 0) + baseline,
-        ]);
-        setChartData(combined);
-        if (combined.length >= 2) {
-          const awal = combined[0][1], akhir = combined[combined.length - 1][1], diff = akhir - awal;
+        const combined = processResults(results);
+        if (combined && combined.length >= 2) {
+          setChartData(combined);
+          const awal = combined[0][1], akhir = combined[combined.length-1][1], diff = akhir - awal;
           setPnlChart({ selisih: diff, persen: (diff / awal) * 100 });
+          return;
         }
-      } catch { setChartData([]); }
+      } catch {}
+
+      // Fallback: langsung ke CoinGecko dari browser
+      try {
+        const results = await Promise.all(
+          cryptoAssets.map(a =>
+            fetch(`https://api.coingecko.com/api/v3/coins/${a.simbol}/market_chart?vs_currency=usd&days=${period.days}`)
+              .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+          )
+        );
+        const combined = processResults(results);
+        if (combined && combined.length >= 2) {
+          setChartData(combined);
+          const awal = combined[0][1], akhir = combined[combined.length-1][1], diff = akhir - awal;
+          setPnlChart({ selisih: diff, persen: (diff / awal) * 100 });
+          return;
+        }
+      } catch {}
+
+      setChartError(true);
     };
+
     fetchChart();
   }, [period, assets]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1029,7 +1076,7 @@ function App() {
                       ))}
                     </div>
                   </div>
-                  <div style={{ flex: 1 }}><MiniChart data={chartData} color={chartColor} /></div>
+                  <div style={{ flex: 1 }}><MiniChart data={chartData} color={chartColor} isError={chartError} /></div>
                 </div>
               </div>
 
