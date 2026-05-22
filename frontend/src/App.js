@@ -732,7 +732,7 @@ function App() {
   const [showAddModal, setShowAddModal]   = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [sidebarOpen, setSidebarOpen]     = useState(false);
-  const { width } = useWindowSize();
+  useWindowSize(); // trigger re-render on resize for responsive layout
 
   const [hargaSaham, setHargaSaham] = useState({});
   const [cryptoLoaded, setCryptoLoaded] = useState(false);
