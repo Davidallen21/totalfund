@@ -13,10 +13,12 @@ frontend/coverage/
 frontend/build/
 
 # Env files
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
 
 # Logs
 npm-debug.log*

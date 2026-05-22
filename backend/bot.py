@@ -1,5 +1,7 @@
 import os
 import random
+from dotenv import load_dotenv
+load_dotenv()  # load .env file otomatis
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional
