@@ -555,7 +555,7 @@ DATA PASAR REALTIME:
 ${mkt}`;
   };
 
-  const welcome = `Halo! Saya **DavidHedge AI**, konsultan keuangan personal kamu. ✦
+  const welcome = `Halo! Saya **TotalFund AI**, konsultan keuangan personal kamu. ✦
 
 Portfolio kamu saat ini senilai **${formatUSD(grandTotalUSD)}** dengan PNL **${overallPnlUSD>=0?'+':''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)**.
 
@@ -620,7 +620,7 @@ Tanyakan apa saja tentang portfolio, pasar, atau strategi investasimu!`;
         {isWelcome && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60%', textAlign: 'center', padding: '20px 0' }}>
             <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 8px 28px rgba(74,222,128,0.25)', marginBottom: 20 }}>✦</div>
-            <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '22px', letterSpacing: '-0.5px', marginBottom: 8 }}>DavidHedge AI</div>
+            <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '22px', letterSpacing: '-0.5px', marginBottom: 8 }}>TotalFund AI</div>
             <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: 28, maxWidth: 420, lineHeight: 1.6 }}>
               Konsultan keuangan personal kamu berbasis AI dengan akses data portfolio &amp; pasar secara real-time.
             </div>
