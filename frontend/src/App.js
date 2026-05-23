@@ -58,7 +58,6 @@ function Sidebar({ activePage, setActivePage, onClose, isOpen }) {
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px' }}>✕</button>
         )}
       </div>
-
       <nav className="sidebar-nav">
         {NAV_ITEMS.map(({ key, label, icon }) => (
           <div
@@ -71,7 +70,6 @@ function Sidebar({ activePage, setActivePage, onClose, isOpen }) {
           </div>
         ))}
       </nav>
-
       <div className="sidebar-footer">
         <div className="status-dot" />
         <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 500 }}>System Online</span>
@@ -184,14 +182,8 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
       background: gradientBg, border: '1px solid #262626', borderLeft: `4px solid ${typeConfig.color}`,
       gap: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.02)',
     }}>
-
-      {/* Aset Info */}
       <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
-        <div style={{
-          width: '48px', height: '48px', borderRadius: '13px', backgroundColor: typeConfig.bg, color: typeConfig.color,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px', flexShrink: 0,
-          letterSpacing: '0.5px', boxShadow: `0 4px 14px ${typeConfig.glow}`,
-        }}>
+        <div style={{ width: '48px', height: '48px', borderRadius: '13px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px', flexShrink: 0, letterSpacing: '0.5px', boxShadow: `0 4px 14px ${typeConfig.glow}` }}>
           {asset.ticker.substring(0, 4)}
         </div>
         <div style={{ minWidth: 0 }}>
@@ -199,47 +191,25 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
           <div style={{ color: '#606060', fontSize: '12px', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.nama}</div>
         </div>
       </div>
-
-      {/* Harga Live */}
       <div style={{ flex: 1.5 }}>
-        {isCashIDR ? (
-          <span style={{ color: '#404040', fontSize: '14px' }}>Pegged</span>
-        ) : (
+        {isCashIDR ? <span style={{ color: '#404040', fontSize: '14px' }}>Pegged</span> : (
           <>
-            <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>
-              {hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : <span style={{ color: '#383838' }}>—</span>}
-            </div>
-            <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>
-              {hargaAcuan ? (isSaham ? formatUSD(hargaAcuan / kursIdr) : formatIDR(hargaAcuan * kursIdr)) : ''}
-            </div>
+            <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : <span style={{ color: '#383838' }}>—</span>}</div>
+            <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>{hargaAcuan ? (isSaham ? formatUSD(hargaAcuan / kursIdr) : formatIDR(hargaAcuan * kursIdr)) : ''}</div>
           </>
         )}
       </div>
-
-      {/* Holdings */}
       <div style={{ flex: 1.5 }}>
-        {isCashIDR ? (
-          <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>
-            {formatIDR(asset.jumlah).replace('Rp ', '')} <span style={{ color: '#555', fontSize: '12px', fontWeight: 400 }}>IDR</span>
-          </div>
-        ) : (
+        {isCashIDR ? <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>{formatIDR(asset.jumlah).replace('Rp ', '')} <span style={{ color: '#555', fontSize: '12px', fontWeight: 400 }}>IDR</span></div> : (
           <>
-            <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>
-              {(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} <span style={{ color: '#555', fontSize: '12px', fontWeight: 400 }}>{isSaham ? 'Lot' : asset.ticker}</span>
-            </div>
+            <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>{(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} <span style={{ color: '#555', fontSize: '12px', fontWeight: 400 }}>{isSaham ? 'Lot' : asset.ticker}</span></div>
             <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>Avg: {isSaham ? formatIDR(asset.avg) : formatUSD(asset.avg)}</div>
           </>
         )}
       </div>
-
-      {/* Nilai Aset */}
       <div style={{ flex: 1.5 }}>
-        <div style={{ color: '#e5e5e5', fontWeight: 700, fontSize: '15px' }}>
-          {nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}
-        </div>
-        <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>
-          {nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}
-        </div>
+        <div style={{ color: '#e5e5e5', fontWeight: 700, fontSize: '15px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
+        <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
           <div style={{ width: '80px', height: '3px', backgroundColor: '#252525', borderRadius: '999px', overflow: 'hidden' }}>
             <div style={{ width: `${Math.min(parseFloat(pct), 100)}%`, height: '100%', backgroundColor: typeConfig.color }}></div>
@@ -247,29 +217,14 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
           <span style={{ fontSize: '11px', color: '#555', fontWeight: 600 }}>{pct}%</span>
         </div>
       </div>
-
-      {/* Unrealized PNL */}
       <div style={{ flex: 1.5 }}>
         {!isStable && !isCashIDR && pnl !== null ? (
           <>
-            <div style={{ color: profit ? '#4ade80' : '#f87171', fontWeight: 700, fontSize: '16px', letterSpacing: '-0.3px' }}>
-              {profit ? '+' : ''}{(isSaham) ? formatIDR(pnl) : formatUSD(pnl)}
-            </div>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px',
-              backgroundColor: profit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)',
-              color: profit ? '#4ade80' : '#f87171', padding: '4px 10px', borderRadius: '20px',
-              fontSize: '12px', fontWeight: 700, border: `1px solid ${profit ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)'}`,
-            }}>
-              {profit ? '▲' : '▼'} {Math.abs(pnlPersen).toFixed(2)}%
-            </div>
+            <div style={{ color: profit ? '#4ade80' : '#f87171', fontWeight: 700, fontSize: '16px', letterSpacing: '-0.3px' }}>{profit ? '+' : ''}{(isSaham) ? formatIDR(pnl) : formatUSD(pnl)}</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', backgroundColor: profit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: profit ? '#4ade80' : '#f87171', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, border: `1px solid ${profit ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)'}` }}>{profit ? '▲' : '▼'} {Math.abs(pnlPersen).toFixed(2)}%</div>
           </>
-        ) : (
-          <span style={{ color: '#383838', fontSize: '20px' }}>—</span>
-        )}
+        ) : <span style={{ color: '#383838', fontSize: '20px' }}>—</span>}
       </div>
-
-      {/* Aksi */}
       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
         <button onClick={() => onEdit(asset)} style={{ backgroundColor: '#1e1e1e', color: '#909090', border: '1px solid #2e2e2e', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
         <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'rgba(239,68,68,0.07)', color: '#f87171', border: '1px solid rgba(239,68,68,0.18)', borderRadius: '8px', padding: '8px 12px', fontSize: '15px', cursor: 'pointer' }}>✕</button>
@@ -280,24 +235,17 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
     <div className="asset-row-mobile" style={{ borderLeft: `4px solid ${typeConfig.color}`, background: `linear-gradient(to right, rgba(${typeConfig.color.replace('#','').match(/.{2}/g).map(h=>parseInt(h,16)).join(',')}, 0.04) 0%, #141414 35%)` }}>
       <div className="asset-row-mobile-top">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px', flexShrink: 0 }}>
-            {asset.ticker.substring(0, 4)}
-          </div>
+          <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px', flexShrink: 0 }}>{asset.ticker.substring(0, 4)}</div>
           <div style={{ minWidth: 0 }}>
             <div style={{ color: '#fff', fontWeight: 700, fontSize: '15px' }}>{asset.ticker}</div>
             <div style={{ color: '#606060', fontSize: '12px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.nama}</div>
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ color: '#e5e5e5', fontWeight: 700, fontSize: '15px' }}>
-            {nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}
-          </div>
-          <div style={{ color: '#555', fontSize: '12px', marginTop: '2px' }}>
-            {nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}
-          </div>
+          <div style={{ color: '#e5e5e5', fontWeight: 700, fontSize: '15px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
+          <div style={{ color: '#555', fontSize: '12px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
         </div>
       </div>
-
       <div className="asset-row-mobile-bottom">
         <div className="asset-row-mobile-stats">
           {!isCashIDR && (
@@ -308,18 +256,14 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
           )}
           <div>
             <div style={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>Holdings</div>
-            <div style={{ color: '#e5e5e5', fontSize: '13px', fontWeight: 600 }}>
-              {isCashIDR ? formatIDR(asset.jumlah) : `${(isSaham ? asset.jumlah/100 : asset.jumlah).toLocaleString()} ${isSaham ? 'Lot' : asset.ticker}`}
-            </div>
+            <div style={{ color: '#e5e5e5', fontSize: '13px', fontWeight: 600 }}>{isCashIDR ? formatIDR(asset.jumlah) : `${(isSaham ? asset.jumlah/100 : asset.jumlah).toLocaleString()} ${isSaham ? 'Lot' : asset.ticker}`}</div>
           </div>
           {!isStable && !isCashIDR && pnl !== null && (
             <div>
               <div style={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>PNL</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '13px', fontWeight: 700 }}>{profit?'+':''}{isSaham?formatIDR(pnl):formatUSD(pnl)}</span>
-                <span style={{ backgroundColor: profit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: profit ? '#4ade80' : '#f87171', padding: '2px 7px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, border: `1px solid ${profit?'rgba(74,222,128,0.15)':'rgba(248,113,113,0.15)'}` }}>
-                  {profit?'▲':'▼'} {Math.abs(pnlPersen).toFixed(1)}%
-                </span>
+                <span style={{ backgroundColor: profit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: profit ? '#4ade80' : '#f87171', padding: '2px 7px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, border: `1px solid ${profit?'rgba(74,222,128,0.15)':'rgba(248,113,113,0.15)'}` }}>{profit?'▲':'▼'} {Math.abs(pnlPersen).toFixed(1)}%</span>
               </div>
             </div>
           )}
@@ -338,24 +282,13 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
 // KOMPONEN: KONFIRMASI HAPUS
 // ============================================
 function ConfirmDeleteModal({ asset, onConfirm, onCancel }) {
-  const typeConfig = {
-    crypto:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)'  },
-    saham:    { color: '#3b82f6', bg: 'rgba(59,130,246,0.1)'  },
-    saham_us: { color: '#ec4899', bg: 'rgba(236,72,153,0.1)' },
-    komoditas:{ color: '#eab308', bg: 'rgba(234,179,8,0.1)' },
-    stable:   { color: '#10b981', bg: 'rgba(16,185,129,0.1)'  },
-    cash_idr: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)'  },
-  }[asset.type] || { color: '#737373', bg: 'rgba(115,115,115,0.1)' };
-
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
       <div style={{ backgroundColor: '#111215', border: '1px solid #1e2026', borderRadius: '18px', padding: '28px 28px 24px', width: '340px', boxShadow: '0 24px 64px rgba(0,0,0,0.8)' }}>
         <div style={{ width: '52px', height: '52px', borderRadius: '14px', backgroundColor: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', fontSize: '24px' }}>🗑</div>
         <h3 style={{ color: '#ffffff', fontSize: '20px', fontWeight: 800, margin: '0 0 10px' }}>Hapus {asset.ticker}?</h3>
-        <p style={{ color: '#a3a3a3', fontSize: '14px', margin: '0 0 6px', lineHeight: 1.6 }}>
-          Aset <span style={{ color: typeConfig.color, fontWeight: 700 }}>{asset.nama}</span> akan dihapus permanen dari portfolio.
-        </p>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <p style={{ color: '#a3a3a3', fontSize: '14px', margin: '0 0 6px', lineHeight: 1.6 }}>Aset <span style={{ fontWeight: 700 }}>{asset.nama}</span> akan dihapus permanen.</p>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '24px' }}>
           <button onClick={onCancel} style={{ flex: 1, backgroundColor: '#1a1a22', color: '#737373', border: '1px solid #242430', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
           <button onClick={onConfirm} style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>Hapus</button>
         </div>
@@ -394,23 +327,12 @@ function AddAssetModal({ onSave, onClose }) {
     ['cash_idr',  'Cash IDR',   '#8b5cf6'],
   ];
 
-  const labelStyle = {
-    color: '#606060', fontSize: '11px', fontWeight: 700,
-    display: 'block', marginBottom: '8px',
-    textTransform: 'uppercase', letterSpacing: '0.6px',
-  };
-  const inputStyle = {
-    width: '100%', backgroundColor: '#0d0d0d',
-    border: '1px solid #2a2a2a', borderRadius: '10px',
-    padding: '12px 16px', color: '#e5e5e5', fontSize: '14px',
-    outline: 'none', boxSizing: 'border-box', fontWeight: 500,
-  };
+  const labelStyle = { color: '#606060', fontSize: '11px', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.6px' };
+  const inputStyle = { width: '100%', backgroundColor: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 16px', color: '#e5e5e5', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontWeight: 500 };
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
       <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '20px', padding: '0', width: '520px', boxShadow: '0 32px 80px rgba(0,0,0,0.8)', maxHeight: '90vh', overflowY: 'auto' }}>
-
-        {/* Modal Header */}
         <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid #1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h2 style={{ color: '#ffffff', fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>Tambah Aset Baru</h2>
@@ -418,70 +340,30 @@ function AddAssetModal({ onSave, onClose }) {
           </div>
           <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', color: '#606060', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>
         </div>
-
-        {/* Form Body */}
         <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-          {/* Nama + Ticker */}
           <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '14px' }}>
-            <div>
-              <label style={labelStyle}>Nama Aset</label>
-              <input value={form.nama} onChange={e => set('nama', e.target.value)} placeholder="Misal: Apple" style={inputStyle} />
-            </div>
-            <div>
-              <label style={labelStyle}>Ticker</label>
-              <input value={form.ticker} onChange={e => set('ticker', e.target.value.toUpperCase())} placeholder="AAPL" style={{ ...inputStyle, textTransform: 'uppercase', letterSpacing: '0.5px' }} />
-            </div>
+            <div><label style={labelStyle}>Nama Aset</label><input value={form.nama} onChange={e => set('nama', e.target.value)} placeholder="Misal: Apple" style={inputStyle} /></div>
+            <div><label style={labelStyle}>Ticker</label><input value={form.ticker} onChange={e => set('ticker', e.target.value.toUpperCase())} placeholder="AAPL" style={{ ...inputStyle, textTransform: 'uppercase', letterSpacing: '0.5px' }} /></div>
           </div>
-
-          {/* Tipe Aset */}
           <div>
             <label style={labelStyle}>Tipe Aset</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px' }}>
               {typeMap.map(([val, lbl, col]) => (
-                <button key={val} onClick={() => set('type', val)} style={{
-                  padding: '10px 6px', borderRadius: '10px', border: '1px solid',
-                  borderColor: form.type === val ? col : '#222',
-                  backgroundColor: form.type === val ? `${col}15` : '#0d0d0d',
-                  color: form.type === val ? col : '#484848',
-                  fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}>
-                  {lbl}
-                </button>
+                <button key={val} onClick={() => set('type', val)} style={{ padding: '10px 6px', borderRadius: '10px', border: '1px solid', borderColor: form.type === val ? col : '#222', backgroundColor: form.type === val ? `${col}15` : '#0d0d0d', color: form.type === val ? col : '#484848', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>{lbl}</button>
               ))}
             </div>
           </div>
-
-          {/* API Symbol */}
           {(form.type === 'crypto' || form.type === 'saham' || form.type === 'saham_us' || form.type === 'komoditas') && (
             <div>
               <label style={labelStyle}>{form.type === 'crypto' ? 'CoinGecko ID' : 'Yahoo Finance Symbol'}</label>
-              <input
-                value={form.simbol}
-                onChange={e => set('simbol', e.target.value)}
-                placeholder={form.type === 'crypto' ? 'bitcoin' : form.type === 'komoditas' ? 'GC=F (Emas) / SI=F (Silver)' : 'BBCA.JK / AAPL'}
-                style={inputStyle}
-              />
+              <input value={form.simbol} onChange={e => set('simbol', e.target.value)} placeholder={form.type === 'crypto' ? 'bitcoin' : form.type === 'komoditas' ? 'GC=F (Emas)' : 'BBCA.JK / AAPL'} style={inputStyle} />
             </div>
           )}
-
-          {/* Harga AVG + Jumlah */}
           <div style={{ display: 'grid', gridTemplateColumns: isCashIDR ? '1fr' : '1fr 1fr', gap: '14px' }}>
-            {!isCashIDR && (
-              <div>
-                <label style={labelStyle}>Harga Beli AVG ({form.type === 'saham' ? 'IDR' : 'USD'})</label>
-                <input type="number" value={form.avg} onChange={e => set('avg', e.target.value)} placeholder="0" style={inputStyle} />
-              </div>
-            )}
-            <div>
-              <label style={labelStyle}>Jumlah ({form.type === 'saham' ? 'Lembar' : form.type === 'cash_idr' ? 'Rupiah (IDR)' : 'Unit'})</label>
-              <input type="number" value={form.jumlah} onChange={e => set('jumlah', e.target.value)} placeholder={isCashIDR ? '10000000' : '0'} style={inputStyle} />
-            </div>
+            {!isCashIDR && <div><label style={labelStyle}>Harga Beli AVG ({form.type === 'saham' ? 'IDR' : 'USD'})</label><input type="number" value={form.avg} onChange={e => set('avg', e.target.value)} placeholder="0" style={inputStyle} /></div>}
+            <div><label style={labelStyle}>Jumlah ({form.type === 'saham' ? 'Lembar' : form.type === 'cash_idr' ? 'Rupiah (IDR)' : 'Unit'})</label><input type="number" value={form.jumlah} onChange={e => set('jumlah', e.target.value)} placeholder={isCashIDR ? '10000000' : '0'} style={inputStyle} /></div>
           </div>
         </div>
-
-        {/* Footer */}
         <div style={{ padding: '0 28px 28px', display: 'flex', gap: '10px' }}>
           <button onClick={onClose} style={{ flex: 1, backgroundColor: '#1a1a1a', color: '#737373', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
           <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', letterSpacing: '-0.2px' }}>+ Tambah Aset</button>
@@ -508,11 +390,7 @@ function renderAIText(text) {
 }
 
 const SUGGESTIONS = [
-  'Analisa portfolio saya secara keseluruhan',
-  'Aset mana yang paling menguntungkan?',
-  'Bagaimana kondisi pasar hari ini?',
-  'Rekomendasi rebalancing portfolio saya',
-  'Jelaskan risiko portfolio saya saat ini',
+  'Analisa portfolio saya secara keseluruhan', 'Aset mana yang paling menguntungkan?', 'Bagaimana kondisi pasar hari ini?', 'Rekomendasi rebalancing portfolio saya'
 ];
 
 function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, grandTotalIDR, overallPnlUSD, overallPnlPersen, marketData }) {
@@ -528,21 +406,8 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
       const qty    = isSaham ? `${a.jumlah/100} Lot` : `${a.jumlah} ${a.ticker}`;
       return `  • ${a.ticker} (${a.nama}): Harga ${isSaham ? formatIDR(harga) : formatUSD(harga)}, Holdings ${qty}, Nilai ~${formatUSD(nilaiUSD)}${pct !== null ? `, PNL ${pnl >= 0 ? '+' : ''}${pct}%` : ''}`;
     }).join('\n');
-
-    const mkt = Object.entries(marketData)
-      .map(([k,v]) => `  • ${k}: ${v.type==='usd'?'$':''}${v.price.toLocaleString(undefined,{maximumFractionDigits:2})} (${v.isUp?'+':''}${v.change.toFixed(2)}%)`)
-      .join('\n');
-
-    return `PORTFOLIO (${new Date().toLocaleString('id-ID')})
-Total Net Worth : ${formatUSD(grandTotalUSD)} / ${formatIDR(grandTotalIDR)}
-Overall PNL     : ${overallPnlUSD>=0?'+':''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)
-Kurs USD/IDR    : ${kursIdr.toLocaleString('id-ID')}
-
-DETAIL ASET:
-${detail}
-
-DATA PASAR REALTIME:
-${mkt}`;
+    const mkt = Object.entries(marketData).map(([k,v]) => `  • ${k}: ${v.type==='usd'?'$':''}${v.price.toLocaleString(undefined,{maximumFractionDigits:2})} (${v.isUp?'+':''}${v.change.toFixed(2)}%)`).join('\n');
+    return `PORTFOLIO (${new Date().toLocaleString('id-ID')})\nTotal Net Worth : ${formatUSD(grandTotalUSD)}\nOverall PNL : ${overallPnlUSD>=0?'+':''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)\nKurs USD/IDR : ${kursIdr.toLocaleString('id-ID')}\n\nDETAIL ASET:\n${detail}\n\nDATA PASAR REALTIME:\n${mkt}`;
   };
 
   const welcome = `Halo! Saya **TotalFund AI**, konsultan keuangan personal kamu. ✦\n\nPortfolio kamu saat ini senilai **${formatUSD(grandTotalUSD)}** dengan PNL **${overallPnlUSD>=0?'+':''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)**.\n\nTanyakan apa saja tentang portfolio, pasar, atau strategi investasimu!`;
@@ -563,15 +428,11 @@ ${mkt}`;
     setLoading(true);
     try {
       const history = messages.slice(-8).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
-      const res  = await fetch(`${API_BASE}/api/ai-chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, context: buildContext(), history }),
-      });
+      const res  = await fetch(`${API_BASE}/api/ai-chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, context: buildContext(), history }) });
       const data = await res.json();
       setMessages(prev => [...prev, { role: 'ai', text: data.response || 'Maaf, terjadi kesalahan.' }]);
     } catch {
-      setMessages(prev => [...prev, { role: 'ai', text: '⚠️ Tidak bisa terhubung ke server. Pastikan backend berjalan dan **GROQ_API_KEY** sudah dikonfigurasi.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: '⚠️ Tidak bisa terhubung ke server.' }]);
     }
     setLoading(false);
     inputRef.current?.focus();
@@ -581,8 +442,6 @@ ${mkt}`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', borderRadius: '20px', border: '1px solid #262626', backgroundColor: '#141414', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-
-      {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1px solid #1f1f1f', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(74,222,128,0.3)', flexShrink: 0 }}>✦</div>
@@ -594,71 +453,28 @@ ${mkt}`;
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <span style={{ background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.15)', color: '#4ade80', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '20px' }}>Groq · llama-3.3-70b</span>
-        </div>
       </div>
-
-      {/* ── Content area ── */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
-
-        {/* Welcome state */}
         {isWelcome && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60%', textAlign: 'center', padding: '20px 0' }}>
             <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 8px 28px rgba(74,222,128,0.25)', marginBottom: 20 }}>✦</div>
             <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '22px', letterSpacing: '-0.5px', marginBottom: 8 }}>TotalFund AI</div>
-            <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: 28, maxWidth: 420, lineHeight: 1.6 }}>
-              Konsultan keuangan personal kamu berbasis AI dengan akses data portfolio &amp; pasar secara real-time.
-            </div>
-
-            {/* Portfolio snapshot */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, width: '100%', maxWidth: 480, marginBottom: 28 }}>
-              <div style={{ background: '#1a1a1a', border: '1px solid #262626', borderRadius: '14px', padding: '16px 20px', textAlign: 'left' }}>
-                <div style={{ color: '#6b7280', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Net Worth</div>
-                <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>{formatUSD(grandTotalUSD)}</div>
-                <div style={{ color: '#525252', fontSize: '12px', marginTop: 2 }}>{formatIDR(grandTotalIDR)}</div>
-              </div>
-              <div style={{ background: '#1a1a1a', border: '1px solid #262626', borderRadius: '14px', padding: '16px 20px', textAlign: 'left' }}>
-                <div style={{ color: '#6b7280', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Overall PNL</div>
-                <div style={{ color: overallPnlUSD >= 0 ? '#4ade80' : '#f87171', fontWeight: 800, fontSize: '20px', letterSpacing: '-0.5px' }}>{overallPnlUSD >= 0 ? '+' : ''}{formatUSD(overallPnlUSD)}</div>
-                <div style={{ color: overallPnlUSD >= 0 ? '#166534' : '#991b1b', fontSize: '12px', marginTop: 2, fontWeight: 600 }}>{overallPnlPersen >= 0 ? '+' : ''}{overallPnlPersen.toFixed(2)}%</div>
-              </div>
-            </div>
-
-            {/* Suggestions */}
+            <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: 28, maxWidth: 420, lineHeight: 1.6 }}>Konsultan keuangan personal kamu berbasis AI.</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 560 }}>
               {SUGGESTIONS.map((s, i) => (
-                <button key={i} onClick={() => send(s)} style={{ background: '#1a1a1a', color: '#a3a3a3', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background='rgba(74,222,128,0.08)'; e.currentTarget.style.color='#4ade80'; e.currentTarget.style.borderColor='rgba(74,222,128,0.2)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background='#1a1a1a'; e.currentTarget.style.color='#a3a3a3'; e.currentTarget.style.borderColor='#2a2a2a'; }}
-                >{s}</button>
+                <button key={i} onClick={() => send(s)} style={{ background: '#1a1a1a', color: '#a3a3a3', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}>{s}</button>
               ))}
             </div>
           </div>
         )}
-
-        {/* Chat messages */}
         {!isWelcome && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {messages.map((msg, i) => (
               <div key={i} style={{ display: 'flex', gap: '10px', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-start' }}>
-                {msg.role === 'ai' && (
-                  <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #4ade80, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0, boxShadow: '0 2px 8px rgba(74,222,128,0.2)' }}>✦</div>
-                )}
-                <div style={{
-                  maxWidth: '74%', padding: '13px 17px', borderRadius: msg.role === 'ai' ? '2px 14px 14px 14px' : '14px 2px 14px 14px',
-                  background: msg.role === 'ai' ? '#1a1a1a' : 'linear-gradient(135deg, #166534 0%, #14532d 100%)',
-                  border: msg.role === 'ai' ? '1px solid #262626' : '1px solid rgba(74,222,128,0.2)',
-                  color: '#e5e5e5', fontSize: '14px', lineHeight: '1.7',
-                  boxShadow: msg.role === 'user' ? '0 4px 14px rgba(74,222,128,0.1)' : 'none',
-                }}>
-                  {msg.role === 'ai'
-                    ? <div dangerouslySetInnerHTML={{ __html: renderAIText(msg.text) }} />
-                    : <span style={{ fontWeight: 500 }}>{msg.text}</span>}
+                {msg.role === 'ai' && <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #4ade80, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>✦</div>}
+                <div style={{ maxWidth: '74%', padding: '13px 17px', borderRadius: msg.role === 'ai' ? '2px 14px 14px 14px' : '14px 2px 14px 14px', background: msg.role === 'ai' ? '#1a1a1a' : 'linear-gradient(135deg, #166534 0%, #14532d 100%)', border: msg.role === 'ai' ? '1px solid #262626' : '1px solid rgba(74,222,128,0.2)', color: '#e5e5e5', fontSize: '14px', lineHeight: '1.7' }}>
+                  {msg.role === 'ai' ? <div dangerouslySetInnerHTML={{ __html: renderAIText(msg.text) }} /> : <span style={{ fontWeight: 500 }}>{msg.text}</span>}
                 </div>
-                {msg.role === 'user' && (
-                  <div style={{ width: 30, height: 30, borderRadius: '9px', background: '#1a1a1a', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0, color: '#737373' }}>◈</div>
-                )}
               </div>
             ))}
             {loading && (
@@ -673,23 +489,10 @@ ${mkt}`;
           </div>
         )}
       </div>
-
-      {/* ── Input bar ── */}
       <div style={{ padding: '16px 24px', borderTop: '1px solid #1f1f1f', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px' }}>
-          <input
-            ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-            placeholder="Tanya tentang portfolio, pasar, atau strategi investasimu..." disabled={loading}
-            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e5e5e5', fontSize: '14px', fontFamily: 'inherit' }}
-          />
-          <button
-            onClick={() => send()} disabled={loading || !input.trim()}
-            style={{ width: '36px', height: '36px', borderRadius: '9px', background: input.trim() ? 'linear-gradient(135deg, #4ade80, #06b6d4)' : 'rgba(255,255,255,0.05)', border: 'none', color: input.trim() ? '#000' : '#4b5563', fontSize: '15px', fontWeight: 700, cursor: input.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: input.trim() ? '0 4px 12px rgba(74,222,128,0.3)' : 'none' }}
-          >▶</button>
-        </div>
-        <div style={{ color: '#374151', fontSize: '11px', marginTop: '8px', textAlign: 'center' }}>
-          AI dapat membuat kesalahan · Verifikasi sebelum mengambil keputusan investasi
+          <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="Tanya sesuatu..." disabled={loading} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e5e5e5', fontSize: '14px', fontFamily: 'inherit' }} />
+          <button onClick={() => send()} disabled={loading || !input.trim()} style={{ width: '36px', height: '36px', borderRadius: '9px', background: input.trim() ? 'linear-gradient(135deg, #4ade80, #06b6d4)' : 'rgba(255,255,255,0.05)', border: 'none', color: input.trim() ? '#000' : '#4b5563', fontSize: '15px', fontWeight: 700, cursor: input.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▶</button>
         </div>
       </div>
     </div>
@@ -732,27 +535,21 @@ function App() {
   // ── FETCH SEMUA DATA REALTIME ──
   useEffect(() => {
     const fetchAll = async () => {
-
-      // 1. CRYPTO via Binance
+      // 1. CRYPTO
       try {
         const res  = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=' + encodeURIComponent('["BTCUSDT","ETHUSDT","LITUSDT"]'));
         const data = await res.json();
         const find = (sym) => data.find(d => d.symbol === sym) || {};
 
-        const btc = find('BTCUSDT');
-        const eth = find('ETHUSDT');
-        const lit = find('LITUSDT');
-
-        const btcPrice  = parseFloat(btc.lastPrice)          || 0;
-        const btcChange = parseFloat(btc.priceChangePercent)  || 0;
-        const ethPrice  = parseFloat(eth.lastPrice)          || 0;
-        const ethChange = parseFloat(eth.priceChangePercent)  || 0;
-        const litPrice  = parseFloat(lit.lastPrice)          || 0;
+        const btc = find('BTCUSDT'), eth = find('ETHUSDT'), lit = find('LITUSDT');
+        const btcPrice = parseFloat(btc.lastPrice) || 0, btcChange = parseFloat(btc.priceChangePercent) || 0;
+        const ethPrice = parseFloat(eth.lastPrice) || 0, ethChange = parseFloat(eth.priceChangePercent) || 0;
+        const litPrice = parseFloat(lit.lastPrice) || 0;
 
         setHargaMap({
-          bitcoin:  { usd: btcPrice  },
-          ethereum: { usd: ethPrice  },
-          litentry: { usd: litPrice  },
+          bitcoin:  { usd: btcPrice, change: btcChange },
+          ethereum: { usd: ethPrice, change: ethChange },
+          litentry: { usd: litPrice, change: 0 },
         });
 
         setMarketData(prev => ({
@@ -762,59 +559,42 @@ function App() {
         }));
         if (btcPrice > 0) setCryptoLoaded(true);
       } catch (e) {
-        // Fallback CoinGecko
         try {
           const res  = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,litentry&vs_currencies=usd&include_24hr_change=true');
           const data = await res.json();
-          const btcPrice  = data.bitcoin?.usd  ?? 0;
-          const btcChange = data.bitcoin?.usd_24h_change  ?? 0;
-          const ethPrice  = data.ethereum?.usd ?? 0;
-          const ethChange = data.ethereum?.usd_24h_change ?? 0;
-          const litPrice  = data.litentry?.usd ?? 0;
-          setHargaMap({ bitcoin: { usd: btcPrice }, ethereum: { usd: ethPrice }, litentry: { usd: litPrice } });
-          setMarketData(prev => ({ ...prev,
-            BTC: { price: btcPrice, change: btcChange, isUp: btcChange >= 0, type: 'usd' },
-            ETH: { price: ethPrice, change: ethChange, isUp: ethChange >= 0, type: 'usd' },
-          }));
+          const btcPrice = data.bitcoin?.usd ?? 0, btcChange = data.bitcoin?.usd_24h_change ?? 0;
+          const ethPrice = data.ethereum?.usd ?? 0, ethChange = data.ethereum?.usd_24h_change ?? 0;
+          const litPrice = data.litentry?.usd ?? 0;
+          setHargaMap({ bitcoin: { usd: btcPrice, change: btcChange }, ethereum: { usd: ethPrice, change: ethChange }, litentry: { usd: litPrice, change: 0 } });
+          setMarketData(prev => ({ ...prev, BTC: { price: btcPrice, change: btcChange, isUp: btcChange >= 0, type: 'usd' }, ETH: { price: ethPrice, change: ethChange, isUp: ethChange >= 0, type: 'usd' } }));
           if (btcPrice > 0) setCryptoLoaded(true);
-        } catch (e2) { console.warn('Crypto fetch error:', e2); }
+        } catch (e2) {}
       }
 
-      // 2. MARKET DATA via Python backend
+      // 2. MARKET DATA
       try {
         const res  = await fetch(`${API_BASE}/api/market-data`);
         const data = await res.json();
-
         const stockUpdates = {};
-        Object.keys(data).forEach(ticker => {
-           if (data[ticker]?.price) {
-               stockUpdates[ticker] = data[ticker].price;
-           }
-        });
+        Object.keys(data).forEach(ticker => { if (data[ticker]?.price) stockUpdates[ticker] = data[ticker].price; });
         setHargaSaham(prev => ({ ...prev, ...stockUpdates }));
 
-        const mk = (key, type) => data[key]
-          ? { price: data[key].price, change: data[key].change, isUp: data[key].change >= 0, type }
-          : null;
-
+        const mk = (key, type) => data[key] ? { price: data[key].price, change: data[key].change, isUp: data[key].change >= 0, type } : null;
         setMarketData(prev => ({
           ...prev,
-          ...(mk('IHSG',   'idr') ? { IHSG:   mk('IHSG',   'idr') } : {}),
-          ...(mk('SPX500', 'usd') ? { SPX500: mk('SPX500', 'usd') } : {}),
-          ...(mk('NASDAQ', 'usd') ? { NASDAQ: mk('NASDAQ', 'usd') } : {}),
-          ...(mk('GOLD',   'usd') ? { GOLD:   mk('GOLD',   'usd') } : {}),
-          ...(mk('XAG',    'usd') ? { XAG:    mk('XAG',    'usd') } : {}),
-          ...(mk('BRENT',  'usd') ? { BRENT:  mk('BRENT',  'usd') } : {}),
+          ...(mk('IHSG', 'idr') ? { IHSG: mk('IHSG', 'idr') } : {}), ...(mk('SPX500', 'usd') ? { SPX500: mk('SPX500', 'usd') } : {}),
+          ...(mk('NASDAQ', 'usd') ? { NASDAQ: mk('NASDAQ', 'usd') } : {}), ...(mk('GOLD', 'usd') ? { GOLD: mk('GOLD', 'usd') } : {}),
+          ...(mk('XAG', 'usd') ? { XAG: mk('XAG', 'usd') } : {}), ...(mk('BRENT', 'usd') ? { BRENT: mk('BRENT', 'usd') } : {}),
         }));
         setMarketLoaded(true);
-      } catch (e) { console.warn('Backend market-data error:', e); }
+      } catch (e) {}
 
-      // 3. KURS USD/IDR
+      // 3. KURS
       try {
         const res  = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await res.json();
         if (data?.rates?.IDR) setKursIdr(data.rates.IDR);
-      } catch (e) { console.warn('Exchange rate error:', e); }
+      } catch (e) {}
     };
 
     fetchAll();
@@ -853,7 +633,6 @@ function App() {
 
   const grandTotalUSD = valCryptoUSD + valKomoditasUSD + valSahamUS_USD + valSahamIDX_USD + valStableUSD + valCashUSD;
   const grandTotalIDR = grandTotalUSD * kursIdr;
-  
   const grandModalUSD = modCryptoUSD + modKomoditasUSD + modSahamUS_USD + modSahamIDX_USD + valStableUSD + valCashUSD;
   
   const overallPnlUSD = grandTotalUSD - grandModalUSD;
@@ -865,6 +644,46 @@ function App() {
   const pnlKomoditasUSD = valKomoditasUSD - modKomoditasUSD;
   const pnlSahamUS_USD = valSahamUS_USD - modSahamUS_USD;
   const pnlSahamIDX_IDR = valSahamIDX_IDR - modSahamIDX_IDR;
+
+  // ── LOGIC 1-DAY PNL ──
+  let dailyPnlUSD = 0;
+  let dailyModalUSD = 0;
+  
+  assets.forEach(a => {
+    let currentValUSD = 0;
+    let change24h = 0; // percentage
+    
+    if (a.type === 'crypto') {
+        const price = hargaMap[a.simbol]?.usd || a.avg;
+        currentValUSD = price * a.jumlah;
+        change24h = hargaMap[a.simbol]?.change || 0;
+    } else if (a.type === 'komoditas') {
+        const price = hargaSaham[a.simbol || a.ticker] || a.avg;
+        currentValUSD = price * a.jumlah;
+        if (a.ticker.includes('GOLD') || a.simbol === 'GC=F') change24h = marketData.GOLD?.change || 0;
+        else if (a.ticker.includes('SILVER') || a.simbol === 'SI=F') change24h = marketData.XAG?.change || 0;
+    } else if (a.type === 'saham_us') {
+        const price = hargaSaham[a.simbol || a.ticker] || a.avg;
+        currentValUSD = price * a.jumlah;
+        change24h = marketData.SPX500?.change || 0; // SPX Proxy
+    } else if (a.type === 'saham') {
+        const priceIDR = hargaSaham[a.ticker] || a.avg;
+        currentValUSD = (priceIDR * a.jumlah) / kursIdr;
+        change24h = marketData.IHSG?.change || 0; // IHSG Proxy
+    } else {
+        currentValUSD = (a.type === 'cash_idr' ? a.jumlah / kursIdr : a.avg * a.jumlah);
+        change24h = 0;
+    }
+    
+    const denominator = 1 + (change24h / 100);
+    const val24hAgo = denominator !== 0 ? currentValUSD / denominator : currentValUSD;
+    dailyPnlUSD += (currentValUSD - val24hAgo);
+    dailyModalUSD += val24hAgo;
+  });
+
+  const dailyPnlPersen = dailyModalUSD > 0 ? (dailyPnlUSD / dailyModalUSD) * 100 : 0;
+  const isDailyProfit = dailyPnlUSD >= 0;
+
 
   // ── CHART HISTORIS ──
   const baselineNonCrypto = valStableUSD + valSahamIDX_USD + valSahamUS_USD + valKomoditasUSD + valCashUSD;
@@ -923,7 +742,6 @@ function App() {
 
       setChartError(true);
     };
-
     fetchChart();
   }, [period, assets]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -939,20 +757,9 @@ function App() {
     return { ticker: a.ticker, val: valUSD, pct: grandTotalUSD > 0 ? (valUSD / grandTotalUSD) * 100 : 0, color: COLORS[i % COLORS.length] };
   }).filter(d => d.val > 0).sort((a, b) => b.val - a.val);
 
-  function handleSave(id, avgBaru, jumlahBaru) {
-    setAssets(prev => prev.map(a => a.id === id ? { ...a, avg: avgBaru, jumlah: jumlahBaru } : a));
-    setEditingAsset(null);
-  }
-
-  function handleDeleteAsset(id) {
-    setAssets(prev => prev.filter(a => a.id !== id));
-  }
-
-  function handleAddAsset(newAsset) {
-    const newId = Date.now();
-    setAssets(prev => [...prev, { ...newAsset, id: newId }]);
-    setShowAddModal(false);
-  }
+  function handleSave(id, avgBaru, jumlahBaru) { setAssets(prev => prev.map(a => a.id === id ? { ...a, avg: avgBaru, jumlah: jumlahBaru } : a)); setEditingAsset(null); }
+  function handleDeleteAsset(id) { setAssets(prev => prev.filter(a => a.id !== id)); }
+  function handleAddAsset(newAsset) { const newId = Date.now(); setAssets(prev => [...prev, { ...newAsset, id: newId }]); setShowAddModal(false); }
 
   const renderSingleCard = (key, displayName) => {
     const data = marketData[key];
@@ -973,12 +780,8 @@ function App() {
           }
         </div>
         {loaded && isLoaded
-          ? <div style={{ color: 'white', fontWeight: 800, fontSize: '18px', marginTop: '6px', letterSpacing: '-0.5px' }}>
-              {data.type === 'usd' ? '$' : ''}{data.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-            </div>
-          : <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div className="skeleton" style={{ width: '80%', height: 20 }} />
-            </div>
+          ? <div style={{ color: 'white', fontWeight: 800, fontSize: '18px', marginTop: '6px', letterSpacing: '-0.5px' }}>{data.type === 'usd' ? '$' : ''}{data.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+          : <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: 6 }}><div className="skeleton" style={{ width: '80%', height: 20 }} /></div>
         }
       </div>
     );
@@ -991,107 +794,130 @@ function App() {
 
       <div className="app-main">
         <div className="max-container">
-
           <div className="page-header">
             <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
             <div>
-              <h1 className="page-title">
-                {activePage === 'portfolio' && 'Overview'}
-                {activePage === 'ai' && 'AI Consultant'}
-              </h1>
+              <h1 className="page-title">{activePage === 'portfolio' && 'Overview'}{activePage === 'ai' && 'AI Consultant'}</h1>
             </div>
           </div>
 
           {activePage === 'portfolio' && (
             <>
-              {/* ROW 1: NET WORTH (+ Overall Pnl) | PNL BREAKDOWN (2x2) | CHART */}
+              {/* ROW 1: NET WORTH (+ Overall Pnl + 1D) | PNL BREAKDOWN (Cross) | CHART */}
               <div className="summary-cards">
 
-                {/* CARD 1: Total Net Worth & Overall PNL */}
+                {/* CARD 1: Total Net Worth & PNL */}
                 <div style={styles.summaryCard}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <span style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500 }}>Total Net Worth</span>
-                    <span style={{ color: '#4ade80', fontSize: '12px', backgroundColor: 'rgba(74,222,128,0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Total Net Worth</span>
+                    <span style={{ color: '#4ade80', fontSize: '11px', backgroundColor: 'rgba(74,222,128,0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
                   </div>
                   {cryptoLoaded
                     ? <>
                         {/* Net Worth */}
-                        <div style={{ color: 'white', fontSize: '36px', fontWeight: 800, letterSpacing: '-1px' }}>{formatUSD(grandTotalUSD)}</div>
-                        <div style={{ color: '#737373', fontSize: '18px', fontWeight: 500, marginTop: '4px' }}>{formatIDR(grandTotalIDR)}</div>
+                        <div style={{ color: 'white', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>{formatUSD(grandTotalUSD)}</div>
+                        <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginTop: '2px' }}>{formatIDR(grandTotalIDR)}</div>
                         
-                        {/* Garis Pemisah */}
-                        <div style={{ margin: '20px 0 16px', height: '1px', background: '#262626' }} />
+                        {/* Garis Pemisah Tipis */}
+                        <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
                         
-                        {/* Overall PNL yang dipindah kesini */}
-                        <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500, display: 'block', marginBottom: '8px' }}>Overall PNL</span>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-                          <div style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px' }}>
-                            {isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}
+                        {/* Bagian Bawah: Overall & 1-Day (Bersebelahan) */}
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                          
+                          {/* KIRI: Overall PNL */}
+                          <div style={{ flex: 1 }}>
+                            <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>Overall PnL</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>
+                                {isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}
+                              </span>
+                              <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isOverallProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>
+                                {isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%
+                              </span>
+                            </div>
+                            <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}</div>
                           </div>
-                          <span style={{ backgroundColor: isOverallProfit ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)', color: isOverallProfit ? '#4ade80' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}>
-                            {isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%
-                          </span>
-                        </div>
-                        <div style={{ color: isOverallProfit ? '#166534' : '#991b1b', fontSize: '13px', fontWeight: 600, marginTop: '4px' }}>
-                          {isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}
+
+                          {/* Garis Vertikal */}
+                          <div style={{ width: '1px', background: '#262626' }} />
+
+                          {/* KANAN: 1-Day PNL */}
+                          <div style={{ flex: 1 }}>
+                            <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>1-Day PnL</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>
+                                {isDailyProfit ? '+' : ''}{formatUSD(dailyPnlUSD)}
+                              </span>
+                              <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isDailyProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>
+                                {isDailyProfit ? '+' : ''}{dailyPnlPersen.toFixed(2)}%
+                              </span>
+                            </div>
+                            <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isDailyProfit ? '+' : ''}{formatIDR(dailyPnlUSD * kursIdr)}</div>
+                          </div>
+
                         </div>
                       </>
                     : <>
-                        <div className="skeleton" style={{ width: '70%', height: 38, marginBottom: 8 }} />
-                        <div className="skeleton" style={{ width: '50%', height: 22 }} />
+                        <div className="skeleton" style={{ width: '70%', height: 32, marginBottom: 6 }} />
+                        <div className="skeleton" style={{ width: '50%', height: 16 }} />
+                        <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
+                        <div style={{ display: 'flex', gap: '16px' }}>
+                           <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
+                           <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
+                        </div>
                       </>
                   }
                 </div>
 
-                {/* CARD 2: PNL Breakdown (2x2 Grid) */}
+                {/* CARD 2: PnL Breakdown (Cross Design) */}
                 <div style={styles.summaryCard}>
-                  <span style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500, display: 'block', marginBottom: '16px' }}>PnL Breakdown</span>
+                  <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px', display: 'block', marginBottom: '14px' }}>PnL Breakdown</span>
                   {cryptoLoaded
-                    ? <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '16px', flex: 1 }}>
+                    ? <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', flex: 1 }}>
                         
-                        {/* Kripto */}
-                        <div style={{ background: '#0a0a0a', padding: '12px', borderRadius: '12px', border: '1px solid #1f1f1f' }}>
-                          <span style={{ color: '#737373', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Kripto (USD)</span>
-                          <span style={{ color: pnlCryptoUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 'bold', display: 'block' }}>
+                        {/* Kripto (Kiri Atas) */}
+                        <div style={{ padding: '0 12px 12px 0', borderRight: '1px solid #262626', borderBottom: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Kripto (USD)</span>
+                          <span style={{ color: pnlCryptoUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>
                             {pnlCryptoUSD >= 0 ? '+' : ''}{formatUSD(pnlCryptoUSD)}
                           </span>
-                          <span style={{ color: '#555', fontSize: '11px' }}>{pnlCryptoUSD >= 0 ? '+' : ''}{formatIDR(pnlCryptoUSD * kursIdr)}</span>
+                          <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{pnlCryptoUSD >= 0 ? '+' : ''}{formatIDR(pnlCryptoUSD * kursIdr)}</span>
                         </div>
 
-                        {/* Komoditas */}
-                        <div style={{ background: '#0a0a0a', padding: '12px', borderRadius: '12px', border: '1px solid #1f1f1f' }}>
-                          <span style={{ color: '#737373', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Komoditas (USD)</span>
-                          <span style={{ color: pnlKomoditasUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 'bold', display: 'block' }}>
+                        {/* Komoditas (Kanan Atas) */}
+                        <div style={{ padding: '0 0 12px 12px', borderBottom: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Komoditas (USD)</span>
+                          <span style={{ color: pnlKomoditasUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>
                             {pnlKomoditasUSD >= 0 ? '+' : ''}{formatUSD(pnlKomoditasUSD)}
                           </span>
-                          <span style={{ color: '#555', fontSize: '11px' }}>{pnlKomoditasUSD >= 0 ? '+' : ''}{formatIDR(pnlKomoditasUSD * kursIdr)}</span>
+                          <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{pnlKomoditasUSD >= 0 ? '+' : ''}{formatIDR(pnlKomoditasUSD * kursIdr)}</span>
                         </div>
 
-                        {/* Saham IDX */}
-                        <div style={{ background: '#0a0a0a', padding: '12px', borderRadius: '12px', border: '1px solid #1f1f1f' }}>
-                          <span style={{ color: '#737373', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Saham IDX (IDR)</span>
-                          <span style={{ color: pnlSahamIDX_IDR >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 'bold', display: 'block' }}>
+                        {/* Saham IDX (Kiri Bawah) */}
+                        <div style={{ padding: '12px 12px 0 0', borderRight: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Saham IDX (IDR)</span>
+                          <span style={{ color: pnlSahamIDX_IDR >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>
                             {pnlSahamIDX_IDR >= 0 ? '+' : ''}{formatIDR(pnlSahamIDX_IDR)}
                           </span>
-                          <span style={{ color: '#555', fontSize: '11px' }}>{pnlSahamIDX_IDR >= 0 ? '+' : ''}{formatUSD(pnlSahamIDX_IDR / kursIdr)}</span>
+                          <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{pnlSahamIDX_IDR >= 0 ? '+' : ''}{formatUSD(pnlSahamIDX_IDR / kursIdr)}</span>
                         </div>
 
-                        {/* Saham US */}
-                        <div style={{ background: '#0a0a0a', padding: '12px', borderRadius: '12px', border: '1px solid #1f1f1f' }}>
-                          <span style={{ color: '#737373', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Saham US (USD)</span>
-                          <span style={{ color: pnlSahamUS_USD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 'bold', display: 'block' }}>
+                        {/* Saham US (Kanan Bawah) */}
+                        <div style={{ padding: '12px 0 0 12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Saham US (USD)</span>
+                          <span style={{ color: pnlSahamUS_USD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>
                             {pnlSahamUS_USD >= 0 ? '+' : ''}{formatUSD(pnlSahamUS_USD)}
                           </span>
-                          <span style={{ color: '#555', fontSize: '11px' }}>{pnlSahamUS_USD >= 0 ? '+' : ''}{formatIDR(pnlSahamUS_USD * kursIdr)}</span>
+                          <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{pnlSahamUS_USD >= 0 ? '+' : ''}{formatIDR(pnlSahamUS_USD * kursIdr)}</span>
                         </div>
 
                       </div>
                     : <>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '16px', flex: 1 }}>
-                           <div className="skeleton" style={{ borderRadius: 12 }} />
-                           <div className="skeleton" style={{ borderRadius: 12 }} />
-                           <div className="skeleton" style={{ borderRadius: 12 }} />
-                           <div className="skeleton" style={{ borderRadius: 12 }} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '8px', flex: 1 }}>
+                           <div className="skeleton" style={{ borderRadius: 8 }} />
+                           <div className="skeleton" style={{ borderRadius: 8 }} />
+                           <div className="skeleton" style={{ borderRadius: 8 }} />
+                           <div className="skeleton" style={{ borderRadius: 8 }} />
                         </div>
                       </>
                   }
@@ -1100,7 +926,7 @@ function App() {
                 {/* CARD 3: Chart */}
                 <div style={{ ...styles.summaryCard, display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <span style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500 }}>Net Worth Trend</span>
+                    <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Net Worth Trend</span>
                     <div style={styles.periodRow}>
                       {PERIODS.map(p => (
                         <button key={p.label} onClick={() => setPeriod(p)} style={{ ...styles.periodBtn, ...(period.label === p.label ? styles.periodBtnActive : {}) }}>{p.label}</button>
@@ -1126,13 +952,13 @@ function App() {
                 
                 {/* DONUT CHART dengan Judul Baru */}
                 <div className="donut-card" style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 12, left: 16, color: '#a3a3a3', fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px' }}>
+                  <div style={{ position: 'absolute', top: 14, left: 18, color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>
                     Current Allocation
                   </div>
-                  <div style={{ width: '130px', height: '130px', flexShrink: 0, marginTop: '16px' }}>
+                  <div style={{ width: '130px', height: '130px', flexShrink: 0, marginTop: '20px' }}>
                     <DonutChart data={pieData} />
                   </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '140px', overflowY: 'auto', paddingRight: '4px', marginTop: '16px' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '140px', overflowY: 'auto', paddingRight: '4px', marginTop: '20px' }}>
                     {pieData.map(d => (
                       <div key={d.ticker} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1148,7 +974,6 @@ function App() {
 
               {/* TABEL ASET */}
               <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', background: 'linear-gradient(180deg, #0f1014 0%, #0c0e12 100%)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-
                 {/* Header */}
                 <div className="holdings-header" style={{ padding: '22px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
                   <div>
@@ -1225,11 +1050,7 @@ function App() {
 
       {showAddModal && <AddAssetModal onSave={handleAddAsset} onClose={() => setShowAddModal(false)} />}
       {deleteConfirm && (
-        <ConfirmDeleteModal
-          asset={deleteConfirm}
-          onConfirm={() => { handleDeleteAsset(deleteConfirm.id); setDeleteConfirm(null); }}
-          onCancel={() => setDeleteConfirm(null)}
-        />
+        <ConfirmDeleteModal asset={deleteConfirm} onConfirm={() => { handleDeleteAsset(deleteConfirm.id); setDeleteConfirm(null); }} onCancel={() => setDeleteConfirm(null)} />
       )}
 
       {/* MODAL EDIT */}
@@ -1249,15 +1070,7 @@ function App() {
             <input type="number" defaultValue={editingAsset.jumlah} id="editJumlah" style={styles.modalInput} />
             <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
               <button onClick={() => setEditingAsset(null)} style={{ flex: 1, backgroundColor: '#262626', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-              <button
-                onClick={() => handleSave(
-                  editingAsset.id,
-                  parseFloat(document.getElementById('editAvg')?.value || editingAsset.avg),
-                  parseFloat(document.getElementById('editJumlah').value)
-                )}
-                style={{ flex: 1, backgroundColor: 'white', color: 'black', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>
-                Simpan
-              </button>
+              <button onClick={() => handleSave(editingAsset.id, parseFloat(document.getElementById('editAvg')?.value || editingAsset.avg), parseFloat(document.getElementById('editJumlah').value))} style={{ flex: 1, backgroundColor: 'white', color: 'black', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Simpan</button>
             </div>
           </div>
         </div>
@@ -1277,7 +1090,7 @@ const styles = {
   menuItem: { padding: '14px 16px', color: '#737373', borderRadius: '10px', cursor: 'pointer' },
   header: { display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 32 },
   headerTitle: { color: 'white', fontSize: 32, fontWeight: 800, margin: 0, letterSpacing: '-0.5px' },
-  summaryCard: { backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
+  summaryCard: { backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
   periodRow: { display: 'flex', gap: 4, backgroundColor: '#1a1a1a', padding: '4px', borderRadius: '8px' },
   periodBtn: { backgroundColor: 'transparent', color: '#737373', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' },
   periodBtnActive: { backgroundColor: '#333', color: 'white' },
