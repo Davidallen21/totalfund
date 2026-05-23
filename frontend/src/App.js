@@ -145,15 +145,15 @@ function DonutChart({ data }) {
 }
 
 // ============================================
-// KOMPONEN: BARIS DATA (TABLE ROW)
+// KOMPONEN: BARIS DATA (TABLE ROW) - DESAIN RAMPING
 // ============================================
-function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD, onEdit, onDelete }) {
-  const isCrypto  = asset.type === 'crypto';
-  const isSaham   = asset.type === 'saham';
-  const isSahamUS = asset.type === 'saham_us';
+function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD, onEdit, onDelete, isLast }) {
+  const isCrypto    = asset.type === 'crypto';
+  const isSaham     = asset.type === 'saham';
+  const isSahamUS   = asset.type === 'saham_us';
   const isKomoditas = asset.type === 'komoditas';
-  const isStable  = asset.type === 'stable';
-  const isCashIDR = asset.type === 'cash_idr';
+  const isStable    = asset.type === 'stable';
+  const isCashIDR   = asset.type === 'cash_idr';
 
   const hargaAcuan    = isCrypto || isKomoditas || isSahamUS ? hargaLiveUSD : isSaham ? hargaLiveIDR : 1;
   const nilaiModal    = asset.avg * asset.jumlah;
@@ -165,112 +165,102 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
   const pct           = totalNetWorthUSD > 0 ? ((nilaiDalamUSD / totalNetWorthUSD) * 100).toFixed(1) : 0;
 
   const typeConfig = {
-    crypto:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', glow: 'rgba(245,158,11,0.08)'  },
-    saham:    { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', glow: 'rgba(59,130,246,0.08)'  },
-    saham_us: { color: '#ec4899', bg: 'rgba(236,72,153,0.12)', glow: 'rgba(236,72,153,0.08)' },
-    komoditas:{ color: '#eab308', bg: 'rgba(234,179,8,0.12)', glow: 'rgba(234,179,8,0.08)' },
-    stable:   { color: '#10b981', bg: 'rgba(16,185,129,0.12)', glow: 'rgba(16,185,129,0.08)'  },
-    cash_idr: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', glow: 'rgba(139,92,246,0.08)'  },
-  }[asset.type] || { color: '#737373', bg: 'rgba(115,115,115,0.12)', glow: 'rgba(115,115,115,0.06)' };
-
-  const gradientBg = `linear-gradient(to right, rgba(${typeConfig.color.replace('#','').match(/.{2}/g).map(h=>parseInt(h,16)).join(',')}, 0.04) 0%, #141414 35%)`;
+    crypto:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.15)'  },
+    saham:    { color: '#3b82f6', bg: 'rgba(59,130,246,0.15)'  },
+    saham_us: { color: '#ec4899', bg: 'rgba(236,72,153,0.15)' },
+    komoditas:{ color: '#eab308', bg: 'rgba(234,179,8,0.15)' },
+    stable:   { color: '#10b981', bg: 'rgba(16,185,129,0.15)'  },
+    cash_idr: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)'  },
+  }[asset.type] || { color: '#737373', bg: 'rgba(115,115,115,0.15)' };
 
   return (
     <>
     <div className="asset-row-desktop" style={{
-      alignItems: 'center', padding: '18px 24px 18px 20px', borderRadius: '14px', marginBottom: '6px',
-      background: gradientBg, border: '1px solid #262626', borderLeft: `4px solid ${typeConfig.color}`,
-      gap: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.02)',
+      alignItems: 'center', padding: '12px 28px', borderBottom: isLast ? 'none' : '1px solid #1f1f1f',
+      gap: '16px', transition: 'background 0.2s',
     }}>
-      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
-        <div style={{ width: '48px', height: '48px', borderRadius: '13px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px', flexShrink: 0, letterSpacing: '0.5px', boxShadow: `0 4px 14px ${typeConfig.glow}` }}>
+      <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0 }}>
           {asset.ticker.substring(0, 4)}
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '16px', letterSpacing: '-0.2px' }}>{asset.ticker}</div>
-          <div style={{ color: '#606060', fontSize: '12px', marginTop: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.nama}</div>
+          <div style={{ color: '#ffffff', fontWeight: 600, fontSize: '14px', letterSpacing: '-0.2px' }}>{asset.ticker}</div>
+          <div style={{ color: '#737373', fontSize: '11px', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.nama}</div>
         </div>
       </div>
       <div style={{ flex: 1.5 }}>
-        {isCashIDR ? <span style={{ color: '#404040', fontSize: '14px' }}>Pegged</span> : (
+        {isCashIDR ? <span style={{ color: '#404040', fontSize: '13px' }}>Pegged</span> : (
           <>
-            <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : <span style={{ color: '#383838' }}>—</span>}</div>
-            <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>{hargaAcuan ? (isSaham ? formatUSD(hargaAcuan / kursIdr) : formatIDR(hargaAcuan * kursIdr)) : ''}</div>
+            <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : <span style={{ color: '#383838' }}>—</span>}</div>
+            <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{hargaAcuan ? (isSaham ? formatUSD(hargaAcuan / kursIdr) : formatIDR(hargaAcuan * kursIdr)) : ''}</div>
           </>
         )}
       </div>
       <div style={{ flex: 1.5 }}>
-        {isCashIDR ? <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>{formatIDR(asset.jumlah).replace('Rp ', '')} <span style={{ color: '#555', fontSize: '12px', fontWeight: 400 }}>IDR</span></div> : (
+        {isCashIDR ? <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{formatIDR(asset.jumlah).replace('Rp ', '')} <span style={{ color: '#555', fontSize: '11px', fontWeight: 400 }}>IDR</span></div> : (
           <>
-            <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '15px' }}>{(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} <span style={{ color: '#555', fontSize: '12px', fontWeight: 400 }}>{isSaham ? 'Lot' : asset.ticker}</span></div>
-            <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>Avg: {isSaham ? formatIDR(asset.avg) : formatUSD(asset.avg)}</div>
+            <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} <span style={{ color: '#555', fontSize: '11px', fontWeight: 400 }}>{isSaham ? 'Lot' : asset.ticker}</span></div>
+            <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>Avg: {isSaham ? formatIDR(asset.avg) : formatUSD(asset.avg)}</div>
           </>
         )}
       </div>
       <div style={{ flex: 1.5 }}>
-        <div style={{ color: '#e5e5e5', fontWeight: 700, fontSize: '15px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
-        <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
-          <div style={{ width: '80px', height: '3px', backgroundColor: '#252525', borderRadius: '999px', overflow: 'hidden' }}>
-            <div style={{ width: `${Math.min(parseFloat(pct), 100)}%`, height: '100%', backgroundColor: typeConfig.color }}></div>
-          </div>
-          <span style={{ fontSize: '11px', color: '#555', fontWeight: 600 }}>{pct}%</span>
-        </div>
+        <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '13px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
+        <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
       </div>
       <div style={{ flex: 1.5 }}>
         {!isStable && !isCashIDR && pnl !== null ? (
           <>
-            <div style={{ color: profit ? '#4ade80' : '#f87171', fontWeight: 700, fontSize: '16px', letterSpacing: '-0.3px' }}>{profit ? '+' : ''}{(isSaham) ? formatIDR(pnl) : formatUSD(pnl)}</div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', backgroundColor: profit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: profit ? '#4ade80' : '#f87171', padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 700, border: `1px solid ${profit ? 'rgba(74,222,128,0.15)' : 'rgba(248,113,113,0.15)'}` }}>{profit ? '▲' : '▼'} {Math.abs(pnlPersen).toFixed(2)}%</div>
+            <div style={{ color: profit ? '#4ade80' : '#f87171', fontWeight: 600, fontSize: '13px', letterSpacing: '-0.3px' }}>{profit ? '+' : ''}{(isSaham) ? formatIDR(pnl) : formatUSD(pnl)}</div>
+            <div style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 600, marginTop: '2px' }}>{profit ? '▲' : '▼'} {Math.abs(pnlPersen).toFixed(2)}%</div>
           </>
-        ) : <span style={{ color: '#383838', fontSize: '20px' }}>—</span>}
+        ) : <span style={{ color: '#383838', fontSize: '16px' }}>—</span>}
       </div>
       <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-        <button onClick={() => onEdit(asset)} style={{ backgroundColor: '#1e1e1e', color: '#909090', border: '1px solid #2e2e2e', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
-        <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'rgba(239,68,68,0.07)', color: '#f87171', border: '1px solid rgba(239,68,68,0.18)', borderRadius: '8px', padding: '8px 12px', fontSize: '15px', cursor: 'pointer' }}>✕</button>
+        <button onClick={() => onEdit(asset)} style={{ backgroundColor: 'transparent', color: '#909090', border: '1px solid #333', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+        <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'transparent', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer' }}>✕</button>
       </div>
     </div>
 
-    {/* ── MOBILE CARD LAYOUT ── */}
-    <div className="asset-row-mobile" style={{ borderLeft: `4px solid ${typeConfig.color}`, background: `linear-gradient(to right, rgba(${typeConfig.color.replace('#','').match(/.{2}/g).map(h=>parseInt(h,16)).join(',')}, 0.04) 0%, #141414 35%)` }}>
+    {/* ── MOBILE CARD LAYOUT (Ramping) ── */}
+    <div className="asset-row-mobile" style={{ borderBottom: '1px solid #1f1f1f', padding: '12px 16px' }}>
       <div className="asset-row-mobile-top">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '12px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '11px', flexShrink: 0 }}>{asset.ticker.substring(0, 4)}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0 }}>{asset.ticker.substring(0, 4)}</div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ color: '#fff', fontWeight: 700, fontSize: '15px' }}>{asset.ticker}</div>
-            <div style={{ color: '#606060', fontSize: '12px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.nama}</div>
+            <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{asset.ticker}</div>
+            <div style={{ color: '#737373', fontSize: '11px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.nama}</div>
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ color: '#e5e5e5', fontWeight: 700, fontSize: '15px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
-          <div style={{ color: '#555', fontSize: '12px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
+          <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '14px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
+          <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
         </div>
       </div>
-      <div className="asset-row-mobile-bottom">
-        <div className="asset-row-mobile-stats">
+      <div className="asset-row-mobile-bottom" style={{ marginTop: '12px' }}>
+        <div className="asset-row-mobile-stats" style={{ gap: '16px' }}>
           {!isCashIDR && (
             <div>
-              <div style={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>Harga</div>
-              <div style={{ color: '#e5e5e5', fontSize: '13px', fontWeight: 600 }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : '—'}</div>
+              <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>Harga</div>
+              <div style={{ color: '#e5e5e5', fontSize: '12px', fontWeight: 500 }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : '—'}</div>
             </div>
           )}
           <div>
-            <div style={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>Holdings</div>
-            <div style={{ color: '#e5e5e5', fontSize: '13px', fontWeight: 600 }}>{isCashIDR ? formatIDR(asset.jumlah) : `${(isSaham ? asset.jumlah/100 : asset.jumlah).toLocaleString()} ${isSaham ? 'Lot' : asset.ticker}`}</div>
+            <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>Holdings</div>
+            <div style={{ color: '#e5e5e5', fontSize: '12px', fontWeight: 500 }}>{isCashIDR ? formatIDR(asset.jumlah) : `${(isSaham ? asset.jumlah/100 : asset.jumlah).toLocaleString()} ${isSaham ? 'Lot' : asset.ticker}`}</div>
           </div>
           {!isStable && !isCashIDR && pnl !== null && (
             <div>
-              <div style={{ color: '#555', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>PNL</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '13px', fontWeight: 700 }}>{profit?'+':''}{isSaham?formatIDR(pnl):formatUSD(pnl)}</span>
-                <span style={{ backgroundColor: profit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', color: profit ? '#4ade80' : '#f87171', padding: '2px 7px', borderRadius: '20px', fontSize: '11px', fontWeight: 700, border: `1px solid ${profit?'rgba(74,222,128,0.15)':'rgba(248,113,113,0.15)'}` }}>{profit?'▲':'▼'} {Math.abs(pnlPersen).toFixed(1)}%</span>
+              <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>PNL</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '12px', fontWeight: 600 }}>{profit?'+':''}{isSaham?formatIDR(pnl):formatUSD(pnl)}</span>
               </div>
             </div>
           )}
         </div>
         <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-          <button onClick={() => onEdit(asset)} style={{ backgroundColor: '#1e1e1e', color: '#909090', border: '1px solid #2e2e2e', borderRadius: '8px', padding: '7px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
-          <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'rgba(239,68,68,0.07)', color: '#f87171', border: '1px solid rgba(239,68,68,0.18)', borderRadius: '8px', padding: '7px 10px', fontSize: '14px', cursor: 'pointer' }}>✕</button>
+          <button onClick={() => onEdit(asset)} style={{ backgroundColor: 'transparent', color: '#909090', border: '1px solid #333', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+          <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'transparent', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', cursor: 'pointer' }}>✕</button>
         </div>
       </div>
     </div>
@@ -684,7 +674,6 @@ function App() {
   const dailyPnlPersen = dailyModalUSD > 0 ? (dailyPnlUSD / dailyModalUSD) * 100 : 0;
   const isDailyProfit = dailyPnlUSD >= 0;
 
-
   // ── CHART HISTORIS ──
   const baselineNonCrypto = valStableUSD + valSahamIDX_USD + valSahamUS_USD + valKomoditasUSD + valCashUSD;
   const baselineRef = useRef(baselineNonCrypto);
@@ -972,61 +961,70 @@ function App() {
                 </div>
               </div>
 
-              {/* TABEL ASET */}
-              <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', background: 'linear-gradient(180deg, #0f1014 0%, #0c0e12 100%)', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-                {/* Header */}
-                <div className="holdings-header" style={{ padding: '22px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
+              {/* TABEL ASET - DIREVISI RAMPING & SELALU TAMPIL */}
+              <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
+                {/* Header Utama */}
+                <div className="holdings-header" style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
                   <div>
-                    <h3 style={{ color: '#fff', fontSize: '17px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>Holdings</h3>
-                    <span style={{ color: '#6b7280', fontSize: '13px', marginTop: '2px', display: 'block' }}>{assets.length} aset terdaftar</span>
+                    <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>Holdings</h3>
+                    <span style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px', display: 'block' }}>{assets.length} aset terdaftar</span>
                   </div>
                   <button
                     onClick={() => setShowAddModal(true)}
-                    style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', color: '#000', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(74,222,128,0.25)', letterSpacing: '-0.2px' }}
+                    style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(74,222,128,0.25)', letterSpacing: '-0.2px' }}
                   >+ Tambah Aset</button>
                 </div>
 
-                {/* Column Headers */}
-                <div className="col-headers" style={{ alignItems: 'center', padding: '10px 28px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                {/* Judul Kolom */}
+                <div className="col-headers" style={{ alignItems: 'center', padding: '12px 28px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: '#0f0f0f' }}>
                   {[['Aset', 2], ['Harga Live', 1.5], ['Holdings / AVG', 1.5], ['Nilai Aset', 1.5], ['Unrealized PNL', 1.5]].map(([h, f]) => (
-                    <div key={h} style={{ flex: f, color: '#4b5563', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px' }}>{h}</div>
+                    <div key={h} style={{ flex: f, color: '#4b5563', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px' }}>{h}</div>
                   ))}
                   <div style={{ flexShrink: 0, width: '98px' }} />
                 </div>
 
-                <div style={{ padding: '10px 8px 18px' }}>
+                <div style={{ paddingBottom: '18px' }}>
                   {[
-                    { type: 'crypto', label: 'Crypto', color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', list: assets.filter(a => a.type === 'crypto') },
-                    { type: 'saham_us', label: 'Saham US', color: '#ec4899', bg: 'rgba(236,72,153,0.1)', list: assets.filter(a => a.type === 'saham_us') },
-                    { type: 'saham', label: 'Saham IDX', color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', list: assets.filter(a => a.type === 'saham') },
-                    { type: 'komoditas', label: 'Komoditas', color: '#eab308', bg: 'rgba(234,179,8,0.1)', list: assets.filter(a => a.type === 'komoditas') },
-                    { type: 'cashstable', label: 'Cash & Stable', color: '#10b981', bg: 'rgba(16,185,129,0.1)', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
-                  ].map(({ type, label, color, bg, list }) => list.length > 0 && (
+                    { type: 'crypto', label: 'Crypto', color: '#f59e0b', list: assets.filter(a => a.type === 'crypto') },
+                    { type: 'saham_us', label: 'Saham US', color: '#ec4899', list: assets.filter(a => a.type === 'saham_us') },
+                    { type: 'saham', label: 'Saham IDX', color: '#3b82f6', list: assets.filter(a => a.type === 'saham') },
+                    { type: 'komoditas', label: 'Komoditas', color: '#eab308', list: assets.filter(a => a.type === 'komoditas') },
+                    { type: 'cashstable', label: 'Cash & Stable', color: '#10b981', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
+                  ].map(({ type, label, color, list }) => (
                     <div key={type}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px 10px 10px' }}>
-                        <span style={{ backgroundColor: bg, color, fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', padding: '4px 10px', borderRadius: '6px' }}>{label}</span>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(255,255,255,0.06), transparent)' }} />
-                        <span style={{ color: '#374151', fontSize: '11px', fontWeight: 600 }}>{list.length} aset</span>
+                      {/* Sub-Header per Kategori (Selalu Muncul) */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 28px 8px' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color }}></div>
+                        <span style={{ color: '#a3a3a3', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</span>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, #1f1f1f, transparent)' }} />
+                        <span style={{ color: '#4b5563', fontSize: '10px', fontWeight: 600 }}>{list.length} aset</span>
                       </div>
-                      {list.map(asset => (
-                        <DataRow
-                          key={asset.id} asset={asset}
-                          hargaLiveUSD={(asset.type === 'crypto' || asset.type === 'komoditas' || asset.type === 'saham_us') ? (asset.type === 'crypto' ? hargaMap[asset.simbol]?.usd : hargaSaham[asset.simbol || asset.ticker]) : undefined}
-                          hargaLiveIDR={asset.type === 'saham' ? hargaSaham[asset.ticker] : undefined}
-                          kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD}
-                          onEdit={setEditingAsset} onDelete={setDeleteConfirm}
-                        />
-                      ))}
+                      
+                      {/* List Aset (Jika ada) */}
+                      {list.length > 0 ? (
+                        <div>
+                          {list.map((asset, idx) => (
+                            <DataRow
+                              key={asset.id} 
+                              asset={asset}
+                              isLast={idx === list.length - 1}
+                              hargaLiveUSD={(asset.type === 'crypto' || asset.type === 'komoditas' || asset.type === 'saham_us') ? (asset.type === 'crypto' ? hargaMap[asset.simbol]?.usd : hargaSaham[asset.simbol || asset.ticker]) : undefined}
+                              hargaLiveIDR={asset.type === 'saham' ? hargaSaham[asset.ticker] : undefined}
+                              kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD}
+                              onEdit={setEditingAsset} onDelete={setDeleteConfirm}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        /* Empty State (Jika Kosong) */
+                        <div style={{ padding: '10px 28px 20px' }}>
+                          <div style={{ padding: '16px', border: '1px dashed #262626', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>
+                            Belum ada aset {label}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
-
-                  {assets.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '60px 24px' }}>
-                      <div style={{ fontSize: '40px', marginBottom: '16px', opacity: 0.4 }}>◈</div>
-                      <div style={{ color: '#6b7280', fontSize: '15px', fontWeight: 600 }}>Belum ada aset</div>
-                      <div style={{ color: '#374151', fontSize: '13px', marginTop: '6px' }}>Klik "+ Tambah Aset" untuk mulai tracking</div>
-                    </div>
-                  )}
                 </div>
               </div>
             </>
