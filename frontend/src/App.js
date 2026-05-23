@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-// Di local dev: '' (proxy ke localhost:8000 via package.json proxy)
-// Di Vercel: set REACT_APP_API_URL ke URL backend Vercel kamu
 const API_BASE = process.env.REACT_APP_API_URL || '';
 
 function useWindowSize() {
@@ -15,9 +13,6 @@ function useWindowSize() {
   return size;
 }
 
-// ============================================
-// KONFIGURASI ASET & KURS AWAL
-// ============================================
 const INITIAL_ASSETS = [
   { id: 1, nama: 'Bitcoin',  ticker: 'BTC',  simbol: 'bitcoin',  avg: 60000, jumlah: 0.5,  type: 'crypto' },
   { id: 2, nama: 'Ethereum', ticker: 'ETH',  simbol: 'ethereum', avg: 3000,  jumlah: 2,    type: 'crypto' },
@@ -38,9 +33,6 @@ const formatUSD = (val) => '$' + val.toLocaleString('en-US', { minimumFractionDi
 const formatIDR = (val) => 'Rp ' + val.toLocaleString('id-ID', { maximumFractionDigits: 0 });
 const COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#64748b', '#84cc16'];
 
-// ============================================
-// KOMPONEN: SIDEBAR
-// ============================================
 const NAV_ITEMS = [
   { key: 'portfolio', label: 'Portfolio Live',  icon: '◈' },
   { key: 'ai',        label: 'AI Consultant',   icon: '✦' },
@@ -78,9 +70,6 @@ function Sidebar({ activePage, setActivePage, onClose, isOpen }) {
   );
 }
 
-// ============================================
-// HELPER: CHARTS
-// ============================================
 function MiniChart({ data, color, isError }) {
   if (isError) return (
     <div style={{ height: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
@@ -144,9 +133,6 @@ function DonutChart({ data }) {
   );
 }
 
-// ============================================
-// KOMPONEN: BARIS DATA (TABLE ROW) - DESAIN RAMPING
-// ============================================
 function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD, onEdit, onDelete, isLast }) {
   const isCrypto    = asset.type === 'crypto';
   const isSaham     = asset.type === 'saham';
@@ -162,6 +148,8 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
   const pnlPersen     = nilaiModal > 0 && pnl ? (pnl / nilaiModal) * 100 : 0;
   const profit        = pnl >= 0;
   const nilaiDalamUSD = isSaham || isCashIDR ? (nilaiSekarang ?? 0) / kursIdr : (nilaiSekarang ?? 0);
+  // pct dipakai untuk progress bar alokasi
+  const pct           = totalNetWorthUSD > 0 ? ((nilaiDalamUSD / totalNetWorthUSD) * 100).toFixed(1) : 0;
 
   const typeConfig = {
     crypto:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.15)'  },
@@ -206,6 +194,12 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
       <div style={{ flex: 1.5 }}>
         <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '13px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
         <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '6px' }}>
+          <div style={{ width: '60px', height: '2px', backgroundColor: '#252525', borderRadius: '999px', overflow: 'hidden' }}>
+            <div style={{ width: `${Math.min(parseFloat(pct), 100)}%`, height: '100%', backgroundColor: typeConfig.color }}></div>
+          </div>
+          <span style={{ fontSize: '10px', color: '#555', fontWeight: 600 }}>{pct}%</span>
+        </div>
       </div>
       <div style={{ flex: 1.5 }}>
         {!isStable && !isCashIDR && pnl !== null ? (
@@ -221,7 +215,6 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
       </div>
     </div>
 
-    {/* ── MOBILE CARD LAYOUT (Ramping) ── */}
     <div className="asset-row-mobile" style={{ borderBottom: '1px solid #1f1f1f', padding: '12px 16px' }}>
       <div className="asset-row-mobile-top">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
@@ -267,9 +260,6 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
   );
 }
 
-// ============================================
-// KOMPONEN: KONFIRMASI HAPUS
-// ============================================
 function ConfirmDeleteModal({ asset, onConfirm, onCancel }) {
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
@@ -286,9 +276,6 @@ function ConfirmDeleteModal({ asset, onConfirm, onCancel }) {
   );
 }
 
-// ============================================
-// KOMPONEN: MODAL TAMBAH ASET
-// ============================================
 function AddAssetModal({ onSave, onClose }) {
   const [form, setForm] = useState({ nama: '', ticker: '', simbol: '', type: 'crypto', avg: '', jumlah: '' });
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
@@ -362,9 +349,6 @@ function AddAssetModal({ onSave, onClose }) {
   );
 }
 
-// ============================================
-// KOMPONEN: AI CONSULTANT
-// ============================================
 function renderAIText(text) {
   const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   return escaped
@@ -391,9 +375,9 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
       const nilaiUSD = (isSaham || a.type === 'cash_idr') ? nilai / kursIdr : nilai;
       const modal  = a.avg * a.jumlah;
       const pnl    = !['stable','cash_idr'].includes(a.type) ? nilai - modal : null;
-      const pct    = modal > 0 && pnl !== null ? (pnl / modal * 100).toFixed(1) : null;
+      const pctAI  = modal > 0 && pnl !== null ? (pnl / modal * 100).toFixed(1) : null;
       const qty    = isSaham ? `${a.jumlah/100} Lot` : `${a.jumlah} ${a.ticker}`;
-      return `  • ${a.ticker} (${a.nama}): Harga ${isSaham ? formatIDR(harga) : formatUSD(harga)}, Holdings ${qty}, Nilai ~${formatUSD(nilaiUSD)}${pct !== null ? `, PNL ${pnl >= 0 ? '+' : ''}${pct}%` : ''}`;
+      return `  • ${a.ticker} (${a.nama}): Harga ${isSaham ? formatIDR(harga) : formatUSD(harga)}, Holdings ${qty}, Nilai ~${formatUSD(nilaiUSD)}${pctAI !== null ? `, PNL ${pnl >= 0 ? '+' : ''}${pctAI}%` : ''}`;
     }).join('\n');
     const mkt = Object.entries(marketData).map(([k,v]) => `  • ${k}: ${v.type==='usd'?'$':''}${v.price.toLocaleString(undefined,{maximumFractionDigits:2})} (${v.isUp?'+':''}${v.change.toFixed(2)}%)`).join('\n');
     return `PORTFOLIO (${new Date().toLocaleString('id-ID')})\nTotal Net Worth : ${formatUSD(grandTotalUSD)}\nOverall PNL : ${overallPnlUSD>=0?'+':''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)\nKurs USD/IDR : ${kursIdr.toLocaleString('id-ID')}\n\nDETAIL ASET:\n${detail}\n\nDATA PASAR REALTIME:\n${mkt}`;
@@ -488,9 +472,6 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
   );
 }
 
-// ============================================
-// KOMPONEN UTAMA: APP
-// ============================================
 function App() {
   const [activePage, setActivePage]     = useState('portfolio');
   const [assets, setAssets]             = useState(INITIAL_ASSETS);
@@ -521,31 +502,18 @@ function App() {
     BRENT:  { price: 0, change: 0, isUp: false, type: 'usd' },
   });
 
-  // ── FETCH SEMUA DATA REALTIME ──
   useEffect(() => {
     const fetchAll = async () => {
-      // 1. CRYPTO
       try {
         const res  = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbols=' + encodeURIComponent('["BTCUSDT","ETHUSDT","LITUSDT"]'));
         const data = await res.json();
         const find = (sym) => data.find(d => d.symbol === sym) || {};
-
         const btc = find('BTCUSDT'), eth = find('ETHUSDT'), lit = find('LITUSDT');
         const btcPrice = parseFloat(btc.lastPrice) || 0, btcChange = parseFloat(btc.priceChangePercent) || 0;
         const ethPrice = parseFloat(eth.lastPrice) || 0, ethChange = parseFloat(eth.priceChangePercent) || 0;
         const litPrice = parseFloat(lit.lastPrice) || 0;
-
-        setHargaMap({
-          bitcoin:  { usd: btcPrice, change: btcChange },
-          ethereum: { usd: ethPrice, change: ethChange },
-          litentry: { usd: litPrice, change: 0 },
-        });
-
-        setMarketData(prev => ({
-          ...prev,
-          BTC: { price: btcPrice, change: btcChange, isUp: btcChange >= 0, type: 'usd' },
-          ETH: { price: ethPrice, change: ethChange, isUp: ethChange >= 0, type: 'usd' },
-        }));
+        setHargaMap({ bitcoin: { usd: btcPrice, change: btcChange }, ethereum: { usd: ethPrice, change: ethChange }, litentry: { usd: litPrice, change: 0 } });
+        setMarketData(prev => ({ ...prev, BTC: { price: btcPrice, change: btcChange, isUp: btcChange >= 0, type: 'usd' }, ETH: { price: ethPrice, change: ethChange, isUp: ethChange >= 0, type: 'usd' } }));
         if (btcPrice > 0) setCryptoLoaded(true);
       } catch (e) {
         try {
@@ -560,14 +528,12 @@ function App() {
         } catch (e2) {}
       }
 
-      // 2. MARKET DATA
       try {
         const res  = await fetch(`${API_BASE}/api/market-data`);
         const data = await res.json();
         const stockUpdates = {};
         Object.keys(data).forEach(ticker => { if (data[ticker]?.price) stockUpdates[ticker] = data[ticker].price; });
         setHargaSaham(prev => ({ ...prev, ...stockUpdates }));
-
         const mk = (key, type) => data[key] ? { price: data[key].price, change: data[key].change, isUp: data[key].change >= 0, type } : null;
         setMarketData(prev => ({
           ...prev,
@@ -578,7 +544,6 @@ function App() {
         setMarketLoaded(true);
       } catch (e) {}
 
-      // 3. KURS
       try {
         const res  = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await res.json();
@@ -591,9 +556,6 @@ function App() {
     return () => clearInterval(interval);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ============================================
-  // KALKULASI PORTFOLIO BARU
-  // ============================================
   const getLivePrice = (asset) => {
      if (asset.type === 'crypto') return hargaMap[asset.simbol]?.usd || asset.avg;
      if (asset.type === 'saham') return hargaSaham[asset.ticker] || asset.avg;
@@ -601,79 +563,68 @@ function App() {
      return asset.avg;
   };
 
-  const valCryptoUSD = assets.filter(a => a.type === 'crypto').reduce((s, a) => s + getLivePrice(a) * a.jumlah, 0);
-  const modCryptoUSD = assets.filter(a => a.type === 'crypto').reduce((s, a) => s + a.avg * a.jumlah, 0);
-
+  const valCryptoUSD    = assets.filter(a => a.type === 'crypto').reduce((s, a) => s + getLivePrice(a) * a.jumlah, 0);
+  const modCryptoUSD    = assets.filter(a => a.type === 'crypto').reduce((s, a) => s + a.avg * a.jumlah, 0);
   const valKomoditasUSD = assets.filter(a => a.type === 'komoditas').reduce((s, a) => s + getLivePrice(a) * a.jumlah, 0);
   const modKomoditasUSD = assets.filter(a => a.type === 'komoditas').reduce((s, a) => s + a.avg * a.jumlah, 0);
-
-  const valSahamUS_USD = assets.filter(a => a.type === 'saham_us').reduce((s, a) => s + getLivePrice(a) * a.jumlah, 0);
-  const modSahamUS_USD = assets.filter(a => a.type === 'saham_us').reduce((s, a) => s + a.avg * a.jumlah, 0);
-
+  const valSahamUS_USD  = assets.filter(a => a.type === 'saham_us').reduce((s, a) => s + getLivePrice(a) * a.jumlah, 0);
+  const modSahamUS_USD  = assets.filter(a => a.type === 'saham_us').reduce((s, a) => s + a.avg * a.jumlah, 0);
   const valSahamIDX_IDR = assets.filter(a => a.type === 'saham').reduce((s, a) => s + getLivePrice(a) * a.jumlah, 0);
   const modSahamIDX_IDR = assets.filter(a => a.type === 'saham').reduce((s, a) => s + a.avg * a.jumlah, 0);
-  
-  const valStableUSD = assets.filter(a => a.type === 'stable').reduce((s, a) => s + a.avg * a.jumlah, 0);
-  const valCashIDR = assets.filter(a => a.type === 'cash_idr').reduce((s, a) => s + a.jumlah, 0);
-
+  const valStableUSD    = assets.filter(a => a.type === 'stable').reduce((s, a) => s + a.avg * a.jumlah, 0);
+  const valCashIDR      = assets.filter(a => a.type === 'cash_idr').reduce((s, a) => s + a.jumlah, 0);
   const valSahamIDX_USD = valSahamIDX_IDR / kursIdr;
-  const modSahamIDX_USD = modSahamIDX_IDR / kursIdr;
-  const valCashUSD = valCashIDR / kursIdr;
+  const modSahamIDX_USD = modSahamIDX_IDR / kursIdr; // eslint-disable-line no-unused-vars
+  const valCashUSD      = valCashIDR / kursIdr;
 
-  const grandTotalUSD = valCryptoUSD + valKomoditasUSD + valSahamUS_USD + valSahamIDX_USD + valStableUSD + valCashUSD;
-  const grandTotalIDR = grandTotalUSD * kursIdr;
-  const grandModalUSD = modCryptoUSD + modKomoditasUSD + modSahamUS_USD + modSahamIDX_USD + valStableUSD + valCashUSD;
-  
-  const overallPnlUSD = grandTotalUSD - grandModalUSD;
-  const overallPnlIDR = overallPnlUSD * kursIdr;
+  const grandTotalUSD   = valCryptoUSD + valKomoditasUSD + valSahamUS_USD + valSahamIDX_USD + valStableUSD + valCashUSD;
+  const grandTotalIDR   = grandTotalUSD * kursIdr;
+  const grandModalUSD   = modCryptoUSD + modKomoditasUSD + modSahamUS_USD + (modSahamIDX_IDR / kursIdr) + valStableUSD + valCashUSD;
+  const overallPnlUSD   = grandTotalUSD - grandModalUSD;
+  const overallPnlIDR   = overallPnlUSD * kursIdr;
   const overallPnlPersen = grandModalUSD > 0 ? (overallPnlUSD / grandModalUSD) * 100 : 0;
-  const isOverallProfit = overallPnlUSD >= 0;
+  const isOverallProfit  = overallPnlUSD >= 0;
 
-  const pnlCryptoUSD = valCryptoUSD - modCryptoUSD;
+  const pnlCryptoUSD    = valCryptoUSD - modCryptoUSD;
   const pnlKomoditasUSD = valKomoditasUSD - modKomoditasUSD;
-  const pnlSahamUS_USD = valSahamUS_USD - modSahamUS_USD;
+  const pnlSahamUS_USD  = valSahamUS_USD - modSahamUS_USD;
   const pnlSahamIDX_IDR = valSahamIDX_IDR - modSahamIDX_IDR;
 
-  // ── LOGIC 1-DAY PNL ──
-  let dailyPnlUSD = 0;
+  // 1-Day PNL
+  let dailyPnlUSD   = 0;
   let dailyModalUSD = 0;
-  
   assets.forEach(a => {
     let currentValUSD = 0;
-    let change24h = 0; // percentage
-    
+    let change24h = 0;
     if (a.type === 'crypto') {
-        const price = hargaMap[a.simbol]?.usd || a.avg;
-        currentValUSD = price * a.jumlah;
-        change24h = hargaMap[a.simbol]?.change || 0;
+      const price = hargaMap[a.simbol]?.usd || a.avg;
+      currentValUSD = price * a.jumlah;
+      change24h = hargaMap[a.simbol]?.change || 0;
     } else if (a.type === 'komoditas') {
-        const price = hargaSaham[a.simbol || a.ticker] || a.avg;
-        currentValUSD = price * a.jumlah;
-        if (a.ticker.includes('GOLD') || a.simbol === 'GC=F') change24h = marketData.GOLD?.change || 0;
-        else if (a.ticker.includes('SILVER') || a.simbol === 'SI=F') change24h = marketData.XAG?.change || 0;
+      const price = hargaSaham[a.simbol || a.ticker] || a.avg;
+      currentValUSD = price * a.jumlah;
+      if (a.simbol === 'GC=F') change24h = marketData.GOLD?.change || 0;
+      else if (a.simbol === 'SI=F') change24h = marketData.XAG?.change || 0;
     } else if (a.type === 'saham_us') {
-        const price = hargaSaham[a.simbol || a.ticker] || a.avg;
-        currentValUSD = price * a.jumlah;
-        change24h = marketData.SPX500?.change || 0; // SPX Proxy
+      const price = hargaSaham[a.simbol || a.ticker] || a.avg;
+      currentValUSD = price * a.jumlah;
+      change24h = marketData.SPX500?.change || 0;
     } else if (a.type === 'saham') {
-        const priceIDR = hargaSaham[a.ticker] || a.avg;
-        currentValUSD = (priceIDR * a.jumlah) / kursIdr;
-        change24h = marketData.IHSG?.change || 0; // IHSG Proxy
+      const priceIDR = hargaSaham[a.ticker] || a.avg;
+      currentValUSD = (priceIDR * a.jumlah) / kursIdr;
+      change24h = marketData.IHSG?.change || 0;
     } else {
-        currentValUSD = (a.type === 'cash_idr' ? a.jumlah / kursIdr : a.avg * a.jumlah);
-        change24h = 0;
+      currentValUSD = (a.type === 'cash_idr' ? a.jumlah / kursIdr : a.avg * a.jumlah);
+      change24h = 0;
     }
-    
     const denominator = 1 + (change24h / 100);
     const val24hAgo = denominator !== 0 ? currentValUSD / denominator : currentValUSD;
-    dailyPnlUSD += (currentValUSD - val24hAgo);
+    dailyPnlUSD   += (currentValUSD - val24hAgo);
     dailyModalUSD += val24hAgo;
   });
-
   const dailyPnlPersen = dailyModalUSD > 0 ? (dailyPnlUSD / dailyModalUSD) * 100 : 0;
-  const isDailyProfit = dailyPnlUSD >= 0;
+  const isDailyProfit  = dailyPnlUSD >= 0;
 
-  // ── CHART HISTORIS ──
   const baselineNonCrypto = valStableUSD + valSahamIDX_USD + valSahamUS_USD + valKomoditasUSD + valCashUSD;
   const baselineRef = useRef(baselineNonCrypto);
   baselineRef.current = baselineNonCrypto;
@@ -681,28 +632,16 @@ function App() {
   useEffect(() => {
     setChartData(null);
     setChartError(false);
-
     const fetchChart = async () => {
       const cryptoAssets = assets.filter(a => a.type === 'crypto' && a.simbol);
       const baseline = baselineRef.current;
-
       const processResults = (results) => {
         const base = results[0]?.prices ?? [];
         if (base.length < 2) return null;
-        const combined = base.map((pt, i) => [
-          pt[0],
-          cryptoAssets.reduce((s, a, j) => s + (results[j]?.prices?.[i]?.[1] ?? 0) * a.jumlah, 0) + baseline,
-        ]);
-        return combined;
+        return base.map((pt, i) => [pt[0], cryptoAssets.reduce((s, a, j) => s + (results[j]?.prices?.[i]?.[1] ?? 0) * a.jumlah, 0) + baseline]);
       };
-
       try {
-        const results = await Promise.all(
-          cryptoAssets.map(a =>
-            fetch(`${API_BASE}/api/chart?simbol=${a.simbol}&days=${period.days}`)
-              .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-          )
-        );
+        const results = await Promise.all(cryptoAssets.map(a => fetch(`${API_BASE}/api/chart?simbol=${a.simbol}&days=${period.days}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })));
         const combined = processResults(results);
         if (combined && combined.length >= 2) {
           setChartData(combined);
@@ -711,14 +650,8 @@ function App() {
           return;
         }
       } catch {}
-
       try {
-        const results = await Promise.all(
-          cryptoAssets.map(a =>
-            fetch(`https://api.coingecko.com/api/v3/coins/${a.simbol}/market_chart?vs_currency=usd&days=${period.days}`)
-              .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-          )
-        );
+        const results = await Promise.all(cryptoAssets.map(a => fetch(`https://api.coingecko.com/api/v3/coins/${a.simbol}/market_chart?vs_currency=usd&days=${period.days}`).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })));
         const combined = processResults(results);
         if (combined && combined.length >= 2) {
           setChartData(combined);
@@ -727,7 +660,6 @@ function App() {
           return;
         }
       } catch {}
-
       setChartError(true);
     };
     fetchChart();
@@ -735,7 +667,6 @@ function App() {
 
   const chartColor = pnlChart?.selisih >= 0 ? '#4ade80' : '#f87171';
 
-  // Pie data
   const pieData = assets.map((a, i) => {
     let valUSD = 0;
     if (a.type === 'crypto' || a.type === 'komoditas' || a.type === 'saham_us') valUSD = getLivePrice(a) * a.jumlah;
@@ -747,30 +678,25 @@ function App() {
 
   function handleSave(id, avgBaru, jumlahBaru) { setAssets(prev => prev.map(a => a.id === id ? { ...a, avg: avgBaru, jumlah: jumlahBaru } : a)); setEditingAsset(null); }
   function handleDeleteAsset(id) { setAssets(prev => prev.filter(a => a.id !== id)); }
-  function handleAddAsset(newAsset) { const newId = Date.now(); setAssets(prev => [...prev, { ...newAsset, id: newId }]); setShowAddModal(false); }
+  function handleAddAsset(newAsset) { setAssets(prev => [...prev, { ...newAsset, id: Date.now() }]); setShowAddModal(false); }
 
   const renderSingleCard = (key, displayName) => {
     const data = marketData[key];
-    if(!data) return null;
+    if (!data) return null;
     const isLoaded = data.price > 0;
     const isCrypto = key === 'BTC' || key === 'ETH';
     const loaded = isCrypto ? cryptoLoaded : marketLoaded;
-
     return (
       <div style={styles.marketCardMini} key={key}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#a3a3a3', fontWeight: 700, fontSize: '13px' }}>{displayName}</span>
           {loaded && isLoaded
-            ? <span style={{ color: data.isUp ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, background: data.isUp ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                {data.isUp ? '+' : ''}{data.change.toFixed(2)}%
-              </span>
-            : <div className="skeleton" style={{ width: 42, height: 16 }} />
-          }
+            ? <span style={{ color: data.isUp ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, background: data.isUp ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{data.isUp ? '+' : ''}{data.change.toFixed(2)}%</span>
+            : <div className="skeleton" style={{ width: 42, height: 16 }} />}
         </div>
         {loaded && isLoaded
           ? <div style={{ color: 'white', fontWeight: 800, fontSize: '18px', marginTop: '6px', letterSpacing: '-0.5px' }}>{data.type === 'usd' ? '$' : ''}{data.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-          : <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: 6 }}><div className="skeleton" style={{ width: '80%', height: 20 }} /></div>
-        }
+          : <div style={{ marginTop: '8px' }}><div className="skeleton" style={{ width: '80%', height: 20 }} /></div>}
       </div>
     );
   };
@@ -784,130 +710,83 @@ function App() {
         <div className="max-container">
           <div className="page-header">
             <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
-            <div>
-              <h1 className="page-title">{activePage === 'portfolio' && 'Overview'}{activePage === 'ai' && 'AI Consultant'}</h1>
-            </div>
+            <div><h1 className="page-title">{activePage === 'portfolio' && 'Overview'}{activePage === 'ai' && 'AI Consultant'}</h1></div>
           </div>
 
           {activePage === 'portfolio' && (
             <>
-              {/* ROW 1: NET WORTH (+ Overall Pnl + 1D) | PNL BREAKDOWN (Cross) | CHART */}
+              {/* ROW 1 */}
               <div className="summary-cards">
 
-                {/* CARD 1: Total Net Worth & PNL */}
+                {/* CARD 1: Total Net Worth */}
                 <div style={styles.summaryCard}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Total Net Worth</span>
                     <span style={{ color: '#4ade80', fontSize: '11px', backgroundColor: 'rgba(74,222,128,0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
                   </div>
-                  {cryptoLoaded
-                    ? <>
-                        {/* Net Worth */}
-                        <div style={{ color: 'white', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>{formatUSD(grandTotalUSD)}</div>
-                        <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginTop: '2px' }}>{formatIDR(grandTotalIDR)}</div>
-                        
-                        {/* Garis Pemisah Tipis */}
-                        <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
-                        
-                        {/* Bagian Bawah: Overall & 1-Day (Bersebelahan) */}
-                        <div style={{ display: 'flex', gap: '16px' }}>
-                          
-                          {/* KIRI: Overall PNL */}
-                          <div style={{ flex: 1 }}>
-                            <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>Overall PnL</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>
-                                {isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}
-                              </span>
-                              <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isOverallProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>
-                                {isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%
-                              </span>
-                            </div>
-                            <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}</div>
-                          </div>
-
-                          {/* Garis Vertikal */}
-                          <div style={{ width: '1px', background: '#262626' }} />
-
-                          {/* KANAN: 1-Day PNL */}
-                          <div style={{ flex: 1 }}>
-                            <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>1-Day PnL</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>
-                                {isDailyProfit ? '+' : ''}{formatUSD(dailyPnlUSD)}
-                              </span>
-                              <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isDailyProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>
-                                {isDailyProfit ? '+' : ''}{dailyPnlPersen.toFixed(2)}%
-                              </span>
-                            </div>
-                            <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isDailyProfit ? '+' : ''}{formatIDR(dailyPnlUSD * kursIdr)}</div>
-                          </div>
-
+                  {cryptoLoaded ? <>
+                    <div style={{ color: 'white', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>{formatUSD(grandTotalUSD)}</div>
+                    <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginTop: '2px' }}>{formatIDR(grandTotalIDR)}</div>
+                    <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>Overall PnL</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>{isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}</span>
+                          <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isOverallProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%</span>
                         </div>
-                      </>
-                    : <>
-                        <div className="skeleton" style={{ width: '70%', height: 32, marginBottom: 6 }} />
-                        <div className="skeleton" style={{ width: '50%', height: 16 }} />
-                        <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
-                        <div style={{ display: 'flex', gap: '16px' }}>
-                           <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
-                           <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
+                        <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}</div>
+                      </div>
+                      <div style={{ width: '1px', background: '#262626' }} />
+                      <div style={{ flex: 1 }}>
+                        <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>1-Day PnL</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>{isDailyProfit ? '+' : ''}{formatUSD(dailyPnlUSD)}</span>
+                          <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isDailyProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{isDailyProfit ? '+' : ''}{dailyPnlPersen.toFixed(2)}%</span>
                         </div>
-                      </>
-                  }
+                        <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isDailyProfit ? '+' : ''}{formatIDR(dailyPnlUSD * kursIdr)}</div>
+                      </div>
+                    </div>
+                  </> : <>
+                    <div className="skeleton" style={{ width: '70%', height: 32, marginBottom: 6 }} />
+                    <div className="skeleton" style={{ width: '50%', height: 16 }} />
+                    <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
+                      <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
+                    </div>
+                  </>}
                 </div>
 
-                {/* CARD 2: PnL Breakdown (Cross Design) */}
+                {/* CARD 2: PnL Breakdown */}
                 <div style={styles.summaryCard}>
                   <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px', display: 'block', marginBottom: '14px' }}>PnL Breakdown</span>
                   {cryptoLoaded
                     ? <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', flex: 1 }}>
-                        
-                        {/* Kripto (Kiri Atas) */}
                         <div style={{ padding: '0 12px 12px 0', borderRight: '1px solid #262626', borderBottom: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Kripto (USD)</span>
-                          <span style={{ color: pnlCryptoUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>
-                            {pnlCryptoUSD >= 0 ? '+' : ''}{formatUSD(pnlCryptoUSD)}
-                          </span>
+                          <span style={{ color: pnlCryptoUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>{pnlCryptoUSD >= 0 ? '+' : ''}{formatUSD(pnlCryptoUSD)}</span>
                           <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{pnlCryptoUSD >= 0 ? '+' : ''}{formatIDR(pnlCryptoUSD * kursIdr)}</span>
                         </div>
-
-                        {/* Komoditas (Kanan Atas) */}
                         <div style={{ padding: '0 0 12px 12px', borderBottom: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Komoditas (USD)</span>
-                          <span style={{ color: pnlKomoditasUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>
-                            {pnlKomoditasUSD >= 0 ? '+' : ''}{formatUSD(pnlKomoditasUSD)}
-                          </span>
+                          <span style={{ color: pnlKomoditasUSD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>{pnlKomoditasUSD >= 0 ? '+' : ''}{formatUSD(pnlKomoditasUSD)}</span>
                           <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{pnlKomoditasUSD >= 0 ? '+' : ''}{formatIDR(pnlKomoditasUSD * kursIdr)}</span>
                         </div>
-
-                        {/* Saham IDX (Kiri Bawah) */}
                         <div style={{ padding: '12px 12px 0 0', borderRight: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Saham IDX (IDR)</span>
-                          <span style={{ color: pnlSahamIDX_IDR >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>
-                            {pnlSahamIDX_IDR >= 0 ? '+' : ''}{formatIDR(pnlSahamIDX_IDR)}
-                          </span>
+                          <span style={{ color: pnlSahamIDX_IDR >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>{pnlSahamIDX_IDR >= 0 ? '+' : ''}{formatIDR(pnlSahamIDX_IDR)}</span>
                           <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{pnlSahamIDX_IDR >= 0 ? '+' : ''}{formatUSD(pnlSahamIDX_IDR / kursIdr)}</span>
                         </div>
-
-                        {/* Saham US (Kanan Bawah) */}
                         <div style={{ padding: '12px 0 0 12px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Saham US (USD)</span>
-                          <span style={{ color: pnlSahamUS_USD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>
-                            {pnlSahamUS_USD >= 0 ? '+' : ''}{formatUSD(pnlSahamUS_USD)}
-                          </span>
+                          <span style={{ color: pnlSahamUS_USD >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>{pnlSahamUS_USD >= 0 ? '+' : ''}{formatUSD(pnlSahamUS_USD)}</span>
                           <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{pnlSahamUS_USD >= 0 ? '+' : ''}{formatIDR(pnlSahamUS_USD * kursIdr)}</span>
                         </div>
-
                       </div>
-                    : <>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '8px', flex: 1 }}>
-                           <div className="skeleton" style={{ borderRadius: 8 }} />
-                           <div className="skeleton" style={{ borderRadius: 8 }} />
-                           <div className="skeleton" style={{ borderRadius: 8 }} />
-                           <div className="skeleton" style={{ borderRadius: 8 }} />
-                        </div>
-                      </>
+                    : <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '8px', flex: 1 }}>
+                        {[0,1,2,3].map(i => <div key={i} className="skeleton" style={{ borderRadius: 8 }} />)}
+                      </div>
                   }
                 </div>
 
@@ -925,7 +804,7 @@ function App() {
                 </div>
               </div>
 
-              {/* ROW 2: 8 MARKET CARDS + DONUT CHART */}
+              {/* ROW 2 */}
               <div className="market-section">
                 <div className="market-mini-grid">
                   {renderSingleCard('BTC', 'BTC')}
@@ -937,15 +816,9 @@ function App() {
                   {renderSingleCard('NASDAQ', 'Nasdaq')}
                   {renderSingleCard('BRENT', 'Oil Brent')}
                 </div>
-                
-                {/* DONUT CHART dengan Judul Baru */}
                 <div className="donut-card" style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 14, left: 18, color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>
-                    Current Allocation
-                  </div>
-                  <div style={{ width: '130px', height: '130px', flexShrink: 0, marginTop: '20px' }}>
-                    <DonutChart data={pieData} />
-                  </div>
+                  <div style={{ position: 'absolute', top: 14, left: 18, color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Current Allocation</div>
+                  <div style={{ width: '130px', height: '130px', flexShrink: 0, marginTop: '20px' }}><DonutChart data={pieData} /></div>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '140px', overflowY: 'auto', paddingRight: '4px', marginTop: '20px' }}>
                     {pieData.map(d => (
                       <div key={d.ticker} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -960,66 +833,49 @@ function App() {
                 </div>
               </div>
 
-              {/* TABEL ASET - DIREVISI RAMPING & SELALU TAMPIL */}
+              {/* HOLDINGS TABLE */}
               <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-                {/* Header Utama */}
                 <div className="holdings-header" style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
                   <div>
                     <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>Holdings</h3>
                     <span style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px', display: 'block' }}>{assets.length} aset terdaftar</span>
                   </div>
-                  <button
-                    onClick={() => setShowAddModal(true)}
-                    style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(74,222,128,0.25)', letterSpacing: '-0.2px' }}
-                  >+ Tambah Aset</button>
+                  <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(74,222,128,0.25)', letterSpacing: '-0.2px' }}>+ Tambah Aset</button>
                 </div>
-
-                {/* Judul Kolom */}
                 <div className="col-headers" style={{ alignItems: 'center', padding: '12px 28px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: '#0f0f0f' }}>
                   {[['Aset', 2], ['Harga Live', 1.5], ['Holdings / AVG', 1.5], ['Nilai Aset', 1.5], ['Unrealized PNL', 1.5]].map(([h, f]) => (
                     <div key={h} style={{ flex: f, color: '#4b5563', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px' }}>{h}</div>
                   ))}
                   <div style={{ flexShrink: 0, width: '98px' }} />
                 </div>
-
                 <div style={{ paddingBottom: '18px' }}>
                   {[
-                    { type: 'crypto', label: 'Crypto', color: '#f59e0b', list: assets.filter(a => a.type === 'crypto') },
-                    { type: 'saham_us', label: 'Saham US', color: '#ec4899', list: assets.filter(a => a.type === 'saham_us') },
-                    { type: 'saham', label: 'Saham IDX', color: '#3b82f6', list: assets.filter(a => a.type === 'saham') },
-                    { type: 'komoditas', label: 'Komoditas', color: '#eab308', list: assets.filter(a => a.type === 'komoditas') },
-                    { type: 'cashstable', label: 'Cash & Stable', color: '#10b981', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
+                    { type: 'crypto',    label: 'Crypto',       color: '#f59e0b', list: assets.filter(a => a.type === 'crypto') },
+                    { type: 'saham_us',  label: 'Saham US',     color: '#ec4899', list: assets.filter(a => a.type === 'saham_us') },
+                    { type: 'saham',     label: 'Saham IDX',    color: '#3b82f6', list: assets.filter(a => a.type === 'saham') },
+                    { type: 'komoditas', label: 'Komoditas',    color: '#eab308', list: assets.filter(a => a.type === 'komoditas') },
+                    { type: 'cashstable',label: 'Cash & Stable',color: '#10b981', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
                   ].map(({ type, label, color, list }) => (
                     <div key={type}>
-                      {/* Sub-Header per Kategori (Selalu Muncul) */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 28px 8px' }}>
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color }}></div>
                         <span style={{ color: '#a3a3a3', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</span>
                         <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, #1f1f1f, transparent)' }} />
                         <span style={{ color: '#4b5563', fontSize: '10px', fontWeight: 600 }}>{list.length} aset</span>
                       </div>
-                      
-                      {/* List Aset (Jika ada) */}
                       {list.length > 0 ? (
-                        <div>
-                          {list.map((asset, idx) => (
-                            <DataRow
-                              key={asset.id} 
-                              asset={asset}
-                              isLast={idx === list.length - 1}
-                              hargaLiveUSD={(asset.type === 'crypto' || asset.type === 'komoditas' || asset.type === 'saham_us') ? (asset.type === 'crypto' ? hargaMap[asset.simbol]?.usd : hargaSaham[asset.simbol || asset.ticker]) : undefined}
-                              hargaLiveIDR={asset.type === 'saham' ? hargaSaham[asset.ticker] : undefined}
-                              kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD}
-                              onEdit={setEditingAsset} onDelete={setDeleteConfirm}
-                            />
-                          ))}
-                        </div>
+                        list.map((asset, idx) => (
+                          <DataRow
+                            key={asset.id} asset={asset} isLast={idx === list.length - 1}
+                            hargaLiveUSD={(asset.type === 'crypto' || asset.type === 'komoditas' || asset.type === 'saham_us') ? (asset.type === 'crypto' ? hargaMap[asset.simbol]?.usd : hargaSaham[asset.simbol || asset.ticker]) : undefined}
+                            hargaLiveIDR={asset.type === 'saham' ? hargaSaham[asset.ticker] : undefined}
+                            kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD}
+                            onEdit={setEditingAsset} onDelete={setDeleteConfirm}
+                          />
+                        ))
                       ) : (
-                        /* Empty State (Jika Kosong) */
                         <div style={{ padding: '10px 28px 20px' }}>
-                          <div style={{ padding: '16px', border: '1px dashed #262626', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>
-                            Belum ada aset {label}
-                          </div>
+                          <div style={{ padding: '16px', border: '1px dashed #262626', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>Belum ada aset {label}</div>
                         </div>
                       )}
                     </div>
@@ -1030,27 +886,14 @@ function App() {
           )}
 
           {activePage === 'ai' && (
-            <AIConsultant
-              assets={assets}
-              hargaMap={hargaMap}
-              hargaSaham={hargaSaham}
-              kursIdr={kursIdr}
-              grandTotalUSD={grandTotalUSD}
-              grandTotalIDR={grandTotalIDR}
-              overallPnlUSD={overallPnlUSD}
-              overallPnlPersen={overallPnlPersen}
-              marketData={marketData}
-            />
+            <AIConsultant assets={assets} hargaMap={hargaMap} hargaSaham={hargaSaham} kursIdr={kursIdr} grandTotalUSD={grandTotalUSD} grandTotalIDR={grandTotalIDR} overallPnlUSD={overallPnlUSD} overallPnlPersen={overallPnlPersen} marketData={marketData} />
           )}
         </div>
       </div>
 
       {showAddModal && <AddAssetModal onSave={handleAddAsset} onClose={() => setShowAddModal(false)} />}
-      {deleteConfirm && (
-        <ConfirmDeleteModal asset={deleteConfirm} onConfirm={() => { handleDeleteAsset(deleteConfirm.id); setDeleteConfirm(null); }} onCancel={() => setDeleteConfirm(null)} />
-      )}
+      {deleteConfirm && <ConfirmDeleteModal asset={deleteConfirm} onConfirm={() => { handleDeleteAsset(deleteConfirm.id); setDeleteConfirm(null); }} onCancel={() => setDeleteConfirm(null)} />}
 
-      {/* MODAL EDIT */}
       {editingAsset && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '16px', padding: '32px', width: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
@@ -1061,9 +904,7 @@ function App() {
                 <input type="number" defaultValue={editingAsset.avg} id="editAvg" style={styles.modalInput} />
               </>
             )}
-            <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500, marginTop: '16px', display: 'block' }}>
-              Jumlah ({editingAsset.type === 'saham' ? 'Lembar' : editingAsset.type === 'cash_idr' ? 'IDR' : 'Koin'})
-            </label>
+            <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500, marginTop: '16px', display: 'block' }}>Jumlah ({editingAsset.type === 'saham' ? 'Lembar' : editingAsset.type === 'cash_idr' ? 'IDR' : 'Koin'})</label>
             <input type="number" defaultValue={editingAsset.jumlah} id="editJumlah" style={styles.modalInput} />
             <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
               <button onClick={() => setEditingAsset(null)} style={{ flex: 1, backgroundColor: '#262626', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
@@ -1076,24 +917,12 @@ function App() {
   );
 }
 
-// ============================================
-// STYLES
-// ============================================
 const styles = {
-  sidebar: { width: 260, backgroundColor: '#0a0a0a', borderRight: '1px solid #1f1f1f', display: 'flex', flexDirection: 'column' },
-  sidebarLogo: { height: 88, display: 'flex', alignItems: 'center', gap: '12px', padding: '0 24px', borderBottom: '1px solid #1f1f1f' },
-  sidebarMenu: { padding: '24px 16px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 },
-  menuItemActive: { padding: '14px 16px', backgroundColor: '#1a1a1a', color: 'white', borderRadius: '10px', cursor: 'pointer' },
-  menuItem: { padding: '14px 16px', color: '#737373', borderRadius: '10px', cursor: 'pointer' },
-  header: { display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 32 },
-  headerTitle: { color: 'white', fontSize: 32, fontWeight: 800, margin: 0, letterSpacing: '-0.5px' },
   summaryCard: { backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
   periodRow: { display: 'flex', gap: 4, backgroundColor: '#1a1a1a', padding: '4px', borderRadius: '8px' },
   periodBtn: { backgroundColor: 'transparent', color: '#737373', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' },
   periodBtnActive: { backgroundColor: '#333', color: 'white' },
   marketCardMini: { backgroundColor: '#141414', borderRadius: '12px', padding: '12px 16px', border: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
-  modernRow: { display: 'flex', padding: '16px 12px', alignItems: 'center', borderBottom: '1px solid #1f1f1f', borderRadius: '10px', margin: '4px 0' },
-  actionBtn: { backgroundColor: '#1a1a1a', color: 'white', border: '1px solid #333', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' },
   modalInput: { width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '10px', padding: '12px 16px', color: 'white', fontSize: '16px', outline: 'none', marginTop: '8px', boxSizing: 'border-box', fontWeight: 500 },
 };
 
