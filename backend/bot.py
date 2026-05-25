@@ -1,11 +1,12 @@
 import os
+import json
 import random
 from dotenv import load_dotenv
 load_dotenv()  # load .env file otomatis
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from groq import Groq
@@ -58,18 +59,89 @@ MARKET_SYMBOLS = {
 }
 
 @app.get("/api/market-data")
-def get_market_data():
+def get_market_data(symbols: str = Query(None, description="Comma separated symbols, e.g. AAPL,TSLA,TLKM.JK")):
     results = {}
-    # Fetch semua simbol secara paralel
+    
+    # 1. Siapkan daftar simbol default (untuk Widget Market)
+    target_symbols = MARKET_SYMBOLS.copy()
+    
+    # 2. Tambahkan simbol dinamis dari request frontend (jika ada)
+    if symbols:
+        extra_symbols = symbols.split(",")
+        for sym in extra_symbols:
+            sym = sym.strip()
+            if sym not in target_symbols.values(): # Cegah duplikat
+                target_symbols[sym] = sym # Key dan Value disamakan
+                
+    # 3. Fetch semua secara paralel
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = {executor.submit(fetch_yahoo, sym): key for key, sym in MARKET_SYMBOLS.items()}
+        futures = {executor.submit(fetch_yahoo, sym): key for key, sym in target_symbols.items()}
         for future in as_completed(futures):
             key = futures[future]
             try:
-                results[key] = future.result()
-            except Exception:
+                res = future.result()
+                if res is not None:
+                    results[key] = res
+            except Exception as e:
                 results[key] = None
+                print(f"Error fetching {key}: {e}")
+                
     return results
+
+# ── PROXY CRYPTO PRICES via CoinGecko ──────────────────────────────────────
+# Mapping ticker → CoinGecko ID
+COINGECKO_IDS = {
+    "BTC": "bitcoin", "ETH": "ethereum", "BNB": "binancecoin",
+    "SOL": "solana",  "XRP": "ripple",   "ADA": "cardano",
+    "DOGE": "dogecoin", "AVAX": "avalanche-2", "MATIC": "matic-network",
+    "DOT": "polkadot", "LINK": "chainlink", "UNI": "uniswap",
+    "ATOM": "cosmos", "LTC": "litecoin", "BCH": "bitcoin-cash",
+    "NEAR": "near",   "APT": "aptos",    "OP": "optimism",
+    "ARB": "arbitrum", "SUI": "sui",
+}
+
+@app.get("/api/crypto-prices")
+def get_crypto_prices(symbols: str = Query(..., description="Comma separated, e.g. BTCUSDT,ETHUSDT")):
+    """Proxy ke CoinGecko — lebih stabil dari Binance untuk local dev."""
+    # Parse symbols: BTCUSDT → BTC
+    tickers = []
+    for s in symbols.split(","):
+        s = s.strip().replace("USDT", "").replace("usdt", "").upper()
+        tickers.append(s)
+
+    # Cari CoinGecko IDs
+    coin_ids = [COINGECKO_IDS.get(t) for t in tickers if COINGECKO_IDS.get(t)]
+    if not coin_ids:
+        return []
+
+    try:
+        res = requests.get(
+            "https://api.coingecko.com/api/v3/coins/markets",
+            params={
+                "vs_currency": "usd",
+                "ids": ",".join(coin_ids),
+                "price_change_percentage": "24h",
+            },
+            timeout=15
+        )
+        data = res.json()
+
+        # Format mirip Binance response agar App.js tidak perlu diubah
+        result = []
+        for coin in data:
+            # Cari ticker dari coin id
+            ticker = next((t for t, cid in COINGECKO_IDS.items() if cid == coin["id"]), None)
+            if ticker:
+                result.append({
+                    "symbol": f"{ticker}USDT",
+                    "lastPrice": str(coin.get("current_price", 0)),
+                    "priceChangePercent": str(coin.get("price_change_percentage_24h", 0) or 0),
+                })
+        print(f"[CoinGecko Proxy] OK, {len(result)} coins")
+        return result
+    except Exception as e:
+        print(f"[CoinGecko Proxy] Error: {e}")
+        return []
 
 # ── AI Bot endpoint (existing) ──
 def analisa_sentimen_dan_teknikal():
