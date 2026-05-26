@@ -3,6 +3,7 @@ import './App.css';
 
 import { useLocalStorage } from './hooks/useLocalstorage';
 import { formatUSD, formatIDR, COLORS, renderAIText } from './utils/helpers';
+import { NetWorthTrendCard, NetWorthDetailPage } from './networthtrend';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -34,8 +35,9 @@ function useWindowSize() {
 }
 
 const PERIODS = [
-  { label: '1D', days: 1 }, { label: '7D', days: 7 }, { label: '30D', days: 30 },
-  { label: '90D', days: 90 }, { label: '1Y', days: 365 },
+  { label: '1D', days: 1 }, { label: '7D', days: 7 }, { label: '1M', days: 30 },
+  { label: '6M', days: 180 }, { label: '1Y', days: 365 }, { label: '5Y', days: 1825 },
+  { label: 'All', days: null },
 ];
 
 const NAV_ITEMS = [
@@ -72,45 +74,6 @@ function Sidebar({ activePage, setActivePage, onClose, isOpen }) {
         <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 500 }}>System Online</span>
       </div>
     </div>
-  );
-}
-
-function MiniChart({ data, color, isError }) {
-  if (isError) return (
-    <div style={{ height: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-      <span style={{ fontSize: 20 }}>📡</span>
-      <span style={{ color: '#4b5563', fontSize: 12 }}>Tidak dapat memuat chart</span>
-    </div>
-  );
-  if (!data) return (
-    <div style={{ height: 100, display: 'flex', alignItems: 'flex-end', gap: 3, padding: '8px 4px' }}>
-      {[40,65,50,75,55,80,60,90,70,85,65,95,75,88,72].map((h, i) => (
-        <div key={i} className="skeleton" style={{ flex: 1, height: `${h}%`, borderRadius: 3 }} />
-      ))}
-    </div>
-  );
-  if (data.length < 2) return (
-    <div style={{ height: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-      <span style={{ fontSize: 20 }}>📊</span>
-      <span style={{ color: '#4b5563', fontSize: 12 }}>Data belum tersedia</span>
-    </div>
-  );
-  const W = 400, H = 100;
-  const prices = data.map(d => d[1]);
-  const min = Math.min(...prices), max = Math.max(...prices), range = max - min || 1;
-  const points = data.map((d, i) => `${(i / (data.length - 1)) * W},${H - ((d[1] - min) / range) * (H - 4) - 2}`).join(' ');
-  const gradientId = `grad-${color.replace('#', '')}`;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '100%', minHeight: '100px' }} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon points={`0,${H} ${points} ${W},${H}`} fill={`url(#${gradientId})`} />
-      <polyline points={points} fill="none" stroke={color} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
   );
 }
 
@@ -287,7 +250,6 @@ function AddAssetModal({ onSave, onClose }) {
       if (form.type === 'crypto') {
         const symbol = form.ticker.toUpperCase();
         try {
-          // ✅ FIX: Gunakan proxy backend untuk cek harga crypto
           const res  = await fetchWithRetry(`${API_BASE}/api/crypto-prices?symbols=${symbol}USDT`);
           const data = await res.json();
           const item = Array.isArray(data) ? data[0] : null;
@@ -379,7 +341,7 @@ function AddAssetModal({ onSave, onClose }) {
         </div>
         <div style={{ padding: '0 28px 28px', display: 'flex', gap: '10px' }}>
           <button onClick={onClose} style={{ flex: 1, backgroundColor: '#1a1a1a', color: '#737373', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-          <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#4ade80', color: '#000', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>+ Tambah Aset</button>
+          <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>+ Tambah Aset</button>
         </div>
       </div>
     </div>
@@ -530,7 +492,6 @@ function App() {
   );
 
   const fetchCryptoPrices = useCallback(async () => {
-    console.log('[Crypto] Memulai fetch via proxy backend...');
     try {
       const baseSymbols      = ['BTCUSDT', 'ETHUSDT'];
       const portfolioSymbols = cryptoAssets
@@ -539,11 +500,8 @@ function App() {
       const allSymbols = [...new Set([...baseSymbols, ...portfolioSymbols])];
       const symbolsStr = allSymbols.join(',');
 
-      console.log('[Crypto] Fetching symbols via proxy:', allSymbols);
-      // ✅ FIX: Lewat proxy backend, bukan langsung ke Binance
       const res  = await fetchWithRetry(`${API_BASE}/api/crypto-prices?symbols=${symbolsStr}`);
       const data = await res.json();
-      console.log('[Crypto] Response OK, items:', data.length);
 
       if (cryptoAssets.length > 0) {
         const newHargaMap = {};
@@ -554,13 +512,11 @@ function App() {
             newHargaMap[asset.simbol] = { usd: parseFloat(d.lastPrice), change: parseFloat(d.priceChangePercent) };
           }
         });
-        console.log('[Crypto] hargaMap updated:', Object.keys(newHargaMap));
         setHargaMap(newHargaMap);
       }
 
       const btcRaw = data.find(d => d.symbol === 'BTCUSDT');
       const ethRaw = data.find(d => d.symbol === 'ETHUSDT');
-      console.log('[Crypto] BTC:', btcRaw?.lastPrice, '| ETH:', ethRaw?.lastPrice);
 
       setMarketData(prev => ({
         ...prev,
@@ -583,19 +539,15 @@ function App() {
       }));
 
       setCryptoLoaded(true);
-      console.log('[Crypto] ✅ Done, cryptoLoaded = true');
     } catch (err) {
-      console.error('[Crypto] ❌ Gagal fetch:', err.message);
       setCryptoLoaded(true);
     }
   }, [cryptoAssets]);
 
   const fetchMarketData = useCallback(async () => {
-    console.log('[Market] Memulai fetch /api/market-data...');
     try {
       const res  = await fetchWithRetry(`${API_BASE}/api/market-data`);
       const data = await res.json();
-      console.log('[Market] Response OK, keys:', Object.keys(data));
 
       const stockUpdates = {};
       Object.keys(data).forEach(ticker => {
@@ -625,9 +577,7 @@ function App() {
 
       setMarketData(prev => ({ ...prev, ...updates }));
       setMarketLoaded(true);
-      console.log('[Market] ✅ Done');
     } catch (err) {
-      console.error('[Market] ❌ Gagal fetch:', err.message);
       setMarketLoaded(true);
     }
 
@@ -635,9 +585,7 @@ function App() {
       const res  = await fetchWithRetry('https://api.exchangerate-api.com/v4/latest/USD');
       const data = await res.json();
       if (data?.rates?.IDR) setKursIdr(data.rates.IDR);
-    } catch (err) {
-      console.warn('[Market] Kurs IDR gagal, pakai default:', err.message);
-    }
+    } catch (err) {}
   }, []);
 
   useEffect(() => {
@@ -720,42 +668,96 @@ function App() {
   const baselineRef = useRef(baselineNonCrypto);
   baselineRef.current = baselineNonCrypto;
 
+  // ── FIX: LOGIKA FETCH CHART TAHAN BANTING (CORS BYPASS & FALLBACK) ──
   useEffect(() => {
     setChartData(null); setChartError(false);
+    
     const fetchChart = async () => {
       const cryptos  = assets.filter(a => a.type === 'crypto' && a.simbol);
-      const baseline = baselineRef.current;
-      const process  = (results) => {
-        const base = results[0]?.prices ?? [];
-        if (base.length < 2) return null;
-        return base.map((pt, i) => [pt[0], cryptos.reduce((s, a, j) => s + (results[j]?.prices?.[i]?.[1] ?? 0) * a.jumlah, 0) + baseline]);
-      };
-      try {
-        const results  = await Promise.all(cryptos.map(a => fetchWithRetry(`${API_BASE}/api/chart?simbol=${a.simbol}&days=${period.days}`).then(r => r.json())));
-        const combined = process(results);
-        if (combined?.length >= 2) {
-          setChartData(combined);
-          const diff = combined[combined.length-1][1] - combined[0][1];
-          setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 });
-          return;
-        }
-      } catch {}
-      try {
-        const results  = await Promise.all(cryptos.map(a => fetchWithRetry(`https://api.coingecko.com/api/v3/coins/${a.simbol}/market_chart?vs_currency=usd&days=${period.days}`).then(r => r.json())));
-        const combined = process(results);
-        if (combined?.length >= 2) {
-          setChartData(combined);
-          const diff = combined[combined.length-1][1] - combined[0][1];
-          setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 });
-          return;
-        }
-      } catch {}
-      setChartError(true);
-    };
-    fetchChart();
-  }, [period, assets]); // eslint-disable-line react-hooks/exhaustive-deps
+      const baseline = baselineRef.current || 0;
+      const fetchDays = 1825; // Tarik data 5 Tahun
+      const now = Date.now();
 
-  const chartColor = pnlChart?.selisih >= 0 ? '#4ade80' : '#f87171';
+      const createDummyData = (baseVal) => {
+        const arr = [];
+        for (let i = fetchDays; i >= 0; i--) { arr.push([now - (i * 86400000), baseVal]); }
+        return arr;
+      };
+
+      if (cryptos.length === 0) {
+        setChartData(createDummyData(baseline));
+        setPnlChart({ selisih: 0, persen: 0 });
+        return;
+      }
+
+      const process = (results) => {
+        const validResult = results.find(r => r && r.prices && r.prices.length > 0);
+        if (!validResult) return null;
+
+        return validResult.prices.map((pt, i) => [
+          pt[0], 
+          cryptos.reduce((s, a, j) => {
+            const price = results[j]?.prices?.[i]?.[1] ?? (hargaMap[a.simbol]?.usd || a.avg || 0);
+            return s + (price * a.jumlah);
+          }, 0) + baseline
+        ]);
+      };
+
+      // 1. Coba lewat backend lokal dulu (jika menyala)
+      try {
+        const results = await Promise.all(
+          cryptos.map(a => 
+            fetchWithRetry(`${API_BASE}/api/chart?simbol=${a.simbol}&days=${fetchDays}`)
+              .then(r => r.json())
+              .catch(() => null)
+          )
+        );
+        if (results.some(r => r && r.prices)) {
+          const combined = process(results);
+          if (combined?.length >= 2) {
+            setChartData(combined);
+            const diff = combined[combined.length-1][1] - combined[0][1];
+            setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 });
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 2. Coba CoinGecko Public API (Menggunakan CORS Proxy Gratis)
+      try {
+        const results = await Promise.all(
+          cryptos.map(a => {
+            const targetUrl = `https://api.coingecko.com/api/v3/coins/${a.simbol.toLowerCase()}/market_chart?vs_currency=usd&days=${fetchDays}`;
+            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+            return fetchWithRetry(proxyUrl)
+              .then(r => r.json())
+              .catch(() => null); // Jangan gagalkan semua jika 1 mati/rate-limit
+          })
+        );
+        
+        if (results.some(r => r && r.prices)) {
+          const combined = process(results);
+          if (combined?.length >= 2) {
+            setChartData(combined);
+            const diff = combined[combined.length-1][1] - combined[0][1];
+            setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 });
+            return;
+          }
+        }
+      } catch (e) {}
+
+      // 3. Fallback Terakhir (Simulasi Flat Chart supaya tidak blank)
+      const fallbackCombined = createDummyData(grandTotalUSD);
+      setChartData(fallbackCombined);
+      setPnlChart({ selisih: 0, persen: 0 });
+      setChartError(true); 
+    };
+    
+    fetchChart();
+  }, [assets, grandTotalUSD, hargaMap]); 
+  // ──────────────────────────────────────────────────────────────────
+
+  const chartColor = pnlChart?.selisih >= 0 ? '#16a34a' : '#ef4444';
 
   const pieData = useMemo(() => assets.map((a, i) => {
     let valUSD = 0;
@@ -816,7 +818,7 @@ function App() {
         <div className="max-container">
           <div className="page-header">
             <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
-            <h1 className="page-title">{activePage === 'portfolio' ? 'Overview' : 'AI Consultant'}</h1>
+            <h1 className="page-title">{activePage === 'portfolio' ? 'Overview' : activePage === 'networth-detail' ? 'Net Worth Analytics' : 'AI Consultant'}</h1>
           </div>
 
           {activePage === 'portfolio' && (
@@ -889,17 +891,15 @@ function App() {
                   )}
                 </div>
 
-                <div style={{ ...styles.summaryCard, display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Net Worth Trend</span>
-                    <div style={styles.periodRow}>
-                      {PERIODS.map(p => (
-                        <button key={p.label} onClick={() => setPeriod(p)} style={{ ...styles.periodBtn, ...(period.label === p.label ? styles.periodBtnActive : {}) }}>{p.label}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}><MiniChart data={chartData} color={chartColor} isError={chartError} /></div>
-                </div>
+                <NetWorthTrendCard 
+                  data={chartData} 
+                  color={chartColor} 
+                  isError={chartError} 
+                  period={period} 
+                  setPeriod={setPeriod} 
+                  periodsList={PERIODS} 
+                  onDetailClick={() => setActivePage('networth-detail')} 
+                />
               </div>
 
               <div className="market-section">
@@ -936,7 +936,7 @@ function App() {
                     <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 800, margin: 0 }}>Holdings</h3>
                     <span style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px', display: 'block' }}>{assets.length} aset terdaftar</span>
                   </div>
-                  <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)', color: '#000', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(74,222,128,0.25)' }}>+ Tambah Aset</button>
+                  <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)' }}>+ Tambah Aset</button>
                 </div>
                 <div className="col-headers" style={{ alignItems: 'center', padding: '12px 28px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: '#0f0f0f' }}>
                   {[['Aset', 2], ['Harga Live', 1.5], ['Holdings / AVG', 1.5], ['Nilai Aset', 1.5], ['Unrealized PNL', 1.5]].map(([h, f]) => (
@@ -982,6 +982,23 @@ function App() {
           {activePage === 'ai' && (
             <AIConsultant assets={assets} hargaMap={hargaMap} hargaSaham={hargaSaham} kursIdr={kursIdr} grandTotalUSD={grandTotalUSD} grandTotalIDR={grandTotalIDR} overallPnlUSD={overallPnlUSD} overallPnlPersen={overallPnlPersen} marketData={marketData} />
           )}
+
+          {activePage === 'networth-detail' && (
+            <NetWorthDetailPage
+              onBack={() => setActivePage('portfolio')}
+              chartData={chartData}
+              currentNetWorth={grandTotalUSD}
+              overallPnlUSD={overallPnlUSD}
+              overallPnlPersen={overallPnlPersen}
+              assets={assets}
+              dailyPnlUSD={dailyPnlUSD}
+              hargaMap={hargaMap}
+              hargaSaham={hargaSaham}
+              kursIdr={kursIdr}
+              marketData={marketData}
+            />
+          )}
+
         </div>
       </div>
 
@@ -1005,7 +1022,7 @@ function App() {
             <input type="number" placeholder="Contoh: 0.2" value={editForm.jumlah} onChange={e => setEditForm(p => ({ ...p, jumlah: e.target.value }))} style={styles.modalInput} />
             <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
               <button onClick={() => setEditingAsset(null)} style={{ flex: 1, backgroundColor: '#262626', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-              <button onClick={() => handleSave(editingAsset.id, parseFloat(editForm.harga || 0), parseFloat(editForm.jumlah || 0))} style={{ flex: 1, backgroundColor: '#4ade80', color: 'black', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Tambah Muatan</button>
+              <button onClick={() => handleSave(editingAsset.id, parseFloat(editForm.harga || 0), parseFloat(editForm.jumlah || 0))} style={{ flex: 1, backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Tambah Muatan</button>
             </div>
           </div>
         </div>

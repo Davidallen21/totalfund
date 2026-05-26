@@ -143,6 +143,47 @@ def get_crypto_prices(symbols: str = Query(..., description="Comma separated, e.
         print(f"[CoinGecko Proxy] Error: {e}")
         return []
 
+# ── HISTORICAL CHART UNTUK IHSG & S&P500 ───────────────────────────────────
+@app.get("/api/market/{market_type}")
+def get_market_chart(market_type: str):
+    """Endpoint untuk mengambil data historis pembanding portofolio dari Yahoo Finance"""
+    symbol_map = {
+        "ihsg": "^JKSE",
+        "sp500": "^GSPC"
+    }
+    
+    symbol = symbol_map.get(market_type.lower())
+    if not symbol:
+        return {"prices": []}
+        
+    # Ambil data 5 tahun terakhir dengan interval 1 hari (biar sinkron dengan chart portofolio)
+    url = f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=5y"
+    
+    try:
+        res = requests.get(url, headers=YF_HEADERS, timeout=10)
+        data = res.json()
+        
+        result = data.get("chart", {}).get("result", [])
+        if not result:
+            return {"prices": []}
+            
+        # Ekstrak array timestamp dan harga penutupan (close)
+        timestamps = result[0].get("timestamp", [])
+        quotes = result[0].get("indicators", {}).get("quote", [{}])[0].get("close", [])
+        
+        prices = []
+        for t, c in zip(timestamps, quotes):
+            # Abaikan jika ada data libur/kosong dari Yahoo Finance
+            if c is not None:
+                prices.append([t * 1000, c]) # Kalikan 1000 untuk mengubah detik jadi milidetik
+                
+        print(f"[Market Chart] Berhasil fetch {len(prices)} data untuk {market_type.upper()}")
+        return {"prices": prices}
+        
+    except Exception as e:
+        print(f"[Market Chart] Error fetching {market_type}: {e}")
+        return {"prices": []}
+
 # ── AI Bot endpoint (existing) ──
 def analisa_sentimen_dan_teknikal():
     try:
@@ -251,11 +292,26 @@ def ai_chat(req: ChatRequest):
 @app.get("/api/chart")
 def get_chart(simbol: str, days: int = 1):
     """Fetch CoinGecko chart data server-side (no CORS / rate-limit issue di browser)."""
-    url = f"https://api.coingecko.com/api/v3/coins/{simbol}/market_chart?vs_currency=usd&days={days}"
+    
+    # 1. Bersihkan simbol (misal: "BTCUSDT" atau "BTC" jadi murni "BTC")
+    clean_symbol = simbol.replace("USDT", "").replace("usdt", "").upper()
+    
+    # 2. Terjemahkan ke bahasa CoinGecko (BTC -> bitcoin, ETH -> ethereum)
+    coingecko_id = COINGECKO_IDS.get(clean_symbol, clean_symbol.lower())
+    
+    url = f"https://api.coingecko.com/api/v3/coins/{coingecko_id}/market_chart?vs_currency=usd&days={days}"
+    
     try:
         res = requests.get(url, timeout=15)
-        return res.json()
-    except Exception:
+        data = res.json()
+        
+        # 3. PENGAMAN: Kalau API CoinGecko ngirim error (gak nemu coinnya), kirim array kosong biar React GAK CRASH!
+        if "prices" not in data:
+            return {"prices": []}
+            
+        return data
+    except Exception as e:
+        print(f"Error fetching chart for {simbol}: {e}")
         return {"prices": []}
 
 @app.get("/api/bot-status")
