@@ -652,14 +652,19 @@ export function NetWorthDetailPage({
     // FIX: box-sizing + overflow-x:hidden + padding kecil agar tidak offside di mobile
     <div style={{ padding: '0 0 32px 0', maxWidth: 1200, margin: '0 auto', color: '#e5e5e5', boxSizing: 'border-box', width: '100%', overflowX: 'hidden' }}>
       
-      {/* Header */}
+      {/* Header Detail Analytics */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-        <button onClick={onBack} style={{ backgroundColor: '#1a1a1a', border: '1px solid #262626', color: '#a3a3a3', borderRadius: 10, padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        <button 
+          onClick={onBack} 
+          style={{ backgroundColor: '#1a1a1a', border: '1px solid #262626', color: '#a3a3a3', borderRadius: 10, padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0, transition: '0.2s' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#262626'} 
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1a1a1a'}
+        >
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff' }}>Net Worth Analytics</h1>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#a3a3a3' }}>Analisis mendalam portofolio Anda</p>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Portfolio Analytics</h1>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#737373', fontWeight: 500 }}>Performa & metrik detail aset lu</p>
         </div>
       </div>
 

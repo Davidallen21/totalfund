@@ -41,8 +41,8 @@ const PERIODS = [
 ];
 
 const NAV_ITEMS = [
-  { key: 'portfolio', label: 'Portfolio Live', icon: '◈' },
-  { key: 'ai',        label: 'AI Consultant',  icon: '✦' },
+  { key: 'portfolio', label: 'My Portfolio', icon: '◈' },
+  { key: 'ai',        label: 'AI Consultant', icon: '✦' },
 ];
 
 const SUGGESTIONS = [
@@ -52,16 +52,62 @@ const SUGGESTIONS = [
   'Rekomendasi rebalancing portfolio saya',
 ];
 
-function Sidebar({ activePage, setActivePage, onClose, isOpen }) {
+function Sidebar({ activePage, setActivePage, onClose, isOpen, username, setUsername, profilePic, setProfilePic }) {
+  const fileInputRef = useRef(null);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePic(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className={`app-sidebar${isOpen ? ' sidebar-open' : ''}`}>
-      <div className="sidebar-logo-area">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="sidebar-logo-icon">T</div>
-          <span className="sidebar-logo-text">TOTAL<span>FUND</span></span>
+      {/* SEKSI PROFIL PENGGUNA BARU */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 20px', borderBottom: '1px solid #1f1f1f' }}>
+        <div 
+          onClick={handleImageClick}
+          style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#262626', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', border: '2px solid #333', flexShrink: 0, position: 'relative' }}
+          title="Klik untuk ubah foto profil"
+        >
+          {profilePic ? (
+            <img src={profilePic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ color: '#737373', fontSize: '16px', fontWeight: 'bold' }}>{username ? username[0].toUpperCase() : 'U'}</span>
+          )}
         </div>
-        {onClose && <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px' }}>✕</button>}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          onChange={handleImageChange} 
+          accept="image/*" 
+          style={{ display: 'none' }} 
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <input 
+            type="text"
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Set Username"
+            style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '14px', fontWeight: 600, outline: 'none', width: '100%', padding: 0 }}
+            title="Klik untuk mengedit nama"
+          />
+          <div style={{ color: '#555', fontSize: '11px', marginTop: '2px', fontWeight: 500 }}>Investor Account</div>
+        </div>
+        {onClose && (
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px' }}>✕</button>
+        )}
       </div>
+
       <nav className="sidebar-nav">
         {NAV_ITEMS.map(({ key, label, icon }) => (
           <div key={key} className={`nav-item${activePage === key ? ' active' : ''}`} onClick={() => { setActivePage(key); onClose?.(); }}>
@@ -245,7 +291,6 @@ function ConfirmDeleteModal({ asset, onConfirm, onCancel }) {
   );
 }
 
-// ─── Search result dropdown item ───
 function SearchResultItem({ item, onSelect }) {
   const typeColor = {
     crypto:    '#f59e0b',
@@ -293,9 +338,9 @@ function AddAssetModal({ onSave, onClose }) {
   const [form, setForm]           = useState({ nama: '', ticker: '', simbol: '', type: 'crypto', avg: '', jumlah: '', thumb: '' });
   const [loadingHarga, setLoading] = useState(false);
   const [infoHarga, setInfo]       = useState('');
-  const [isTypeLocked, setIsTypeLocked] = useState(false); // Kunci! Cuma aktif kalo diklik.
+  const [isTypeLocked, setIsTypeLocked] = useState(false);
+  const [fetchedLivePrice, setFetchedLivePrice] = useState(null);
 
-  // Search state
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching]       = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -305,7 +350,6 @@ function AddAssetModal({ onSave, onClose }) {
   const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
   const isCashIDR = form.type === 'cash_idr';
 
-  // ── Auto search saat user ngetik di field ticker ──
   const handleTickerInput = (val) => {
     const upper = val.toUpperCase();
     set('ticker', upper);
@@ -317,7 +361,6 @@ function AddAssetModal({ onSave, onClose }) {
     searchTimeout.current = setTimeout(async () => {
       setSearching(true);
       try {
-        // CUMA ngirim filter tipe KALAU udah dilock sama user
         const typeQuery = isTypeLocked ? `&type=${form.type}` : '';
         const res  = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(upper)}${typeQuery}`);
         const data = await res.json();
@@ -330,7 +373,6 @@ function AddAssetModal({ onSave, onClose }) {
     }, 350); 
   };
 
-  // ── User klik salah satu hasil search → auto-fill form & fetch harga ──
   const handleSelectResult = async (item) => {
     setShowDropdown(false);
     setSearchResults([]);
@@ -364,6 +406,7 @@ function AddAssetModal({ onSave, onClose }) {
         const harga    = data.price ?? 0;
         const currency = data.currency || 'USD';
         set('avg', harga);
+        setFetchedLivePrice(harga);
         if (data.coingecko_id) set('simbol', data.coingecko_id);
         if (data.name && !form.nama) set('nama', data.name);
         if (data.thumb) set('thumb', data.thumb);
@@ -375,7 +418,6 @@ function AddAssetModal({ onSave, onClose }) {
     setLoading(false);
   };
 
-  // ── Tombol 🔎 manual fetch ──
   const cekHargaLive = async () => {
     if (!form.ticker) return setInfo('⚠️ Tulis Ticker dulu! (Cth: BTC / BBCA)');
     setLoading(true);
@@ -400,6 +442,7 @@ function AddAssetModal({ onSave, onClose }) {
         const harga    = data.price ?? 0;
         const currency = data.currency || 'USD';
         set('avg', harga);
+        setFetchedLivePrice(harga);
         if (data.coingecko_id) set('simbol', data.coingecko_id);
         if (data.name)         set('nama',   data.name);
         if (data.thumb)        set('thumb',  data.thumb);
@@ -417,7 +460,6 @@ function AddAssetModal({ onSave, onClose }) {
     setLoading(false);
   };
 
-  // Close dropdown kalau klik di luar
   useEffect(() => {
     const handleClick = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -439,7 +481,7 @@ function AddAssetModal({ onSave, onClose }) {
       avg:    isCashIDR ? 1 : parseFloat(form.avg),
       jumlah: parseFloat(form.jumlah),
       thumb:  form.thumb || null,
-    });
+    }, fetchedLivePrice);
   };
 
   const typeMap = [
@@ -688,6 +730,10 @@ function App() {
   const [cryptoLoaded, setCryptoLoaded]   = useState(false);
   const [marketLoaded, setMarketLoaded]   = useState(false);
 
+  // STATE BARU UNTUK PROFIL PENGGUNA
+  const [username, setUsername]           = useLocalStorage('totalfund_username', 'User123');
+  const [profilePic, setProfilePic]       = useLocalStorage('totalfund_profile_pic', '');
+
   const [marketData, setMarketData] = useState({
     BTC:    { price: 0, change: 0, isUp: true,  type: 'usd' },
     ETH:    { price: 0, change: 0, isUp: true,  type: 'usd' },
@@ -720,15 +766,18 @@ function App() {
       const data = await res.json();
 
       if (cryptoAssets.length > 0) {
-        const newHargaMap = {};
-        data.forEach(d => {
-          const ticker = d.symbol.replace('USDT', '').toUpperCase();
-          const asset  = cryptoAssets.find(a => a.ticker.toUpperCase() === ticker);
-          if (asset?.simbol) {
-            newHargaMap[asset.simbol] = { usd: parseFloat(d.lastPrice), change: parseFloat(d.priceChangePercent) };
-          }
+        setHargaMap(prev => {
+          const newMap = { ...prev };
+          data.forEach(d => {
+            const ticker = d.symbol.replace('USDT', '').toUpperCase();
+            const asset  = cryptoAssets.find(a => a.ticker.toUpperCase() === ticker);
+            if (asset) {
+              const key = asset.simbol || asset.ticker;
+              newMap[key] = { usd: parseFloat(d.lastPrice), change: parseFloat(d.priceChangePercent) };
+            }
+          });
+          return newMap;
         });
-        setHargaMap(newHargaMap);
       }
 
       const btcRaw = data.find(d => d.symbol === 'BTCUSDT');
@@ -746,9 +795,17 @@ function App() {
     }
   }, [cryptoAssets]);
 
+  const nonCryptoSymbols = useMemo(() => {
+    return assets
+      .filter(a => ['saham', 'saham_us', 'komoditas'].includes(a.type))
+      .map(a => a.simbol || a.ticker)
+      .filter(Boolean);
+  }, [assets]);
+
   const fetchMarketData = useCallback(async () => {
     try {
-      const res  = await fetchWithRetry(`${API_BASE}/api/market-data`);
+      const symQuery = nonCryptoSymbols.length > 0 ? `?symbols=${encodeURIComponent(nonCryptoSymbols.join(','))}` : '';
+      const res  = await fetchWithRetry(`${API_BASE}/api/market-data${symQuery}`);
       const data = await res.json();
 
       const stockUpdates = {};
@@ -788,7 +845,7 @@ function App() {
       const data = await res.json();
       if (data?.rates?.IDR) setKursIdr(data.rates.IDR);
     } catch (err) {}
-  }, []);
+  }, [nonCryptoSymbols]);
 
   useEffect(() => {
     fetchCryptoPrices();
@@ -803,9 +860,10 @@ function App() {
   }, [fetchMarketData]);
 
   const getLivePrice = useCallback((asset) => {
-    if (asset.type === 'crypto')    return hargaMap[asset.simbol]?.usd || asset.avg;
-    if (asset.type === 'saham')     return hargaSaham[asset.ticker] || asset.avg;
-    if (asset.type === 'saham_us' || asset.type === 'komoditas') return hargaSaham[asset.simbol || asset.ticker] || asset.avg;
+    const key = asset.simbol || asset.ticker;
+    if (asset.type === 'crypto')    return hargaMap[key]?.usd || hargaMap[asset.ticker]?.usd || asset.avg;
+    if (asset.type === 'saham')     return hargaSaham[key] || hargaSaham[asset.ticker] || asset.avg;
+    if (asset.type === 'saham_us' || asset.type === 'komoditas') return hargaSaham[key] || hargaSaham[asset.ticker] || asset.avg;
     return asset.avg;
   }, [hargaMap, hargaSaham]);
 
@@ -841,17 +899,21 @@ function App() {
     assets.forEach(a => {
       let valUSD = 0, change24h = 0;
       if (a.type === 'crypto') {
-        valUSD    = (hargaMap[a.simbol]?.usd || a.avg) * a.jumlah;
-        change24h = hargaMap[a.simbol]?.change || 0;
+        const key = a.simbol || a.ticker;
+        valUSD    = (hargaMap[key]?.usd || a.avg) * a.jumlah;
+        change24h = hargaMap[key]?.change || 0;
       } else if (a.type === 'komoditas') {
-        const price = hargaSaham[a.simbol || a.ticker] || a.avg;
+        const key = a.simbol || a.ticker;
+        const price = hargaSaham[key] || a.avg;
         valUSD    = price * a.jumlah;
         change24h = a.simbol === 'GC=F' ? (marketData.GOLD?.change || 0) : a.simbol === 'SI=F' ? (marketData.XAG?.change || 0) : 0;
       } else if (a.type === 'saham_us') {
-        valUSD    = (hargaSaham[a.simbol || a.ticker] || a.avg) * a.jumlah;
+        const key = a.simbol || a.ticker;
+        valUSD    = (hargaSaham[key] || a.avg) * a.jumlah;
         change24h = marketData.SPX500?.change || 0;
       } else if (a.type === 'saham') {
-        valUSD    = ((hargaSaham[a.ticker] || a.avg) * a.jumlah) / kursIdr;
+        const key = a.simbol || a.ticker;
+        valUSD    = ((hargaSaham[key] || a.avg) * a.jumlah) / kursIdr;
         change24h = marketData.IHSG?.change || 0;
       } else {
         valUSD = a.type === 'cash_idr' ? a.jumlah / kursIdr : a.avg * a.jumlah;
@@ -959,7 +1021,20 @@ function App() {
     return { ticker: a.ticker, val: valUSD, pct: grandTotalUSD > 0 ? (valUSD / grandTotalUSD) * 100 : 0, color: COLORS[i % COLORS.length] };
   }).filter(d => d.val > 0).sort((a, b) => b.val - a.val), [assets, getLivePrice, kursIdr, grandTotalUSD]);
 
-  const handleAddAsset    = useCallback((newAsset) => { setAssets(prev => [...prev, { ...newAsset, id: Date.now() }]); setShowAddModal(false); }, [setAssets]);
+  const handleAddAsset = useCallback((newAsset, livePrice) => {
+    setAssets(prev => [...prev, { ...newAsset, id: Date.now() }]);
+    setShowAddModal(false);
+    
+    if (livePrice) {
+      const key = newAsset.simbol || newAsset.ticker;
+      if (newAsset.type === 'crypto') {
+        setHargaMap(prev => ({ ...prev, [key]: { usd: livePrice, change: 0 } }));
+      } else if (['saham', 'saham_us', 'komoditas'].includes(newAsset.type)) {
+        setHargaSaham(prev => ({ ...prev, [key]: livePrice }));
+      }
+    }
+  }, [setAssets]);
+
   const handleDeleteAsset = useCallback((id) => { setAssets(prev => prev.filter(a => a.id !== id)); }, [setAssets]);
   const openEdit          = useCallback((asset) => { setEditingAsset(asset); setEditForm({ harga: '', jumlah: '' }); }, []);
 
@@ -1003,13 +1078,52 @@ function App() {
   return (
     <div className="app-wrapper">
       <div className={`sidebar-overlay${sidebarOpen ? ' sidebar-open' : ''}`} onClick={() => setSidebarOpen(false)} />
-      <Sidebar activePage={activePage} setActivePage={setActivePage} onClose={() => setSidebarOpen(false)} isOpen={sidebarOpen} />
+      
+      {/* SIDEBAR DENGAN PROFIL PENGGUNA */}
+      <Sidebar 
+        activePage={activePage} 
+        setActivePage={setActivePage} 
+        onClose={() => setSidebarOpen(false)} 
+        isOpen={sidebarOpen}
+        username={username}
+        setUsername={setUsername}
+        profilePic={profilePic}
+        setProfilePic={setProfilePic}
+      />
 
       <div className="app-main">
         <div className="max-container">
-          <div className="page-header">
-            <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
-            <h1 className="page-title">{activePage === 'portfolio' ? 'Overview' : activePage === 'networth-detail' ? 'Net Worth Analytics' : 'AI Consultant'}</h1>
+          
+          {/* PAGE HEADER DENGAN IDENTITAS WEBSITE GLOBAL */}
+          <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
+              
+              {/* LOGO TOTALFUND (Selalu Muncul di Semua Halaman) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 120 120" 
+                  style={{ width: '28px', height: '28px', flexShrink: 0 }}
+                >
+                  <rect width="120" height="120" rx="28" fill="#0A0A0A" />
+                  <rect width="120" height="120" rx="28" fill="none" stroke="#262626" strokeWidth="3" />
+                  <path d="M 20 35 H 55 V 47 H 43.5 V 80 H 31.5 V 47 H 20 V 35 Z" fill="#F5F5F5" />
+                  <circle cx="62" cy="74" r="6" fill="#F5F5F5" />
+                  <path d="M 72 35 H 100 V 47 H 84 V 53 H 96 V 63 H 84 V 80 H 72 V 35 Z" fill="#F5F5F5" />
+                </svg>
+                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: '18px', letterSpacing: '-0.4px', display: 'flex', alignItems: 'center' }}>
+                  TOTAL<span style={{ color: '#16a34a' }}>FUND</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Nama Halaman Aktif di Kanan Atas (Agar user tau lagi buka apa) */}
+            {activePage !== 'portfolio' && (
+              <div style={{ color: '#737373', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                {activePage === 'networth-detail' ? 'Analytics' : 'AI Chat'}
+              </div>
+            )}
           </div>
 
           {activePage === 'portfolio' && (
@@ -1203,7 +1317,7 @@ function App() {
             {editingAsset.type !== 'cash_idr' && (
               <>
                 <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500 }}>Harga Beli Baru ({editingAsset.type === 'saham' ? 'IDR' : 'USD'})</label>
-                <input type="number" placeholder="Contoh: 65000" value={editForm.harga} onChange={e => setEditForm(p => ({ ...p, harga: e.target.value }))} style={styles.modalInput} />
+                <input type="number" placeholder="Contoh: 65000" value={editForm.harga} onChange={e => setEditForm(p => ({ ...p, length: e.target.value }))} style={styles.modalInput} />
               </>
             )}
             <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500, marginTop: '16px', display: 'block' }}>
