@@ -126,8 +126,12 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
     <>
       <div className="asset-row-desktop" style={{ alignItems: 'center', padding: '12px 28px', borderBottom: isLast ? 'none' : '1px solid #1f1f1f', gap: '16px', transition: 'background 0.2s' }}>
         <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0 }}>
-            {asset.ticker.substring(0, 4)}
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
+            {asset.thumb ? (
+              <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              asset.ticker.substring(0, 4)
+            )}
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ color: '#ffffff', fontWeight: 600, fontSize: '14px', letterSpacing: '-0.2px' }}>{asset.ticker}</div>
@@ -179,7 +183,13 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
       <div className="asset-row-mobile" style={{ borderBottom: '1px solid #1f1f1f', padding: '12px 16px' }}>
         <div className="asset-row-mobile-top">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0 }}>{asset.ticker.substring(0, 4)}</div>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
+              {asset.thumb ? (
+                <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                asset.ticker.substring(0, 4)
+              )}
+            </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{asset.ticker}</div>
               <div style={{ color: '#737373', fontSize: '11px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.nama}</div>
@@ -235,48 +245,171 @@ function ConfirmDeleteModal({ asset, onConfirm, onCancel }) {
   );
 }
 
+// ─── Search result dropdown item ───
+function SearchResultItem({ item, onSelect }) {
+  const typeColor = {
+    crypto:    '#f59e0b',
+    stock_idx: '#3b82f6',
+    stock_us:  '#ec4899',
+    stock:     '#a3a3a3',
+    index:     '#10b981',
+  }[item.type] || '#737373';
+
+  const typeLabel = {
+    crypto:    'Crypto',
+    stock_idx: 'IDX',
+    stock_us:  'US',
+    stock:     item.exchange || 'Stock',
+    index:     'Index',
+  }[item.type] || item.type;
+
+  return (
+    <div
+      onClick={() => onSelect(item)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: '10px',
+        padding: '10px 14px', cursor: 'pointer',
+        borderBottom: '1px solid #1a1a1a',
+        transition: 'background 0.15s',
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    >
+      {item.thumb
+        ? <img src={item.thumb} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
+        : <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: typeColor + '33', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: typeColor, fontWeight: 800 }}>{item.symbol?.substring(0, 2)}</div>
+      }
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ color: '#fff', fontWeight: 700, fontSize: '13px' }}>{item.symbol}</div>
+        <div style={{ color: '#555', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+      </div>
+      <span style={{ fontSize: '10px', fontWeight: 700, color: typeColor, backgroundColor: typeColor + '22', padding: '2px 7px', borderRadius: '4px', flexShrink: 0 }}>{typeLabel}</span>
+      {item.market_cap_rank && <span style={{ fontSize: '10px', color: '#555' }}>#{item.market_cap_rank}</span>}
+    </div>
+  );
+}
+
 function AddAssetModal({ onSave, onClose }) {
-  const [form, setForm]           = useState({ nama: '', ticker: '', simbol: '', type: 'crypto', avg: '', jumlah: '' });
+  const [form, setForm]           = useState({ nama: '', ticker: '', simbol: '', type: 'crypto', avg: '', jumlah: '', thumb: '' });
   const [loadingHarga, setLoading] = useState(false);
   const [infoHarga, setInfo]       = useState('');
+  const [isTypeLocked, setIsTypeLocked] = useState(false); // Kunci! Cuma aktif kalo diklik.
 
-  const set       = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+  // Search state
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching]       = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchTimeout                   = useRef(null);
+  const dropdownRef                     = useRef(null);
+
+  const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
   const isCashIDR = form.type === 'cash_idr';
 
+  // ── Auto search saat user ngetik di field ticker ──
+  const handleTickerInput = (val) => {
+    const upper = val.toUpperCase();
+    set('ticker', upper);
+    setInfo('');
+
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (upper.length < 1) { setSearchResults([]); setShowDropdown(false); return; }
+
+    searchTimeout.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        // CUMA ngirim filter tipe KALAU udah dilock sama user
+        const typeQuery = isTypeLocked ? `&type=${form.type}` : '';
+        const res  = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(upper)}${typeQuery}`);
+        const data = await res.json();
+        setSearchResults(data.results || []);
+        setShowDropdown(true);
+      } catch (e) {
+        setSearchResults([]);
+      }
+      setSearching(false);
+    }, 350); 
+  };
+
+  // ── User klik salah satu hasil search → auto-fill form & fetch harga ──
+  const handleSelectResult = async (item) => {
+    setShowDropdown(false);
+    setSearchResults([]);
+
+    const typeMap = {
+      crypto:    'crypto',
+      stock_idx: 'saham',
+      stock_us:  'saham_us',
+      stock:     'saham_us',
+      index:     'saham_us',
+    };
+    
+    const detectedType = isTypeLocked ? form.type : (typeMap[item.type] || form.type);
+    const simbol = item.type === 'crypto' ? item.id : item.id;
+
+    set('ticker', item.symbol);
+    set('nama',   item.name || item.symbol);
+    set('type',   detectedType);
+    set('simbol', simbol);
+    set('thumb',  item.thumb || '');
+
+    setLoading(true);
+    setInfo('⏳ Mengambil harga live...');
+    try {
+      const res  = await fetchWithRetry(`${API_BASE}/api/price/${encodeURIComponent(item.symbol)}?type=${detectedType}`);
+      const data = await res.json();
+
+      if (data.error) {
+        setInfo(`⚠️ ${data.error}`);
+      } else {
+        const harga    = data.price ?? 0;
+        const currency = data.currency || 'USD';
+        set('avg', harga);
+        if (data.coingecko_id) set('simbol', data.coingecko_id);
+        if (data.name && !form.nama) set('nama', data.name);
+        if (data.thumb) set('thumb', data.thumb);
+        setInfo(`✅ Live: ${currency === 'IDR' ? formatIDR(harga) : '$' + harga.toLocaleString(undefined, { maximumFractionDigits: 6 })} (${data.change >= 0 ? '+' : ''}${data.change?.toFixed(2)}% 24h)`);
+      }
+    } catch (e) {
+      setInfo(`❌ Gagal fetch harga: ${e.message}`);
+    }
+    setLoading(false);
+  };
+
+  // ── Tombol 🔎 manual fetch ──
   const cekHargaLive = async () => {
     if (!form.ticker) return setInfo('⚠️ Tulis Ticker dulu! (Cth: BTC / BBCA)');
-    setLoading(true); setInfo('⏳ Mengambil data API...');
+    setLoading(true);
+    setInfo('⏳ Mencari di market...');
+    setShowDropdown(false);
     try {
-      if (form.type === 'crypto') {
-        const symbol = form.ticker.toUpperCase();
-        try {
-          const res  = await fetchWithRetry(`${API_BASE}/api/crypto-prices?symbols=${symbol}USDT`);
-          const data = await res.json();
-          const item = Array.isArray(data) ? data[0] : null;
-          if (!item?.lastPrice) throw new Error('Data tidak valid');
-          set('avg', parseFloat(item.lastPrice));
-          set('simbol', symbol.toLowerCase());
-          setInfo(`✅ Live Binance: $${parseFloat(item.lastPrice).toLocaleString()}`);
-        } catch {
-          if (!form.nama) { setInfo('⚠️ Isi Nama Aset untuk pencarian cadangan'); setLoading(false); return; }
-          const coinId = form.nama.toLowerCase().replace(/\s/g, '-');
-          const res  = await fetchWithRetry(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`);
-          const data = await res.json();
-          if (!data[coinId]?.usd) throw new Error('Koin tidak ditemukan');
-          set('avg', data[coinId].usd);
-          set('simbol', coinId);
-          setInfo(`✅ Live CoinGecko: $${data[coinId].usd.toLocaleString()}`);
+      const typeQuery = isTypeLocked ? `?type=${form.type}` : '';
+      const res  = await fetchWithRetry(`${API_BASE}/api/price/${encodeURIComponent(form.ticker)}${typeQuery}`);
+      const data = await res.json();
+
+      if (data.error) {
+        const sRes  = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(form.ticker)}${typeQuery.replace('?', '&')}`);
+        const sData = await sRes.json();
+        if (sData.results?.length > 0) {
+          setSearchResults(sData.results);
+          setShowDropdown(true);
+          setInfo(`⚠️ Ticker tidak ditemukan langsung. Pilih dari hasil di bawah.`);
+        } else {
+          setInfo(`❌ "${form.ticker}" tidak ditemukan.`);
         }
-      } else if (form.type === 'saham' || form.type === 'saham_us') {
-        const ticker = form.ticker.toUpperCase();
-        const res  = await fetchWithRetry(`${API_BASE}/api/market-data`);
-        const data = await res.json();
-        if (!data[ticker]?.price) { setInfo(`❌ Ticker ${ticker} tidak ada di database API.`); setLoading(false); return; }
-        set('avg', parseFloat(data[ticker].price));
-        set('simbol', ticker);
-        setInfo(`✅ Live Saham (${ticker}): ${form.type === 'saham' ? 'Rp' : '$'}${parseFloat(data[ticker].price).toLocaleString()}`);
       } else {
-        setInfo('⚠️ Auto-fetch saat ini hanya untuk Kripto & Saham.');
+        const harga    = data.price ?? 0;
+        const currency = data.currency || 'USD';
+        set('avg', harga);
+        if (data.coingecko_id) set('simbol', data.coingecko_id);
+        if (data.name)         set('nama',   data.name);
+        if (data.thumb)        set('thumb',  data.thumb);
+        
+        if (!isTypeLocked) {
+          if (data.type === 'crypto')    set('type', 'crypto');
+          if (data.type === 'stock_idx') set('type', 'saham');
+          if (data.type === 'stock_us' || data.type === 'stock') set('type', 'saham_us');
+        }
+        setInfo(`✅ ${data.name || form.ticker}: ${currency === 'IDR' ? formatIDR(harga) : '$' + harga.toLocaleString(undefined, { maximumFractionDigits: 6 })} (${data.change >= 0 ? '+' : ''}${data.change?.toFixed(2)}% 24h)`);
       }
     } catch (e) {
       setInfo(`❌ Error: ${e.message}`);
@@ -284,10 +417,29 @@ function AddAssetModal({ onSave, onClose }) {
     setLoading(false);
   };
 
+  // Close dropdown kalau klik di luar
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   const handleSubmit = () => {
     if (!form.nama || !form.ticker || !form.jumlah) return;
     if (!isCashIDR && !form.avg) return;
-    onSave({ nama: form.nama, ticker: form.ticker.toUpperCase(), simbol: form.simbol?.trim() || null, type: form.type, avg: isCashIDR ? 1 : parseFloat(form.avg), jumlah: parseFloat(form.jumlah) });
+    onSave({
+      nama:   form.nama,
+      ticker: form.ticker.toUpperCase(),
+      simbol: form.simbol?.trim() || null,
+      type:   form.type,
+      avg:    isCashIDR ? 1 : parseFloat(form.avg),
+      jumlah: parseFloat(form.jumlah),
+      thumb:  form.thumb || null,
+    });
   };
 
   const typeMap = [
@@ -304,41 +456,105 @@ function AddAssetModal({ onSave, onClose }) {
         <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid #1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h2 style={{ color: '#fff', fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>Tambah Aset Baru</h2>
-            <p style={{ color: '#606060', fontSize: '13px', margin: '4px 0 0' }}>Lengkapi informasi aset portfolio kamu</p>
+            <p style={{ color: '#606060', fontSize: '13px', margin: '4px 0 0' }}>Ketik ticker apapun — crypto, IDX, US, semua otomatis terdeteksi</p>
           </div>
           <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', color: '#606060', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
+
         <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label style={labelStyle}>Tipe Aset</label>
+            <label style={labelStyle}>Tipe Aset <span style={{ color: '#383838', fontWeight: 400, textTransform: 'none' }}>(Klik untuk mengunci filter pencarian)</span></label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px' }}>
               {typeMap.map(([val, lbl, col]) => (
-                <button key={val} onClick={() => set('type', val)} style={{ padding: '10px 6px', borderRadius: '10px', border: '1px solid', borderColor: form.type === val ? col : '#222', backgroundColor: form.type === val ? `${col}15` : '#0d0d0d', color: form.type === val ? col : '#484848', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>{lbl}</button>
+                <button key={val} onClick={() => { set('type', val); setIsTypeLocked(true); }} style={{ padding: '10px 6px', borderRadius: '10px', border: '1px solid', borderColor: form.type === val ? col : '#222', backgroundColor: form.type === val ? `${col}15` : '#0d0d0d', color: form.type === val ? col : '#484848', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>
+                  {lbl} {isTypeLocked && form.type === val ? '🔒' : ''}
+                </button>
               ))}
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '14px' }}>
-            <div><label style={labelStyle}>Nama Aset</label><input value={form.nama} onChange={e => set('nama', e.target.value)} placeholder="Contoh: Bitcoin / BCA" style={inputStyle} /></div>
-            <div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '14px' }}>
+            <div style={{ position: 'relative' }} ref={dropdownRef}>
               <label style={labelStyle}>Ticker</label>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <input value={form.ticker} onChange={e => set('ticker', e.target.value.toUpperCase())} placeholder="BTC / BBCA" style={{ ...inputStyle, textTransform: 'uppercase' }} />
-                <button onClick={cekHargaLive} disabled={loadingHarga} style={{ backgroundColor: '#2a2a2a', border: 'none', borderRadius: '10px', padding: '0 12px', color: '#4ade80', cursor: 'pointer', fontWeight: 'bold', flexShrink: 0 }}>🔎</button>
+                <input
+                  value={form.ticker}
+                  onChange={e => handleTickerInput(e.target.value)}
+                  onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                  placeholder="PUMP / BBCA"
+                  style={{ ...inputStyle, textTransform: 'uppercase', flex: 1 }}
+                  autoComplete="off"
+                />
+                <button
+                  onClick={cekHargaLive}
+                  disabled={loadingHarga}
+                  title="Cari harga manual"
+                  style={{ backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '0 12px', color: loadingHarga ? '#383838' : '#4ade80', cursor: loadingHarga ? 'default' : 'pointer', fontWeight: 'bold', flexShrink: 0, fontSize: '14px' }}
+                >
+                  {loadingHarga ? '⏳' : '🔎'}
+                </button>
               </div>
+
+              {showDropdown && searchResults.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0,
+                  backgroundColor: '#141414', border: '1px solid #2a2a2a',
+                  borderRadius: '12px', marginTop: '4px', zIndex: 999,
+                  maxHeight: '260px', overflowY: 'auto',
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
+                }}>
+                  {searching && (
+                    <div style={{ padding: '10px 14px', color: '#555', fontSize: '12px' }}>Mencari...</div>
+                  )}
+                  {searchResults.map((item, i) => (
+                    <SearchResultItem key={`${item.type}:${item.symbol}:${i}`} item={item} onSelect={handleSelectResult} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label style={labelStyle}>Nama Aset</label>
+              <input
+                value={form.nama}
+                onChange={e => set('nama', e.target.value)}
+                placeholder="Otomatis terisi"
+                style={inputStyle}
+              />
             </div>
           </div>
-          {infoHarga && <div style={{ color: infoHarga.startsWith('✅') ? '#4ade80' : '#f87171', fontSize: '12px', fontWeight: 'bold', padding: '8px 12px', backgroundColor: infoHarga.startsWith('✅') ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', borderRadius: '6px', marginTop: '-10px' }}>{infoHarga}</div>}
+
+          {infoHarga && (
+            <div style={{
+              color: infoHarga.startsWith('✅') ? '#4ade80' : '#f87171',
+              fontSize: '12px', fontWeight: 'bold',
+              padding: '8px 12px',
+              backgroundColor: infoHarga.startsWith('✅') ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)',
+              borderRadius: '6px', marginTop: '-10px',
+            }}>{infoHarga}</div>
+          )}
+
           {['saham', 'saham_us', 'komoditas'].includes(form.type) && (
             <div>
-              <label style={labelStyle}>Simbol Ekstra (Opsional)</label>
+              <label style={labelStyle}>Simbol Yahoo Finance (Opsional)</label>
               <input value={form.simbol} onChange={e => set('simbol', e.target.value)} placeholder="Misal: BBCA.JK" style={inputStyle} />
             </div>
           )}
+
           <div style={{ display: 'grid', gridTemplateColumns: isCashIDR ? '1fr' : '1fr 1fr', gap: '14px' }}>
-            {!isCashIDR && <div><label style={labelStyle}>Harga Beli AVG ({form.type === 'saham' ? 'IDR' : 'USD'})</label><input type="number" value={form.avg} onChange={e => set('avg', e.target.value)} placeholder="0" style={inputStyle} /></div>}
-            <div><label style={labelStyle}>Jumlah ({form.type === 'saham' ? 'Lembar' : form.type === 'cash_idr' ? 'Rupiah' : 'Unit'})</label><input type="number" value={form.jumlah} onChange={e => set('jumlah', e.target.value)} placeholder={isCashIDR ? '10000000' : '0'} style={inputStyle} /></div>
+            {!isCashIDR && (
+              <div>
+                <label style={labelStyle}>Harga Beli AVG ({form.type === 'saham' ? 'IDR' : 'USD'})</label>
+                <input type="number" value={form.avg} onChange={e => set('avg', e.target.value)} placeholder="Auto-filled" style={inputStyle} />
+              </div>
+            )}
+            <div>
+              <label style={labelStyle}>Jumlah ({form.type === 'saham' ? 'Lembar' : form.type === 'cash_idr' ? 'Rupiah' : 'Unit'})</label>
+              <input type="number" value={form.jumlah} onChange={e => set('jumlah', e.target.value)} placeholder={isCashIDR ? '10000000' : '0'} style={inputStyle} />
+            </div>
           </div>
         </div>
+
         <div style={{ padding: '0 28px 28px', display: 'flex', gap: '10px' }}>
           <button onClick={onClose} style={{ flex: 1, backgroundColor: '#1a1a1a', color: '#737373', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
           <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>+ Tambah Aset</button>
@@ -520,22 +736,8 @@ function App() {
 
       setMarketData(prev => ({
         ...prev,
-        ...(btcRaw ? {
-          BTC: {
-            price:  parseFloat(btcRaw.lastPrice),
-            change: parseFloat(btcRaw.priceChangePercent),
-            isUp:   parseFloat(btcRaw.priceChangePercent) >= 0,
-            type:   'usd',
-          }
-        } : {}),
-        ...(ethRaw ? {
-          ETH: {
-            price:  parseFloat(ethRaw.lastPrice),
-            change: parseFloat(ethRaw.priceChangePercent),
-            isUp:   parseFloat(ethRaw.priceChangePercent) >= 0,
-            type:   'usd',
-          }
-        } : {}),
+        ...(btcRaw ? { BTC: { price: parseFloat(btcRaw.lastPrice), change: parseFloat(btcRaw.priceChangePercent), isUp: parseFloat(btcRaw.priceChangePercent) >= 0, type: 'usd' } } : {}),
+        ...(ethRaw ? { ETH: { price: parseFloat(ethRaw.lastPrice), change: parseFloat(ethRaw.priceChangePercent), isUp: parseFloat(ethRaw.priceChangePercent) >= 0, type: 'usd' } } : {}),
       }));
 
       setCryptoLoaded(true);
@@ -668,14 +870,12 @@ function App() {
   const baselineRef = useRef(baselineNonCrypto);
   baselineRef.current = baselineNonCrypto;
 
-  // ── FIX: LOGIKA FETCH CHART TAHAN BANTING (CORS BYPASS & FALLBACK) ──
   useEffect(() => {
     setChartData(null); setChartError(false);
-    
     const fetchChart = async () => {
       const cryptos  = assets.filter(a => a.type === 'crypto' && a.simbol);
       const baseline = baselineRef.current || 0;
-      const fetchDays = 1825; // Tarik data 5 Tahun
+      const fetchDays = 1825;
       const now = Date.now();
 
       const createDummyData = (baseVal) => {
@@ -693,9 +893,8 @@ function App() {
       const process = (results) => {
         const validResult = results.find(r => r && r.prices && r.prices.length > 0);
         if (!validResult) return null;
-
         return validResult.prices.map((pt, i) => [
-          pt[0], 
+          pt[0],
           cryptos.reduce((s, a, j) => {
             const price = results[j]?.prices?.[i]?.[1] ?? (hargaMap[a.simbol]?.usd || a.avg || 0);
             return s + (price * a.jumlah);
@@ -703,10 +902,9 @@ function App() {
         ]);
       };
 
-      // 1. Coba lewat backend lokal dulu (jika menyala)
       try {
         const results = await Promise.all(
-          cryptos.map(a => 
+          cryptos.map(a =>
             fetchWithRetry(`${API_BASE}/api/chart?simbol=${a.simbol}&days=${fetchDays}`)
               .then(r => r.json())
               .catch(() => null)
@@ -723,18 +921,14 @@ function App() {
         }
       } catch (e) {}
 
-      // 2. Coba CoinGecko Public API (Menggunakan CORS Proxy Gratis)
       try {
         const results = await Promise.all(
           cryptos.map(a => {
             const targetUrl = `https://api.coingecko.com/api/v3/coins/${a.simbol.toLowerCase()}/market_chart?vs_currency=usd&days=${fetchDays}`;
             const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-            return fetchWithRetry(proxyUrl)
-              .then(r => r.json())
-              .catch(() => null); // Jangan gagalkan semua jika 1 mati/rate-limit
+            return fetchWithRetry(proxyUrl).then(r => r.json()).catch(() => null);
           })
         );
-        
         if (results.some(r => r && r.prices)) {
           const combined = process(results);
           if (combined?.length >= 2) {
@@ -746,16 +940,13 @@ function App() {
         }
       } catch (e) {}
 
-      // 3. Fallback Terakhir (Simulasi Flat Chart supaya tidak blank)
       const fallbackCombined = createDummyData(grandTotalUSD);
       setChartData(fallbackCombined);
       setPnlChart({ selisih: 0, persen: 0 });
-      setChartError(true); 
+      setChartError(true);
     };
-    
     fetchChart();
-  }, [assets, grandTotalUSD, hargaMap]); 
-  // ──────────────────────────────────────────────────────────────────
+  }, [assets, grandTotalUSD, hargaMap]);
 
   const chartColor = pnlChart?.selisih >= 0 ? '#16a34a' : '#ef4444';
 
@@ -891,14 +1082,14 @@ function App() {
                   )}
                 </div>
 
-                <NetWorthTrendCard 
-                  data={chartData} 
-                  color={chartColor} 
-                  isError={chartError} 
-                  period={period} 
-                  setPeriod={setPeriod} 
-                  periodsList={PERIODS} 
-                  onDetailClick={() => setActivePage('networth-detail')} 
+                <NetWorthTrendCard
+                  data={chartData}
+                  color={chartColor}
+                  isError={chartError}
+                  period={period}
+                  setPeriod={setPeriod}
+                  periodsList={PERIODS}
+                  onDetailClick={() => setActivePage('networth-detail')}
                 />
               </div>
 
@@ -998,7 +1189,6 @@ function App() {
               marketData={marketData}
             />
           )}
-
         </div>
       </div>
 

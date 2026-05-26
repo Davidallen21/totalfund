@@ -1,5 +1,5 @@
 // src/networthtrend.js
-// v7 — (Fixed Chart Responsive Container Height & Missing Data)
+// v8 — Mobile responsive fix: no offside scroll, simetris card height, proper wrapping
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
@@ -259,16 +259,15 @@ const useBenchmarkData = (portfolioPoints, activeCompares, returnMode) => {
         });
         clearTimeout(timeout);
 
-        if (!res.ok) throw new Error(`HTTP ${res.status} - Gagal memuat data dari API`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
 
         const aligned = alignRealtimeBenchmark(portfolioPoints, json, key, returnMode);
-        if (!aligned) throw new Error('Format JSON dari backend tidak cocok / Tidak bisa di-align');
+        if (!aligned) throw new Error('Format tidak cocok');
 
         setRtData((prev) => ({ ...prev, [key]: aligned }));
         setRtStatus((prev) => ({ ...prev, [key]: 'realtime' }));
       } catch (err) {
-        console.warn(`⚠️ [Benchmark] API ${key} gagal, menggunakan simulasi. Error:`, err.message);
         const sim = generateBenchmarkSim(portfolioPoints, key, returnMode);
         setRtData((prev) => ({ ...prev, [key]: sim }));
         setRtStatus((prev) => ({ ...prev, [key]: 'sim' }));
@@ -363,7 +362,7 @@ const calcDrawdownSeries = (points) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NET WORTH DRIVERS
+// DAILY MOVERS
 // ─────────────────────────────────────────────────────────────────────────────
 const DailyMovers = ({ assets }) => {
   const TYPE_COLOR = {
@@ -408,7 +407,7 @@ const DailyMovers = ({ assets }) => {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 160, opacity: 0.5 }}>
         <Activity size={28} color="#737373" />
         <p style={{ margin: 0, fontSize: 13, color: '#737373', textAlign: 'center' }}>
-          Data harga live belum tersedia.<br />Pastikan backend aktif.
+          Data harga live belum tersedia.
         </p>
       </div>
     );
@@ -416,7 +415,6 @@ const DailyMovers = ({ assets }) => {
 
   const MoverRow = ({ asset, isGainer }) => {
     const c = isGainer ? '#4ade80' : '#f87171';
-    const bg = isGainer ? '#4ade8010' : '#f8717110';
     const typeColor = TYPE_COLOR[asset.type] || '#737373';
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #1a1a1a' }}>
@@ -429,11 +427,9 @@ const DailyMovers = ({ assets }) => {
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: c }}>{isGainer ? '+' : ''}{asset.dayChangePct.toFixed(2)}%</div>
-          <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>
-            {isGainer ? '+' : ''}{formatCurrency(asset.dayUSD)}
-          </div>
+          <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>{isGainer ? '+' : ''}{formatCurrency(asset.dayUSD)}</div>
         </div>
-        <div style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: isGainer ? '#4ade8010' : '#f8717110', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {isGainer ? <TrendingUp size={11} color={c} /> : <TrendingDown size={11} color={c} />}
         </div>
       </div>
@@ -445,34 +441,26 @@ const DailyMovers = ({ assets }) => {
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#4ade80' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-            Top Gainers
-          </span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Top Gainers</span>
           <span style={{ fontSize: 10, color: '#555', marginLeft: 'auto' }}>1D</span>
         </div>
         {gainers.length > 0 ? (
           gainers.map((a, i) => <MoverRow key={i} asset={a} isGainer={true} />)
         ) : (
-          <div style={{ padding: '20px 0', textAlign: 'center', color: '#444', fontSize: 12 }}>
-            Tidak ada gainer hari ini
-          </div>
+          <div style={{ padding: '20px 0', textAlign: 'center', color: '#444', fontSize: 12 }}>Tidak ada gainer hari ini</div>
         )}
       </div>
       <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', left: -10, top: 0, bottom: 0, width: 1, backgroundColor: '#1e1e1e' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#f87171' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-            Top Losers
-          </span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Top Losers</span>
           <span style={{ fontSize: 10, color: '#555', marginLeft: 'auto' }}>1D</span>
         </div>
         {losers.length > 0 ? (
           losers.map((a, i) => <MoverRow key={i} asset={a} isGainer={false} />)
         ) : (
-          <div style={{ padding: '20px 0', textAlign: 'center', color: '#444', fontSize: 12 }}>
-            Tidak ada loser hari ini
-          </div>
+          <div style={{ padding: '20px 0', textAlign: 'center', color: '#444', fontSize: 12 }}>Tidak ada loser hari ini</div>
         )}
       </div>
     </div>
@@ -481,6 +469,9 @@ const DailyMovers = ({ assets }) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENT 1: WIDGET CARD
+// FIX: Hapus height:'100%' dari outer div. Tinggi dikontrol dari parent (App.js).
+//      Chart height dikurangi ke 120px agar simetris dgn kolom market cards.
+//      Period buttons compact, wrap jika overflow.
 // ─────────────────────────────────────────────────────────────────────────────
 export function NetWorthTrendCard({
   data, color, isError, period, setPeriod, periodsList, onDetailClick,
@@ -493,40 +484,48 @@ export function NetWorthTrendCard({
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 8, padding: '12px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 8, padding: '10px 12px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
         <p style={{ color: '#a3a3a3', fontSize: 11, margin: '0 0 4px' }}>{payload[0].payload?.date || '—'}</p>
-        <p style={{ color: '#fff', fontSize: 16, fontWeight: 700, margin: 0 }}>{formatCurrency(payload[0].value)}</p>
+        <p style={{ color: '#fff', fontSize: 15, fontWeight: 700, margin: 0 }}>{formatCurrency(payload[0].value)}</p>
       </div>
     );
   };
 
   return (
-    <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <span style={{ color: '#a3a3a3', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px' }}>Net Worth Trend</span>
-        <div style={{ display: 'flex', gap: 4, backgroundColor: '#1a1a1a', padding: 4, borderRadius: 8, alignItems: 'center' }}>
+    // FIX: Hapus height:'100%' — biarkan parent mengontrol tinggi via CSS grid/align-items
+    <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column' }}>
+      
+      {/* Header: label + period controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+        <span style={{ color: '#a3a3a3', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px', flexShrink: 0 }}>Net Worth Trend</span>
+        
+        {/* Period buttons — compact, scrollable on narrow mobile */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, backgroundColor: '#1a1a1a', padding: '3px 4px', borderRadius: 8, overflowX: 'auto', flexShrink: 1, minWidth: 0 }}>
           {periodsList.map((p) => (
             <button key={p.label} onClick={() => setPeriod(p)} style={{
               backgroundColor: period.label === p.label ? '#333' : 'transparent',
               color: period.label === p.label ? '#fff' : '#737373',
-              border: 'none', borderRadius: 6, padding: '4px 10px',
-              fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+              border: 'none', borderRadius: 6,
+              // FIX: padding lebih kecil supaya muat di mobile
+              padding: '4px 7px',
+              fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              transition: 'all 0.15s', flexShrink: 0, whiteSpace: 'nowrap',
             }}>
               {p.label}
             </button>
           ))}
-          <div style={{ width: 1, height: 16, backgroundColor: '#333', margin: '0 4px' }} />
-          <button onClick={onDetailClick} style={{ backgroundColor: 'transparent', color: '#a3a3a3', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', borderRadius: 6 }}>
-            <ChevronRight size={16} />
+          <div style={{ width: 1, height: 14, backgroundColor: '#333', margin: '0 2px', flexShrink: 0 }} />
+          <button onClick={onDetailClick} style={{ backgroundColor: 'transparent', color: '#a3a3a3', border: 'none', cursor: 'pointer', padding: '4px 4px', display: 'flex', alignItems: 'center', borderRadius: 6, flexShrink: 0 }}>
+            <ChevronRight size={15} />
           </button>
         </div>
       </div>
       
-      {/* FIX: Set height pasti (160px) agar chart di dashboard luar tidak collapse */}
-      <div style={{ height: 160, width: '100%', marginTop: 'auto' }}>
+      {/* FIX: Chart tinggi 120px — simetris dengan layout market cards */}
+      <div style={{ height: 120, width: '100%' }}>
         {isError && chartPoints.length === 0 ? (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <span style={{ fontSize: 20 }}>📡</span>
+            <span style={{ fontSize: 18 }}>📡</span>
             <span style={{ color: '#4b5563', fontSize: 12 }}>Tidak dapat memuat chart</span>
           </div>
         ) : chartPoints.length < 2 ? (
@@ -545,7 +544,7 @@ export function NetWorthTrendCard({
                 </linearGradient>
               </defs>
               <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#333', strokeWidth: 1, strokeDasharray: '4 4' }} />
-              <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" />
+              <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -556,6 +555,8 @@ export function NetWorthTrendCard({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENT 2: FULL DETAIL PAGE
+// FIX: padding box-sizing + overflow-x:hidden, semua grid pakai auto-fit,
+//      bottom section stack di mobile.
 // ─────────────────────────────────────────────────────────────────────────────
 export function NetWorthDetailPage({
   onBack, chartData, currentNetWorth, overallPnlUSD, overallPnlPersen,
@@ -648,69 +649,71 @@ export function NetWorthDetailPage({
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1200, margin: '0 auto', color: '#e5e5e5' }}>
+    // FIX: box-sizing + overflow-x:hidden + padding kecil agar tidak offside di mobile
+    <div style={{ padding: '0 0 32px 0', maxWidth: 1200, margin: '0 auto', color: '#e5e5e5', boxSizing: 'border-box', width: '100%', overflowX: 'hidden' }}>
+      
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-        <button onClick={onBack} style={{ backgroundColor: '#1a1a1a', border: '1px solid #262626', color: '#a3a3a3', borderRadius: 10, padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+        <button onClick={onBack} style={{ backgroundColor: '#1a1a1a', border: '1px solid #262626', color: '#a3a3a3', borderRadius: 10, padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#fff' }}>Net Worth Analytics</h1>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#a3a3a3' }}>Analisis mendalam portofolio Anda</p>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff' }}>Net Worth Analytics</h1>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#a3a3a3' }}>Analisis mendalam portofolio Anda</p>
         </div>
       </div>
 
-      {/* Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16, marginBottom: 24 }}>
+      {/* Metrics Grid — FIX: auto-fit minmax agar stacked di mobile */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
         {metrics.map((m, i) => (
-          <div key={i} style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20 }}>
+          <div key={i} style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 14, padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <p style={{ margin: 0, fontSize: 12, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{m.label}</p>
-                <h3 style={{ margin: '8px 0 4px', fontSize: 20, fontWeight: 800, color: '#fff' }}>{m.value}</h3>
-                {m.subValue && <span style={{ fontSize: 12, fontWeight: 600, color: m.color, backgroundColor: `${m.color}15`, padding: '2px 8px', borderRadius: 4 }}>{m.subValue}</span>}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <p style={{ margin: 0, fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{m.label}</p>
+                <h3 style={{ margin: '6px 0 4px', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>{m.value}</h3>
+                {m.subValue && <span style={{ fontSize: 11, fontWeight: 600, color: m.color, backgroundColor: `${m.color}15`, padding: '2px 7px', borderRadius: 4 }}>{m.subValue}</span>}
               </div>
-              <div style={{ backgroundColor: `${m.color}15`, padding: 10, borderRadius: 12, color: m.color }}><m.icon size={20} /></div>
+              <div style={{ backgroundColor: `${m.color}15`, padding: 8, borderRadius: 10, color: m.color, flexShrink: 0, marginLeft: 8 }}><m.icon size={18} /></div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Analytics Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 16 }}>
+      {/* Analytics Row — FIX: auto-fit, minmax 150px */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
           <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>Volatilitas</p>
           {volInfo ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{volatility.toFixed(1)}%</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: volInfo.color, backgroundColor: volInfo.bg, padding: '2px 8px', borderRadius: 4 }}>{volInfo.label}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{volatility.toFixed(1)}%</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: volInfo.color, backgroundColor: volInfo.bg, padding: '2px 7px', borderRadius: 4 }}>{volInfo.label}</span>
             </div>
-          ) : <span style={{ fontSize: 14, color: '#555' }}>Data kurang</span>}
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>Annualized, periode aktif</p>
+          ) : <span style={{ fontSize: 13, color: '#555' }}>Data kurang</span>}
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>Annualized</p>
         </div>
 
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 16 }}>
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
           <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>Sharpe Ratio</p>
           {sharpe !== null ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{sharpe.toFixed(2)}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: sharpe >= 1 ? '#16a34a' : sharpe >= 0 ? '#f59e0b' : '#ef4444', backgroundColor: sharpe >= 1 ? '#16a34a18' : sharpe >= 0 ? '#f59e0b18' : '#ef444418', padding: '2px 8px', borderRadius: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{sharpe.toFixed(2)}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: sharpe >= 1 ? '#16a34a' : sharpe >= 0 ? '#f59e0b' : '#ef4444', backgroundColor: sharpe >= 1 ? '#16a34a18' : sharpe >= 0 ? '#f59e0b18' : '#ef444418', padding: '2px 7px', borderRadius: 4 }}>
                 {sharpe >= 1 ? 'Bagus' : sharpe >= 0 ? 'Cukup' : 'Buruk'}
               </span>
             </div>
-          ) : <span style={{ fontSize: 14, color: '#555' }}>Data kurang</span>}
+          ) : <span style={{ fontSize: 13, color: '#555' }}>Data kurang</span>}
           <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>Risk-free 5.5% pa</p>
         </div>
 
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 16 }}>
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
           <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>Max Drawdown</p>
-          <span style={{ fontSize: 18, fontWeight: 800, color: maxDrawdown > 20 ? '#ef4444' : maxDrawdown > 10 ? '#f59e0b' : '#fff' }}>
+          <span style={{ fontSize: 17, fontWeight: 800, color: maxDrawdown > 20 ? '#ef4444' : maxDrawdown > 10 ? '#f59e0b' : '#fff' }}>
             -{maxDrawdown.toFixed(1)}%
           </span>
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>Penurunan terbesar dari peak</p>
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>Penurunan dari peak</p>
         </div>
 
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 16 }}>
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <p style={{ margin: 0, fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>Target</p>
             <button onClick={() => setEditingTarget((v) => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', padding: 0 }}><Target size={14} /></button>
@@ -734,100 +737,80 @@ export function NetWorthDetailPage({
         </div>
       </div>
 
-      {/* ── Performance Chart ────────────────────────────────────────────── */}
-      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 24, marginBottom: 24 }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#fff' }}>Performance History</h2>
+      {/* ── Performance Chart ── */}
+      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: '20px 16px', marginBottom: 16, overflowX: 'hidden' }}>
+        
+        {/* Chart controls — FIX: wrap semua, jangan overflow */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>Performance History</h2>
+            {/* Mode + Drawdown toggle */}
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 1, backgroundColor: '#1a1a1a', padding: 3, borderRadius: 8 }}>
+                {[{ v: 'abs', lbl: '$' }, { v: 'pct', lbl: '%' }].map(({ v, lbl }) => (
+                  <button key={v} onClick={() => setReturnMode(v)} style={{ backgroundColor: returnMode === v ? '#2a2a2a' : 'transparent', color: returnMode === v ? '#fff' : '#737373', border: returnMode === v ? '1px solid #3a3a3a' : '1px solid transparent', borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => setShowDrawdown((v) => !v)} style={{ backgroundColor: showDrawdown ? '#ef444418' : 'transparent', color: showDrawdown ? '#f87171' : '#737373', border: `1px solid ${showDrawdown ? '#ef4444' : '#333'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <BarChart2 size={13} />DD
+              </button>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
 
-            <div style={{ display: 'flex', gap: 2, backgroundColor: '#1a1a1a', padding: 3, borderRadius: 8 }}>
+          {/* Period + Compare — satu baris, scrollable */}
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', overflowX: 'auto', paddingBottom: 2 }}>
+            <div style={{ display: 'flex', gap: 1, backgroundColor: '#1a1a1a', padding: 3, borderRadius: 8, flexShrink: 0 }}>
               {PERIODS.map((p) => (
-                <button key={p.label} onClick={() => setActivePeriod(p)} style={{ backgroundColor: activePeriod.label === p.label ? '#2a2a2a' : 'transparent', color: activePeriod.label === p.label ? '#fff' : '#737373', border: activePeriod.label === p.label ? '1px solid #3a3a3a' : '1px solid transparent', borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s' }}>
+                <button key={p.label} onClick={() => setActivePeriod(p)} style={{ backgroundColor: activePeriod.label === p.label ? '#2a2a2a' : 'transparent', color: activePeriod.label === p.label ? '#fff' : '#737373', border: activePeriod.label === p.label ? '1px solid #3a3a3a' : '1px solid transparent', borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                   {p.label}
                 </button>
               ))}
             </div>
-
-            <div style={{ width: 1, height: 20, backgroundColor: '#2a2a2a' }} />
-
-            <div style={{ display: 'flex', gap: 2, backgroundColor: '#1a1a1a', padding: 3, borderRadius: 8 }}>
-              {[{ v: 'abs', lbl: '$' }, { v: 'pct', lbl: '%' }].map(({ v, lbl }) => (
-                <button key={v} onClick={() => setReturnMode(v)} style={{ backgroundColor: returnMode === v ? '#2a2a2a' : 'transparent', color: returnMode === v ? '#fff' : '#737373', border: returnMode === v ? '1px solid #3a3a3a' : '1px solid transparent', borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>
-                  {lbl}
+            <div style={{ width: 1, height: 18, backgroundColor: '#2a2a2a', flexShrink: 0 }} />
+            {['IHSG', 'S&P500'].map((key) => {
+              const active = activeCompares.includes(key);
+              const c      = COMPARE_COLORS[key];
+              const status = rtStatus[key];
+              return (
+                <button key={key} onClick={() => toggleCompare(key)} style={{ backgroundColor: active ? `${c}18` : 'transparent', color: active ? c : '#737373', border: `1px solid ${active ? c : '#333'}`, borderRadius: 6, padding: '4px 8px', fontSize: 11, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: active ? c : '#555', flexShrink: 0 }} />
+                  vs {key}
+                  {active && status && status !== 'loading' && (
+                    <span style={{ fontSize: 9, fontWeight: 700, color: status === 'realtime' ? '#4ade80' : '#f59e0b', backgroundColor: status === 'realtime' ? '#4ade8018' : '#f59e0b18', padding: '1px 4px', borderRadius: 3 }}>
+                      {status === 'realtime' ? 'LIVE' : 'SIM'}
+                    </span>
+                  )}
+                  {active && status === 'loading' && <span style={{ fontSize: 9, color: '#555' }}>...</span>}
                 </button>
-              ))}
-            </div>
-
-            <div style={{ width: 1, height: 20, backgroundColor: '#2a2a2a' }} />
-
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {['IHSG', 'S&P500'].map((key) => {
-                const active = activeCompares.includes(key);
-                const c      = COMPARE_COLORS[key];
-                const status = rtStatus[key];
-                return (
-                  <button key={key} onClick={() => toggleCompare(key)} style={{
-                    backgroundColor: active ? `${c}18` : 'transparent',
-                    color: active ? c : '#737373',
-                    border: `1px solid ${active ? c : '#333'}`,
-                    borderRadius: 6,
-                    padding: '4px 8px',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    justifyContent: 'center',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: active ? c : '#555', flexShrink: 0 }} />
-                    vs {key}
-                    {active && status && status !== 'loading' && (
-                      <span style={{ fontSize: 9, fontWeight: 700, color: status === 'realtime' ? '#4ade80' : '#f59e0b', backgroundColor: status === 'realtime' ? '#4ade8018' : '#f59e0b18', padding: '1px 4px', borderRadius: 3 }}>
-                        {status === 'realtime' ? 'LIVE' : 'SIM'}
-                      </span>
-                    )}
-                    {active && status === 'loading' && (
-                      <span style={{ fontSize: 9, color: '#555' }}>...</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div style={{ width: 1, height: 20, backgroundColor: '#2a2a2a' }} />
-
-            <button onClick={() => setShowDrawdown((v) => !v)} style={{ backgroundColor: showDrawdown ? '#ef444418' : 'transparent', color: showDrawdown ? '#f87171' : '#737373', border: `1px solid ${showDrawdown ? '#ef4444' : '#333'}`, borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <BarChart2 size={13} />DD
-            </button>
+              );
+            })}
           </div>
         </div>
 
+        {/* Legend */}
         {(activeCompares.length > 0 || showDrawdown) && (
-          <div style={{ display: 'flex', gap: 16, marginBottom: 12, fontSize: 12, color: '#a3a3a3', flexWrap: 'wrap' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ display: 'inline-block', width: 24, height: 2, backgroundColor: '#3b82f6' }} />Portofolio
+          <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 11, color: '#a3a3a3', flexWrap: 'wrap' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ display: 'inline-block', width: 20, height: 2, backgroundColor: '#3b82f6' }} />Portofolio
             </span>
             {activeCompares.map((key) => (
-              <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ display: 'inline-block', width: 24, height: 0, borderTop: `2px dashed ${COMPARE_COLORS[key]}` }} />
-                {key} {rtStatus[key] === 'realtime' ? '(live)' : '(simulasi)'}
+              <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ display: 'inline-block', width: 20, height: 0, borderTop: `2px dashed ${COMPARE_COLORS[key]}` }} />
+                {key}
               </span>
             ))}
             {showDrawdown && (
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: 2, backgroundColor: '#ef444430' }} />Drawdown
               </span>
             )}
           </div>
         )}
 
-        {/* FIX: Set height pasti 350px, menghapus minHeight dan flex:1 agar ResponsiveContainer tidak collapse */}
-        <div style={{ height: 350, width: '100%', marginTop: 16 }}>
+        {/* FIX: Chart height 300px (sedikit dikurangi untuk mobile) */}
+        <div style={{ height: 300, width: '100%' }}>
           {chartPoints.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={mergedChartData}>
@@ -844,16 +827,16 @@ export function NetWorthDetailPage({
                   ))}
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
-                <XAxis dataKey="date" stroke="#555" tick={{ fill: '#737373', fontSize: 11 }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="main" domain={['auto', 'auto']} stroke="#555" tick={{ fill: '#737373', fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={yFormatter} width={returnMode === 'pct' ? 55 : 85} />
-                {showDrawdown && <YAxis yAxisId="dd" orientation="right" domain={['auto', 0]} tick={{ fill: '#ef4444', fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v.toFixed(0)}%`} width={40} />}
-                <Tooltip contentStyle={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 8 }} itemStyle={{ fontWeight: 'bold' }} formatter={tooltipFormatter} />
+                <XAxis dataKey="date" stroke="#555" tick={{ fill: '#737373', fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                <YAxis yAxisId="main" domain={['auto', 'auto']} stroke="#555" tick={{ fill: '#737373', fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={yFormatter} width={returnMode === 'pct' ? 50 : 75} />
+                {showDrawdown && <YAxis yAxisId="dd" orientation="right" domain={['auto', 0]} tick={{ fill: '#ef4444', fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v.toFixed(0)}%`} width={36} />}
+                <Tooltip contentStyle={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 8, fontSize: 12 }} itemStyle={{ fontWeight: 'bold' }} formatter={tooltipFormatter} />
                 {targetValue && returnMode === 'abs' && (
-                  <ReferenceLine yAxisId="main" y={targetValue} stroke="#3b82f6" strokeDasharray="8 4" strokeWidth={1.5} label={{ value: 'Target', fill: '#3b82f6', fontSize: 11, position: 'insideTopRight' }} />
+                  <ReferenceLine yAxisId="main" y={targetValue} stroke="#3b82f6" strokeDasharray="8 4" strokeWidth={1.5} label={{ value: 'Target', fill: '#3b82f6', fontSize: 10, position: 'insideTopRight' }} />
                 )}
                 <Area yAxisId="main" type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#gradMain)" dot={false} />
                 {activeCompares.map((key) => (
-                  <Area key={key} yAxisId="main" type="monotone" dataKey={key} stroke={COMPARE_COLORS[key]} strokeWidth={2} strokeDasharray="6 3" fillOpacity={1} fill={`url(#gradBench_${key})`} dot={false} activeDot={{ r: 4, stroke: COMPARE_COLORS[key] }} />
+                  <Area key={key} yAxisId="main" type="monotone" dataKey={key} stroke={COMPARE_COLORS[key]} strokeWidth={2} strokeDasharray="6 3" fillOpacity={1} fill={`url(#gradBench_${key})`} dot={false} activeDot={{ r: 4 }} />
                 ))}
                 {showDrawdown && drawdownSeries.length > 0 && (
                   <Area yAxisId="dd" data={drawdownSeries} type="monotone" dataKey="drawdown" stroke="#ef4444" strokeWidth={1} fill="#ef444420" fillOpacity={1} dot={false} />
@@ -862,50 +845,48 @@ export function NetWorthDetailPage({
             </ResponsiveContainer>
           ) : (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '1px dashed #262626', borderRadius: 12, gap: 8 }}>
-              <Info color="#737373" size={24} />
-              <p style={{ color: '#737373', margin: 0, fontSize: 14 }}>Data historis sedang dimuat atau belum cukup tersedia untuk periode ini.</p>
+              <Info color="#737373" size={22} />
+              <p style={{ color: '#737373', margin: 0, fontSize: 13, textAlign: 'center', padding: '0 16px' }}>Data historis sedang dimuat atau belum cukup tersedia.</p>
             </div>
           )}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 24 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <h2 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#f59e0b' }}><Zap size={17} /></span>
-              Daily Movers
+      {/* FIX: Daily Movers + History — stack di mobile pakai auto-fit */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#f59e0b' }}><Zap size={16} /></span>Daily Movers
             </h2>
-            <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', backgroundColor: '#f59e0b12', padding: '2px 8px', borderRadius: 4, border: '1px solid #f59e0b22' }}>
-              1D
-            </span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', backgroundColor: '#f59e0b12', padding: '2px 8px', borderRadius: 4, border: '1px solid #f59e0b22' }}>1D</span>
           </div>
           <DailyMovers assets={assets} />
         </div>
 
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 24 }}>
-          <h2 style={{ margin: '0 0 20px', fontSize: 16, fontWeight: 700, color: '#fff' }}>Recent History</h2>
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20 }}>
+          <h2 style={{ margin: '0 0 18px', fontSize: 15, fontWeight: 700, color: '#fff' }}>Recent History</h2>
           {historyRows.length > 0 ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #262626' }}>
                   {['Tanggal', 'Net Worth', 'Change'].map((h) => (
-                    <th key={h} style={{ textAlign: h === 'Tanggal' ? 'left' : 'right', paddingBottom: 12, color: '#737373', fontSize: 11, fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
+                    <th key={h} style={{ textAlign: h === 'Tanggal' ? 'left' : 'right', paddingBottom: 10, color: '#737373', fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {historyRows.map((row, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid #1f1f1f' }}>
-                    <td style={{ padding: '12px 0', fontSize: 13, color: '#d4d4d8' }}>{i === 0 ? 'Terbaru' : row.date}</td>
-                    <td style={{ padding: '12px 0', fontSize: 13, color: '#fff', fontWeight: 600, textAlign: 'right' }}>{formatCurrency(row.nw)}</td>
-                    <td style={{ padding: '12px 0', fontSize: 13, textAlign: 'right' }}>
+                    <td style={{ padding: '10px 0', fontSize: 12, color: '#d4d4d8' }}>{i === 0 ? 'Terbaru' : row.date}</td>
+                    <td style={{ padding: '10px 0', fontSize: 12, color: '#fff', fontWeight: 600, textAlign: 'right' }}>{formatCurrency(row.nw)}</td>
+                    <td style={{ padding: '10px 0', fontSize: 12, textAlign: 'right' }}>
                       {i === historyRows.length - 1 ? (
                         <span style={{ color: '#737373' }}>—</span>
                       ) : (
                         <>
                           <div style={{ color: row.chg >= 0 ? '#4ade80' : '#f87171', fontWeight: 700 }}>{row.chg >= 0 ? '+' : ''}{formatCurrency(row.chg)}</div>
-                          <div style={{ color: '#555', fontSize: 11, marginTop: 2 }}>{row.pct >= 0 ? '+' : ''}{row.pct.toFixed(2)}%</div>
+                          <div style={{ color: '#555', fontSize: 10, marginTop: 2 }}>{row.pct >= 0 ? '+' : ''}{row.pct.toFixed(2)}%</div>
                         </>
                       )}
                     </td>
@@ -914,7 +895,7 @@ export function NetWorthDetailPage({
               </tbody>
             </table>
           ) : (
-            <div style={{ padding: 20, textAlign: 'center', color: '#555', fontSize: 13, border: '1px dashed #262626', borderRadius: 8 }}>
+            <div style={{ padding: 16, textAlign: 'center', color: '#555', fontSize: 13, border: '1px dashed #262626', borderRadius: 8 }}>
               Belum ada riwayat data yang cukup.
             </div>
           )}
