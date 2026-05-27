@@ -1,5 +1,5 @@
 // src/networthtrend.js
-// v8 — Mobile responsive fix: no offside scroll, simetris card height, proper wrapping
+// v10 — Fixed Language Jumper Bug (Robust Local Storage Parsing) & ESLint warnings
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
@@ -11,6 +11,83 @@ import {
   ChevronRight, ArrowLeft, TrendingUp, TrendingDown, Activity,
   DollarSign, PieChart, Info, Target, BarChart2, Zap,
 } from 'lucide-react';
+
+// ==========================================
+// KAMUS MINI LOKAL (KHUSUS HALAMAN ANALYTICS)
+// ==========================================
+const LOCAL_DICT = {
+  id: {
+    nw_trend: 'Trend Kekayaan', failed_chart: 'Gagal memuat chart', detail: 'Detail',
+    analytics_title: 'Portfolio Analytics', analytics_desc: 'Performa & metrik detail aset lu',
+    curr_nw: 'Current Net Worth', tot_gain: 'Total Gain/Loss', day_pnl: '1-Day PnL',
+    asset_dom: 'Asset Dominance', volatility: 'Volatilitas', annualized: 'Annualized',
+    not_enough_data: 'Data kurang', sharpe: 'Sharpe Ratio', good: 'Bagus', fair: 'Cukup',
+    bad: 'Buruk', risk_free: 'Risk-free 5.5% pa', max_dd: 'Max Drawdown', drop_from_peak: 'Penurunan dari peak',
+    target: 'Target', reached: 'tercapai', set_target: 'Tap untuk set target →',
+    perf_history: 'Performance History', portfolio: 'Portofolio', loading_hist: 'Data historis sedang dimuat atau belum cukup tersedia.',
+    daily_movers: 'Daily Movers', top_gainers: 'Top Gainers', top_losers: 'Top Losers',
+    no_gainer: 'Tidak ada gainer hari ini', no_loser: 'Tidak ada loser hari ini',
+    add_holdings_movers: 'Tambahkan holdings untuk melihat daily movers.', no_live_data: 'Data harga live belum tersedia.',
+    recent_hist: 'Recent History', date: 'Tanggal', change: 'Change', latest: 'Terbaru',
+    no_hist: 'Belum ada riwayat data yang cukup.', assets_count: 'Aset', empty: 'Kosong',
+    diverse: 'Beragam', stock: 'Saham', stable_cash: 'Stable/Cash',
+    low_vol: 'Vol Rendah', med_vol: 'Vol Sedang', high_vol: 'Vol Tinggi'
+  },
+  en: {
+    nw_trend: 'Net Worth Trend', failed_chart: 'Failed to load chart', detail: 'Detail',
+    analytics_title: 'Portfolio Analytics', analytics_desc: 'Your asset performance & detailed metrics',
+    curr_nw: 'Current Net Worth', tot_gain: 'Total Gain/Loss', day_pnl: '1-Day PnL',
+    asset_dom: 'Asset Dominance', volatility: 'Volatility', annualized: 'Annualized',
+    not_enough_data: 'Not enough data', sharpe: 'Sharpe Ratio', good: 'Good', fair: 'Fair',
+    bad: 'Bad', risk_free: 'Risk-free 5.5% pa', max_dd: 'Max Drawdown', drop_from_peak: 'Drop from peak',
+    target: 'Target', reached: 'reached', set_target: 'Tap to set target →',
+    perf_history: 'Performance History', portfolio: 'Portfolio', loading_hist: 'Historical data is loading or insufficient.',
+    daily_movers: 'Daily Movers', top_gainers: 'Top Gainers', top_losers: 'Top Losers',
+    no_gainer: 'No gainers today', no_loser: 'No losers today',
+    add_holdings_movers: 'Add holdings to see daily movers.', no_live_data: 'Live price data is unavailable.',
+    recent_hist: 'Recent History', date: 'Date', change: 'Change', latest: 'Latest',
+    no_hist: 'Not enough history data yet.', assets_count: 'Assets', empty: 'Empty',
+    diverse: 'Diverse', stock: 'Stock', stable_cash: 'Stable/Cash',
+    low_vol: 'Low Vol', med_vol: 'Med Vol', high_vol: 'High Vol'
+  },
+  zh: {
+    nw_trend: '净资产趋势', failed_chart: '无法加载图表', detail: '详情',
+    analytics_title: '投资组合分析', analytics_desc: '您的资产表现和详细指标',
+    curr_nw: '当前净资产', tot_gain: '总盈亏', day_pnl: '单日盈亏',
+    asset_dom: '主要资产', volatility: '波动率', annualized: '年化',
+    not_enough_data: '数据不足', sharpe: '夏普比率', good: '好', fair: '一般',
+    bad: '差', risk_free: '无风险利率 5.5%', max_dd: '最大回撤', drop_from_peak: '从高点回落',
+    target: '目标', reached: '已达成', set_target: '点击设置目标 →',
+    perf_history: '历史表现', portfolio: '投资组合', loading_hist: '历史数据正在加载或数据不足。',
+    daily_movers: '今日动向', top_gainers: '涨幅榜', top_losers: '跌幅榜',
+    no_gainer: '今日无上涨资产', no_loser: '今日无下跌资产',
+    add_holdings_movers: '添加持仓以查看今日动向。', no_live_data: '无法获取实时价格数据。',
+    recent_hist: '最近历史', date: '日期', change: '变动', latest: '最新',
+    no_hist: '历史数据不足。', assets_count: '资产', empty: '空',
+    diverse: '多样化', stock: '股票', stable_cash: '稳定币/现金',
+    low_vol: '低波动', med_vol: '中波动', high_vol: '高波动'
+  }
+};
+
+// FIX: Pengecekan bahasa yang anti-error JSON parse 
+const getLocalT = (key, globalT) => {
+  try {
+    let rawLang = window.localStorage.getItem('totalfund_lang') || '';
+    // Hilangkan karakter aneh / tanda kutip biar aman, cuma ambil hurufnya aja
+    let lang = rawLang.replace(/[^a-zA-Z]/g, '').toLowerCase();
+
+    // Kalau kosong atau bahasanya nggak valid, fallback ke setting browser
+    if (!['id', 'en', 'zh'].includes(lang)) {
+      const bLang = (navigator.language || '').toLowerCase();
+      lang = bLang.includes('id') ? 'id' : bLang.includes('zh') ? 'zh' : 'en';
+    }
+
+    return LOCAL_DICT[lang]?.[key] || (globalT && globalT(key)) || key;
+  } catch (e) {
+    return (globalT && globalT(key)) || key;
+  }
+};
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILS
@@ -322,11 +399,11 @@ const calcVolatility = (points) => {
   return Math.sqrt(variance) * Math.sqrt(252) * 100;
 };
 
-const getVolLabel = (vol) => {
+const getVolLabel = (vol, tL) => {
   if (vol === null) return null;
-  if (vol < 15)  return { label: 'Low Vol',    color: '#16a34a', bg: '#16a34a18' };
-  if (vol < 30)  return { label: 'Medium Vol', color: '#f59e0b', bg: '#f59e0b18' };
-  return               { label: 'High Vol',    color: '#ef4444', bg: '#ef444418' };
+  if (vol < 15)  return { label: tL('low_vol'),    color: '#16a34a', bg: '#16a34a18' };
+  if (vol < 30)  return { label: tL('med_vol'),    color: '#f59e0b', bg: '#f59e0b18' };
+  return               { label: tL('high_vol'),    color: '#ef4444', bg: '#ef444418' };
 };
 
 const calcSharpe = (points, riskFreeRate = 0.055) => {
@@ -364,7 +441,10 @@ const calcDrawdownSeries = (points) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // DAILY MOVERS
 // ─────────────────────────────────────────────────────────────────────────────
-const DailyMovers = ({ assets }) => {
+const DailyMovers = ({ assets, t }) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const tL = useCallback((key) => getLocalT(key, t), [t]);
+
   const TYPE_COLOR = {
     crypto:   '#f59e0b',
     saham:    '#3b82f6',
@@ -396,7 +476,7 @@ const DailyMovers = ({ assets }) => {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 160, opacity: 0.5 }}>
         <TrendingUp size={28} color="#3b82f6" />
         <p style={{ margin: 0, fontSize: 13, color: '#737373', textAlign: 'center' }}>
-          Tambahkan holdings untuk melihat daily movers.
+          {tL('add_holdings_movers')}
         </p>
       </div>
     );
@@ -407,7 +487,7 @@ const DailyMovers = ({ assets }) => {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 160, opacity: 0.5 }}>
         <Activity size={28} color="#737373" />
         <p style={{ margin: 0, fontSize: 13, color: '#737373', textAlign: 'center' }}>
-          Data harga live belum tersedia.
+          {tL('no_live_data')}
         </p>
       </div>
     );
@@ -416,6 +496,14 @@ const DailyMovers = ({ assets }) => {
   const MoverRow = ({ asset, isGainer }) => {
     const c = isGainer ? '#4ade80' : '#f87171';
     const typeColor = TYPE_COLOR[asset.type] || '#737373';
+
+    const typeLabel = asset.type === 'crypto' ? (t ? t('cat_crypto') : 'Crypto') :
+                      asset.type === 'saham' ? (t ? t('cat_saham_idx') : 'Saham IDX') :
+                      asset.type === 'saham_us' ? (t ? t('cat_saham_us') : 'Saham US') :
+                      asset.type === 'komoditas' ? (t ? t('cat_komoditas') : 'Komoditas') :
+                      asset.type === 'stable' ? (t ? t('stablecoin') : 'Stablecoin') :
+                      asset.type === 'cash_idr' ? (t ? t('cash_idr') : 'Cash IDR') : asset.type;
+
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #1a1a1a' }}>
         <div style={{ width: 32, height: 32, borderRadius: 8, backgroundColor: `${typeColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -423,7 +511,7 @@ const DailyMovers = ({ assets }) => {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#e5e5e5', letterSpacing: '-0.2px' }}>{asset.ticker}</div>
-          <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>{asset.type}</div>
+          <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>{typeLabel}</div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: c }}>{isGainer ? '+' : ''}{asset.dayChangePct.toFixed(2)}%</div>
@@ -441,26 +529,26 @@ const DailyMovers = ({ assets }) => {
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#4ade80' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Top Gainers</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{tL('top_gainers')}</span>
           <span style={{ fontSize: 10, color: '#555', marginLeft: 'auto' }}>1D</span>
         </div>
         {gainers.length > 0 ? (
           gainers.map((a, i) => <MoverRow key={i} asset={a} isGainer={true} />)
         ) : (
-          <div style={{ padding: '20px 0', textAlign: 'center', color: '#444', fontSize: 12 }}>Tidak ada gainer hari ini</div>
+          <div style={{ padding: '20px 0', textAlign: 'center', color: '#444', fontSize: 12 }}>{tL('no_gainer')}</div>
         )}
       </div>
       <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', left: -10, top: 0, bottom: 0, width: 1, backgroundColor: '#1e1e1e' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#f87171' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Top Losers</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{tL('top_losers')}</span>
           <span style={{ fontSize: 10, color: '#555', marginLeft: 'auto' }}>1D</span>
         </div>
         {losers.length > 0 ? (
           losers.map((a, i) => <MoverRow key={i} asset={a} isGainer={false} />)
         ) : (
-          <div style={{ padding: '20px 0', textAlign: 'center', color: '#444', fontSize: 12 }}>Tidak ada loser hari ini</div>
+          <div style={{ padding: '20px 0', textAlign: 'center', color: '#444', fontSize: 12 }}>{tL('no_loser')}</div>
         )}
       </div>
     </div>
@@ -469,13 +557,13 @@ const DailyMovers = ({ assets }) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENT 1: WIDGET CARD
-// FIX: Hapus height:'100%' dari outer div. Tinggi dikontrol dari parent (App.js).
-//      Chart height dikurangi ke 120px agar simetris dgn kolom market cards.
-//      Period buttons compact, wrap jika overflow.
 // ─────────────────────────────────────────────────────────────────────────────
 export function NetWorthTrendCard({
-  data, color, isError, period, setPeriod, periodsList, onDetailClick,
+  data, color, isError, period, setPeriod, periodsList, onDetailClick, t
 }) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const tL = useCallback((key) => getLocalT(key, t), [t]);
+
   const chartPoints = useMemo(() => {
     const all = safeChartPoints(data);
     return filterByPeriod(all, period?.days);
@@ -492,21 +580,17 @@ export function NetWorthTrendCard({
   };
 
   return (
-    // FIX: Hapus height:'100%' — biarkan parent mengontrol tinggi via CSS grid/align-items
     <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column' }}>
       
-      {/* Header: label + period controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        <span style={{ color: '#a3a3a3', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px', flexShrink: 0 }}>Net Worth Trend</span>
+        <span style={{ color: '#a3a3a3', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px', flexShrink: 0 }}>{tL('nw_trend')}</span>
         
-        {/* Period buttons — compact, scrollable on narrow mobile */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, backgroundColor: '#1a1a1a', padding: '3px 4px', borderRadius: 8, overflowX: 'auto', flexShrink: 1, minWidth: 0 }}>
           {periodsList.map((p) => (
             <button key={p.label} onClick={() => setPeriod(p)} style={{
               backgroundColor: period.label === p.label ? '#333' : 'transparent',
               color: period.label === p.label ? '#fff' : '#737373',
               border: 'none', borderRadius: 6,
-              // FIX: padding lebih kecil supaya muat di mobile
               padding: '4px 7px',
               fontSize: 11, fontWeight: 600, cursor: 'pointer',
               transition: 'all 0.15s', flexShrink: 0, whiteSpace: 'nowrap',
@@ -516,17 +600,17 @@ export function NetWorthTrendCard({
           ))}
           <div style={{ width: 1, height: 14, backgroundColor: '#333', margin: '0 2px', flexShrink: 0 }} />
           <button onClick={onDetailClick} style={{ backgroundColor: 'transparent', color: '#a3a3a3', border: 'none', cursor: 'pointer', padding: '4px 4px', display: 'flex', alignItems: 'center', borderRadius: 6, flexShrink: 0 }}>
+            <span style={{ marginRight: '4px', fontSize: '11px', fontWeight: 'bold' }}>{tL('detail')}</span>
             <ChevronRight size={15} />
           </button>
         </div>
       </div>
       
-      {/* FIX: Chart tinggi 120px — simetris dengan layout market cards */}
       <div style={{ height: 120, width: '100%' }}>
         {isError && chartPoints.length === 0 ? (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span style={{ fontSize: 18 }}>📡</span>
-            <span style={{ color: '#4b5563', fontSize: 12 }}>Tidak dapat memuat chart</span>
+            <span style={{ color: '#4b5563', fontSize: 12 }}>{tL('failed_chart')}</span>
           </div>
         ) : chartPoints.length < 2 ? (
           <div style={{ height: '100%', display: 'flex', alignItems: 'flex-end', gap: 3 }}>
@@ -555,14 +639,15 @@ export function NetWorthTrendCard({
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPONENT 2: FULL DETAIL PAGE
-// FIX: padding box-sizing + overflow-x:hidden, semua grid pakai auto-fit,
-//      bottom section stack di mobile.
 // ─────────────────────────────────────────────────────────────────────────────
 export function NetWorthDetailPage({
   onBack, chartData, currentNetWorth, overallPnlUSD, overallPnlPersen,
   assets: rawAssets, dailyPnlUSD = 0, hargaMap = {}, hargaSaham = {},
-  kursIdr = 16200, marketData = {},
+  kursIdr = 16200, marketData = {}, t
 }) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const tL = useCallback((key) => getLocalT(key, t), [t]);
+
   const [activePeriod, setActivePeriod]     = useState(PERIODS[2]);
   const [activeCompares, setActiveCompares] = useState([]);
   const [returnMode, setReturnMode]         = useState('abs');
@@ -589,7 +674,7 @@ export function NetWorthDetailPage({
   const hasAssets = assets.length > 0;
 
   const volatility  = useMemo(() => calcVolatility(chartPoints), [chartPoints]);
-  const volInfo     = useMemo(() => getVolLabel(volatility), [volatility]);
+  const volInfo     = useMemo(() => getVolLabel(volatility, tL), [volatility, tL]);
   const sharpe      = useMemo(() => calcSharpe(chartPoints), [chartPoints]);
   const maxDrawdown = useMemo(() => calcMaxDrawdown(chartPoints), [chartPoints]);
 
@@ -604,22 +689,22 @@ export function NetWorthDetailPage({
   }, [assets]);
 
   const dominantAsset = useMemo(() => {
-    if (!hasAssets) return 'Kosong';
-    if (cryptoCount > stockCount && cryptoCount > stableCount) return 'Crypto';
-    if (stockCount  > cryptoCount && stockCount  > stableCount) return 'Saham';
-    if (stableCount > 0) return 'Stable/Cash';
-    return 'Beragam';
-  }, [hasAssets, cryptoCount, stockCount, stableCount]);
+    if (!hasAssets) return tL('empty');
+    if (cryptoCount > stockCount && cryptoCount > stableCount) return tL('cat_crypto');
+    if (stockCount  > cryptoCount && stockCount  > stableCount) return tL('stock');
+    if (stableCount > 0) return tL('stable_cash');
+    return tL('diverse');
+  }, [hasAssets, cryptoCount, stockCount, stableCount, tL]);
 
   const targetValue    = useMemo(() => { const v = parseFloat(targetNW.replace(/[^0-9.]/g, '')); return isNaN(v) || v <= 0 ? null : v; }, [targetNW]);
   const targetProgress = useMemo(() => { if (!targetValue || safeNW <= 0) return null; return Math.min((safeNW / targetValue) * 100, 100); }, [targetValue, safeNW]);
 
   const metrics = useMemo(() => [
-    { label: 'Current Net Worth', value: formatCurrency(safeNW), icon: DollarSign, color: '#3b82f6' },
-    { label: 'Total Gain/Loss',   value: formatCurrency(safePnl), subValue: formatPct(safePct), icon: safePnl >= 0 ? TrendingUp : TrendingDown, color: safePnl >= 0 ? '#16a34a' : '#ef4444' },
-    { label: '1-Day PnL',         value: formatCurrency(safeDaily), subValue: 'Live', icon: safeDaily >= 0 ? TrendingUp : TrendingDown, color: safeDaily >= 0 ? '#f59e0b' : '#ef4444' },
-    { label: 'Asset Dominance',   value: dominantAsset, subValue: hasAssets ? `${assets.length} Aset` : '0 Aset', icon: PieChart, color: '#ec4899' },
-  ], [safeNW, safePnl, safePct, safeDaily, dominantAsset, hasAssets, assets.length]);
+    { label: tL('curr_nw'), value: formatCurrency(safeNW), icon: DollarSign, color: '#3b82f6' },
+    { label: tL('tot_gain'), value: formatCurrency(safePnl), subValue: formatPct(safePct), icon: safePnl >= 0 ? TrendingUp : TrendingDown, color: safePnl >= 0 ? '#16a34a' : '#ef4444' },
+    { label: tL('day_pnl'), value: formatCurrency(safeDaily), subValue: 'Live', icon: safeDaily >= 0 ? TrendingUp : TrendingDown, color: safeDaily >= 0 ? '#f59e0b' : '#ef4444' },
+    { label: tL('asset_dom'), value: dominantAsset, subValue: hasAssets ? `${assets.length} ${tL('assets_count')}` : `0 ${tL('assets_count')}`, icon: PieChart, color: '#ec4899' },
+  ], [safeNW, safePnl, safePct, safeDaily, dominantAsset, hasAssets, assets.length, tL]);
 
   useEffect(() => { if (editingTarget && targetInputRef.current) targetInputRef.current.focus(); }, [editingTarget]);
 
@@ -643,16 +728,14 @@ export function NetWorthDetailPage({
 
   const tooltipFormatter = (val, name) => {
     const isRealtime  = rtStatus[name] === 'realtime';
-    const labelSuffix = name === 'value' ? 'Portofolio' : `${name}${isRealtime ? '' : ' (sim)'}`;
+    const labelSuffix = name === 'value' ? tL('portfolio') : `${name}${isRealtime ? '' : ' (sim)'}`;
     if (returnMode === 'pct') return [`${val >= 0 ? '+' : ''}${Number(val).toFixed(2)}%`, labelSuffix];
     return [formatCurrency(val), labelSuffix];
   };
 
   return (
-    // FIX: box-sizing + overflow-x:hidden + padding kecil agar tidak offside di mobile
     <div style={{ padding: '0 0 32px 0', maxWidth: 1200, margin: '0 auto', color: '#e5e5e5', boxSizing: 'border-box', width: '100%', overflowX: 'hidden' }}>
       
-      {/* Header Detail Analytics */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
         <button 
           onClick={onBack} 
@@ -663,12 +746,11 @@ export function NetWorthDetailPage({
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Portfolio Analytics</h1>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#737373', fontWeight: 500 }}>Performa & metrik detail aset lu</p>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>{tL('analytics_title')}</h1>
+          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#737373', fontWeight: 500 }}>{tL('analytics_desc')}</p>
         </div>
       </div>
 
-      {/* Metrics Grid — FIX: auto-fit minmax agar stacked di mobile */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
         {metrics.map((m, i) => (
           <div key={i} style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 14, padding: 16 }}>
@@ -684,43 +766,42 @@ export function NetWorthDetailPage({
         ))}
       </div>
 
-      {/* Analytics Row — FIX: auto-fit, minmax 150px */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>Volatilitas</p>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{tL('volatility')}</p>
           {volInfo ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{volatility.toFixed(1)}%</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: volInfo.color, backgroundColor: volInfo.bg, padding: '2px 7px', borderRadius: 4 }}>{volInfo.label}</span>
             </div>
-          ) : <span style={{ fontSize: 13, color: '#555' }}>Data kurang</span>}
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>Annualized</p>
+          ) : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{tL('annualized')}</p>
         </div>
 
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>Sharpe Ratio</p>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{tL('sharpe')}</p>
           {sharpe !== null ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{sharpe.toFixed(2)}</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: sharpe >= 1 ? '#16a34a' : sharpe >= 0 ? '#f59e0b' : '#ef4444', backgroundColor: sharpe >= 1 ? '#16a34a18' : sharpe >= 0 ? '#f59e0b18' : '#ef444418', padding: '2px 7px', borderRadius: 4 }}>
-                {sharpe >= 1 ? 'Bagus' : sharpe >= 0 ? 'Cukup' : 'Buruk'}
+                {sharpe >= 1 ? tL('good') : sharpe >= 0 ? tL('fair') : tL('bad')}
               </span>
             </div>
-          ) : <span style={{ fontSize: 13, color: '#555' }}>Data kurang</span>}
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>Risk-free 5.5% pa</p>
+          ) : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{tL('risk_free')}</p>
         </div>
 
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>Max Drawdown</p>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{tL('max_dd')}</p>
           <span style={{ fontSize: 17, fontWeight: 800, color: maxDrawdown > 20 ? '#ef4444' : maxDrawdown > 10 ? '#f59e0b' : '#fff' }}>
             -{maxDrawdown.toFixed(1)}%
           </span>
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>Penurunan dari peak</p>
+          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{tL('drop_from_peak')}</p>
         </div>
 
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <p style={{ margin: 0, fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>Target</p>
+            <p style={{ margin: 0, fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{tL('target')}</p>
             <button onClick={() => setEditingTarget((v) => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', padding: 0 }}><Target size={14} /></button>
           </div>
           {editingTarget ? (
@@ -734,22 +815,19 @@ export function NetWorthDetailPage({
               <div style={{ marginTop: 8, height: 4, backgroundColor: '#262626', borderRadius: 2 }}>
                 <div style={{ height: '100%', borderRadius: 2, width: `${targetProgress}%`, backgroundColor: targetProgress >= 100 ? '#16a34a' : '#3b82f6', transition: 'width 0.4s ease' }} />
               </div>
-              <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{targetProgress.toFixed(1)}% tercapai</p>
+              <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{targetProgress.toFixed(1)}% {tL('reached')}</p>
             </>
           ) : (
-            <span style={{ fontSize: 13, color: '#555', cursor: 'pointer' }} onClick={() => setEditingTarget(true)}>Tap untuk set target →</span>
+            <span style={{ fontSize: 13, color: '#555', cursor: 'pointer' }} onClick={() => setEditingTarget(true)}>{tL('set_target')}</span>
           )}
         </div>
       </div>
 
-      {/* ── Performance Chart ── */}
       <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: '20px 16px', marginBottom: 16, overflowX: 'hidden' }}>
         
-        {/* Chart controls — FIX: wrap semua, jangan overflow */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>Performance History</h2>
-            {/* Mode + Drawdown toggle */}
+            <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>{tL('perf_history')}</h2>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: 1, backgroundColor: '#1a1a1a', padding: 3, borderRadius: 8 }}>
                 {[{ v: 'abs', lbl: '$' }, { v: 'pct', lbl: '%' }].map(({ v, lbl }) => (
@@ -764,7 +842,6 @@ export function NetWorthDetailPage({
             </div>
           </div>
 
-          {/* Period + Compare — satu baris, scrollable */}
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', overflowX: 'auto', paddingBottom: 2 }}>
             <div style={{ display: 'flex', gap: 1, backgroundColor: '#1a1a1a', padding: 3, borderRadius: 8, flexShrink: 0 }}>
               {PERIODS.map((p) => (
@@ -794,11 +871,10 @@ export function NetWorthDetailPage({
           </div>
         </div>
 
-        {/* Legend */}
         {(activeCompares.length > 0 || showDrawdown) && (
           <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 11, color: '#a3a3a3', flexWrap: 'wrap' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ display: 'inline-block', width: 20, height: 2, backgroundColor: '#3b82f6' }} />Portofolio
+              <span style={{ display: 'inline-block', width: 20, height: 2, backgroundColor: '#3b82f6' }} />{tL('portfolio')}
             </span>
             {activeCompares.map((key) => (
               <span key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -814,7 +890,6 @@ export function NetWorthDetailPage({
           </div>
         )}
 
-        {/* FIX: Chart height 300px (sedikit dikurangi untuk mobile) */}
         <div style={{ height: 300, width: '100%' }}>
           {chartPoints.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -837,7 +912,7 @@ export function NetWorthDetailPage({
                 {showDrawdown && <YAxis yAxisId="dd" orientation="right" domain={['auto', 0]} tick={{ fill: '#ef4444', fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v.toFixed(0)}%`} width={36} />}
                 <Tooltip contentStyle={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 8, fontSize: 12 }} itemStyle={{ fontWeight: 'bold' }} formatter={tooltipFormatter} />
                 {targetValue && returnMode === 'abs' && (
-                  <ReferenceLine yAxisId="main" y={targetValue} stroke="#3b82f6" strokeDasharray="8 4" strokeWidth={1.5} label={{ value: 'Target', fill: '#3b82f6', fontSize: 10, position: 'insideTopRight' }} />
+                  <ReferenceLine yAxisId="main" y={targetValue} stroke="#3b82f6" strokeDasharray="8 4" strokeWidth={1.5} label={{ value: tL('target'), fill: '#3b82f6', fontSize: 10, position: 'insideTopRight' }} />
                 )}
                 <Area yAxisId="main" type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#gradMain)" dot={false} />
                 {activeCompares.map((key) => (
@@ -851,39 +926,38 @@ export function NetWorthDetailPage({
           ) : (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '1px dashed #262626', borderRadius: 12, gap: 8 }}>
               <Info color="#737373" size={22} />
-              <p style={{ color: '#737373', margin: 0, fontSize: 13, textAlign: 'center', padding: '0 16px' }}>Data historis sedang dimuat atau belum cukup tersedia.</p>
+              <p style={{ color: '#737373', margin: 0, fontSize: 13, textAlign: 'center', padding: '0 16px' }}>{tL('loading_hist')}</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* FIX: Daily Movers + History — stack di mobile pakai auto-fit */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#f59e0b' }}><Zap size={16} /></span>Daily Movers
+              <span style={{ color: '#f59e0b' }}><Zap size={16} /></span>{tL('daily_movers')}
             </h2>
             <span style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', backgroundColor: '#f59e0b12', padding: '2px 8px', borderRadius: 4, border: '1px solid #f59e0b22' }}>1D</span>
           </div>
-          <DailyMovers assets={assets} />
+          <DailyMovers assets={assets} t={t} />
         </div>
 
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20 }}>
-          <h2 style={{ margin: '0 0 18px', fontSize: 15, fontWeight: 700, color: '#fff' }}>Recent History</h2>
+          <h2 style={{ margin: '0 0 18px', fontSize: 15, fontWeight: 700, color: '#fff' }}>{tL('recent_hist')}</h2>
           {historyRows.length > 0 ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #262626' }}>
-                  {['Tanggal', 'Net Worth', 'Change'].map((h) => (
-                    <th key={h} style={{ textAlign: h === 'Tanggal' ? 'left' : 'right', paddingBottom: 10, color: '#737373', fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
+                  {[tL('date'), 'Net Worth', tL('change')].map((h) => (
+                    <th key={h} style={{ textAlign: h === tL('date') ? 'left' : 'right', paddingBottom: 10, color: '#737373', fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {historyRows.map((row, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid #1f1f1f' }}>
-                    <td style={{ padding: '10px 0', fontSize: 12, color: '#d4d4d8' }}>{i === 0 ? 'Terbaru' : row.date}</td>
+                    <td style={{ padding: '10px 0', fontSize: 12, color: '#d4d4d8' }}>{i === 0 ? tL('latest') : row.date}</td>
                     <td style={{ padding: '10px 0', fontSize: 12, color: '#fff', fontWeight: 600, textAlign: 'right' }}>{formatCurrency(row.nw)}</td>
                     <td style={{ padding: '10px 0', fontSize: 12, textAlign: 'right' }}>
                       {i === historyRows.length - 1 ? (
@@ -901,7 +975,7 @@ export function NetWorthDetailPage({
             </table>
           ) : (
             <div style={{ padding: 16, textAlign: 'center', color: '#555', fontSize: 13, border: '1px dashed #262626', borderRadius: 8 }}>
-              Belum ada riwayat data yang cukup.
+              {tL('no_hist')}
             </div>
           )}
         </div>

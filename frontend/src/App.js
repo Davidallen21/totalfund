@@ -7,6 +7,92 @@ import { NetWorthTrendCard, NetWorthDetailPage } from './networthtrend';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+// ==========================================
+// KAMUS BAHASA (FULL TRANSLATE 100% + FIX)
+// ==========================================
+const DICTIONARY = {
+  id: {
+    portfolio: 'Portofolio Saya', ai_consultant: 'Konsultan AI', system_online: 'Sistem Online', online: 'Online',
+    total_net_worth: 'Total Kekayaan', overall_pnl: 'Total PnL', day_pnl: 'PnL 1 Hari',
+    pnl_breakdown: 'Rincian PnL', current_allocation: 'Alokasi Saat Ini', holdings: 'Aset Dimiliki',
+    add_asset: '+ Tambah Aset', no_assets: 'Belum ada aset', save: 'Simpan', cancel: 'Batal',
+    delete: 'Hapus', edit: 'Edit', price_live: 'Harga Live', registered_assets: 'Aset Terdaftar',
+    investor_account: 'Akun Investor', analytics: 'Analitik', ai_chat: 'Chat AI',
+    crypto_usd: 'Kripto (USD)', commodities_usd: 'Komoditas (USD)', stock_idx_idr: 'Saham IDX (IDR)',
+    stock_us_usd: 'Saham US (USD)', asset: 'Aset', holdings_avg: 'Holdings / AVG',
+    asset_value: 'Nilai Aset', unrealized_pnl: 'Unrealized PNL', cash_stable: 'Cash & Stable',
+    assets_count: 'aset', top_up: 'Top Up', your_current_avg: 'Avg kamu saat ini:',
+    new_buy_price: 'Harga Beli Baru', amount_added: 'Penambahan Jumlah', sheet: 'Lembar',
+    coin: 'Koin', rupiah: 'Rupiah', unit: 'Unit', pegged: 'Pegged', asset_type: 'Tipe Aset',
+    click_to_lock: '(Klik untuk mengunci filter pencarian)', ticker: 'Ticker', asset_name: 'Nama Aset',
+    auto_filled: 'Otomatis terisi', yahoo_symbol: 'Simbol Yahoo Finance (Opsional)', avg_buy_price: 'Harga Beli AVG',
+    amount: 'Jumlah', searching_market: '⏳ Mencari di market...', fetching_live: '⏳ Mengambil harga live...',
+    ai_welcome_1: 'Halo! Saya **TotalFund AI**, konsultan keuangan personal kamu. ✦\n\nPortfolio kamu saat ini senilai',
+    ai_welcome_2: 'dengan PNL',
+    ai_welcome_3: 'Tanyakan apa saja tentang portfolio, pasar, atau strategi investasimu!',
+    cat_crypto: 'Kripto', cat_saham_us: 'Saham US', cat_saham_idx: 'Saham IDX', cat_komoditas: 'Komoditas', stablecoin: 'Stablecoin', cash_idr: 'Cash IDR',
+    set_username: 'Set Username', change_profile_pic: 'Klik untuk ubah foto profil',
+    err_ticker_empty: '⚠️ Tulis Ticker!', err_select_from_results: '⚠️ Pilih dari hasil di bawah.', err_not_found: 'tidak ditemukan.',
+    eg_bbca: 'Misal: BBCA.JK', err_server: 'Maaf, terjadi kesalahan.', err_network: '⚠️ Tidak bisa terhubung ke server.'
+  },
+  en: {
+    portfolio: 'My Portfolio', ai_consultant: 'AI Consultant', system_online: 'System Online', online: 'Online',
+    total_net_worth: 'Total Net Worth', overall_pnl: 'Overall PnL', day_pnl: '1-Day PnL',
+    pnl_breakdown: 'PnL Breakdown', current_allocation: 'Current Allocation', holdings: 'Holdings',
+    add_asset: '+ Add Asset', no_assets: 'No assets in', save: 'Save', cancel: 'Cancel',
+    delete: 'Delete', edit: 'Edit', price_live: 'Live Price', registered_assets: 'Registered Assets',
+    investor_account: 'Investor Account', analytics: 'Analytics', ai_chat: 'AI Chat',
+    crypto_usd: 'Crypto (USD)', commodities_usd: 'Commodities (USD)', stock_idx_idr: 'IDX Stock (IDR)',
+    stock_us_usd: 'US Stock (USD)', asset: 'Asset', holdings_avg: 'Holdings / AVG',
+    asset_value: 'Asset Value', unrealized_pnl: 'Unrealized PNL', cash_stable: 'Cash & Stable',
+    assets_count: 'assets', top_up: 'Top Up', your_current_avg: 'Your current avg:',
+    new_buy_price: 'New Buy Price', amount_added: 'Amount Added', sheet: 'Shares',
+    coin: 'Coins', rupiah: 'Rupiah', unit: 'Units', pegged: 'Pegged', asset_type: 'Asset Type',
+    click_to_lock: '(Click to lock search filter)', ticker: 'Ticker', asset_name: 'Asset Name',
+    auto_filled: 'Auto-filled', yahoo_symbol: 'Yahoo Finance Symbol (Optional)', avg_buy_price: 'Avg Buy Price',
+    amount: 'Amount', searching_market: '⏳ Searching market...', fetching_live: '⏳ Fetching live price...',
+    ai_welcome_1: 'Hello! I am **TotalFund AI**, your personal financial consultant. ✦\n\nYour portfolio is currently worth',
+    ai_welcome_2: 'with a PNL of',
+    ai_welcome_3: 'Ask me anything about your portfolio, markets, or investment strategy!',
+    cat_crypto: 'Crypto', cat_saham_us: 'US Stock', cat_saham_idx: 'IDX Stock', cat_komoditas: 'Commodities', stablecoin: 'Stablecoin', cash_idr: 'Cash IDR',
+    set_username: 'Set Username', change_profile_pic: 'Click to change profile pic',
+    err_ticker_empty: '⚠️ Enter Ticker!', err_select_from_results: '⚠️ Select from results below.', err_not_found: 'not found.',
+    eg_bbca: 'e.g., AAPL', err_server: 'Sorry, an error occurred.', err_network: '⚠️ Cannot connect to server.'
+  },
+  zh: {
+    portfolio: '我的投资组合', ai_consultant: 'AI 顾问', system_online: '系统在线', online: '在线',
+    total_net_worth: '净资产总额', overall_pnl: '总盈亏', day_pnl: '单日盈亏',
+    pnl_breakdown: '盈亏明细', current_allocation: '当前资产配置', holdings: '持仓',
+    add_asset: '+ 添加资产', no_assets: '暂无资产', save: '保存', cancel: '取消',
+    delete: '删除', edit: '编辑', price_live: '实时价格', registered_assets: '已注册资产',
+    investor_account: '投资者账户', analytics: '分析', ai_chat: 'AI 聊天',
+    crypto_usd: '加密货币 (USD)', commodities_usd: '大宗商品 (USD)', stock_idx_idr: '印尼股票 (IDR)',
+    stock_us_usd: '美股 (USD)', asset: '资产', holdings_avg: '持仓 / 均价',
+    asset_value: '资产价值', unrealized_pnl: '未实现盈亏', cash_stable: '现金与稳定币',
+    assets_count: '资产', top_up: '充值', your_current_avg: '您当前的均价：',
+    new_buy_price: '新买入价', amount_added: '增加数量', sheet: '股',
+    coin: '币', rupiah: '印尼盾', unit: '单位', pegged: '锚定', asset_type: '资产类型',
+    click_to_lock: '(点击锁定搜索过滤器)', ticker: '代码', asset_name: '资产名称',
+    auto_filled: '自动填写', yahoo_symbol: '雅虎财经代码（可选）', avg_buy_price: '平均买入价',
+    amount: '数量', searching_market: '⏳ 正在搜索市场...', fetching_live: '⏳ 正在获取实时价格...',
+    ai_welcome_1: '你好！我是 **TotalFund AI**，您的个人财务顾问。 ✦\n\n您目前的投资组合价值为',
+    ai_welcome_2: '盈亏为',
+    ai_welcome_3: '请随便问我关于您的投资组合、市场或投资策略的任何问题！',
+    cat_crypto: '加密货币', cat_saham_us: '美股', cat_saham_idx: '印尼股票', cat_komoditas: '大宗商品', stablecoin: '稳定币', cash_idr: '印尼盾现金',
+    set_username: '设置用户名', change_profile_pic: '点击更改头像',
+    err_ticker_empty: '⚠️ 请输入代码！', err_select_from_results: '⚠️ 请从下方结果中选择。', err_not_found: '未找到。',
+    eg_bbca: '例如：AAPL', err_server: '抱歉，发生错误。', err_network: '⚠️ 无法连接到服务器。'
+  }
+};
+
+// Fungsi untuk deteksi bahasa browser (otomatis)
+function getDefaultLang() {
+  const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+  if (browserLang.includes('id')) return 'id';
+  if (browserLang.includes('zh')) return 'zh';
+  return 'en';
+}
+
 async function fetchWithRetry(url, opts = {}, retries = 2, timeout = 6000) {
   for (let i = 0; i <= retries; i++) {
     const ctrl = new AbortController();
@@ -40,44 +126,30 @@ const PERIODS = [
   { label: 'All', days: null },
 ];
 
-const NAV_ITEMS = [
-  { key: 'portfolio', label: 'My Portfolio', icon: '◈' },
-  { key: 'ai',        label: 'AI Consultant', icon: '✦' },
-];
-
-const SUGGESTIONS = [
-  'Analisa portfolio saya secara keseluruhan',
-  'Aset mana yang paling menguntungkan?',
-  'Bagaimana kondisi pasar hari ini?',
-  'Rekomendasi rebalancing portfolio saya',
-];
-
-function Sidebar({ activePage, setActivePage, onClose, isOpen, username, setUsername, profilePic, setProfilePic }) {
+function Sidebar({ activePage, setActivePage, onClose, isOpen, username, setUsername, profilePic, setProfilePic, t }) {
   const fileInputRef = useRef(null);
+  const NAV_ITEMS = [
+    { key: 'portfolio', label: t('portfolio'), icon: '◈' },
+    { key: 'ai',        label: t('ai_consultant'), icon: '✦' },
+  ];
 
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
-  };
-
+  const handleImageClick = () => fileInputRef.current?.click();
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePic(reader.result);
-      };
+      reader.onloadend = () => setProfilePic(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
   return (
     <div className={`app-sidebar${isOpen ? ' sidebar-open' : ''}`}>
-      {/* SEKSI PROFIL PENGGUNA BARU */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 20px', borderBottom: '1px solid #1f1f1f' }}>
         <div 
           onClick={handleImageClick}
           style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#262626', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', border: '2px solid #333', flexShrink: 0, position: 'relative' }}
-          title="Klik untuk ubah foto profil"
+          title={t('change_profile_pic')}
         >
           {profilePic ? (
             <img src={profilePic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -85,27 +157,16 @@ function Sidebar({ activePage, setActivePage, onClose, isOpen, username, setUser
             <span style={{ color: '#737373', fontSize: '16px', fontWeight: 'bold' }}>{username ? username[0].toUpperCase() : 'U'}</span>
           )}
         </div>
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          onChange={handleImageChange} 
-          accept="image/*" 
-          style={{ display: 'none' }} 
-        />
+        <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" style={{ display: 'none' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <input 
-            type="text"
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Set Username"
+            type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+            placeholder={t('set_username')}
             style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '14px', fontWeight: 600, outline: 'none', width: '100%', padding: 0 }}
-            title="Klik untuk mengedit nama"
           />
-          <div style={{ color: '#555', fontSize: '11px', marginTop: '2px', fontWeight: 500 }}>Investor Account</div>
+          <div style={{ color: '#555', fontSize: '11px', marginTop: '2px', fontWeight: 500 }}>{t('investor_account')}</div>
         </div>
-        {onClose && (
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px' }}>✕</button>
-        )}
+        {onClose && <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px' }}>✕</button>}
       </div>
 
       <nav className="sidebar-nav">
@@ -117,7 +178,7 @@ function Sidebar({ activePage, setActivePage, onClose, isOpen, username, setUser
       </nav>
       <div className="sidebar-footer">
         <div className="status-dot" />
-        <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 500 }}>System Online</span>
+        <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 500 }}>{t('system_online')}</span>
       </div>
     </div>
   );
@@ -142,7 +203,7 @@ function DonutChart({ data }) {
   );
 }
 
-function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD, onEdit, onDelete, isLast }) {
+function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD, onEdit, onDelete, isLast, t }) {
   const isCrypto    = asset.type === 'crypto';
   const isSaham     = asset.type === 'saham';
   const isSahamUS   = asset.type === 'saham_us';
@@ -173,11 +234,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
       <div className="asset-row-desktop" style={{ alignItems: 'center', padding: '12px 28px', borderBottom: isLast ? 'none' : '1px solid #1f1f1f', gap: '16px', transition: 'background 0.2s' }}>
         <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
-            {asset.thumb ? (
-              <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              asset.ticker.substring(0, 4)
-            )}
+            {asset.thumb ? <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : asset.ticker.substring(0, 4)}
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ color: '#ffffff', fontWeight: 600, fontSize: '14px', letterSpacing: '-0.2px' }}>{asset.ticker}</div>
@@ -185,7 +242,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
           </div>
         </div>
         <div style={{ flex: 1.5 }}>
-          {isCashIDR ? <span style={{ color: '#404040', fontSize: '13px' }}>Pegged</span> : (
+          {isCashIDR ? <span style={{ color: '#404040', fontSize: '13px' }}>{t('pegged')}</span> : (
             <>
               <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : <span style={{ color: '#383838' }}>—</span>}</div>
               <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{hargaAcuan ? (isSaham ? formatUSD(hargaAcuan / kursIdr) : formatIDR(hargaAcuan * kursIdr)) : ''}</div>
@@ -197,7 +254,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
             <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{formatIDR(asset.jumlah).replace('Rp ', '')} <span style={{ color: '#555', fontSize: '11px', fontWeight: 400 }}>IDR</span></div>
           ) : (
             <>
-              <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} <span style={{ color: '#555', fontSize: '11px', fontWeight: 400 }}>{isSaham ? 'Lot' : asset.ticker}</span></div>
+              <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} <span style={{ color: '#555', fontSize: '11px', fontWeight: 400 }}>{isSaham ? t('sheet') : asset.ticker}</span></div>
               <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>Avg: {isSaham ? formatIDR(asset.avg) : formatUSD(asset.avg)}</div>
             </>
           )}
@@ -221,7 +278,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
           ) : <span style={{ color: '#383838', fontSize: '16px' }}>—</span>}
         </div>
         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-          <button onClick={() => onEdit(asset)} style={{ backgroundColor: 'transparent', color: '#909090', border: '1px solid #333', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+          <button onClick={() => onEdit(asset)} style={{ backgroundColor: 'transparent', color: '#909090', border: '1px solid #333', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('edit')}</button>
           <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'transparent', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer' }}>✕</button>
         </div>
       </div>
@@ -230,11 +287,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
         <div className="asset-row-mobile-top">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
-              {asset.thumb ? (
-                <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                asset.ticker.substring(0, 4)
-              )}
+              {asset.thumb ? <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : asset.ticker.substring(0, 4)}
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{asset.ticker}</div>
@@ -250,13 +303,13 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
           <div className="asset-row-mobile-stats" style={{ gap: '16px' }}>
             {!isCashIDR && (
               <div>
-                <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>Harga</div>
+                <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{t('price_live')}</div>
                 <div style={{ color: '#e5e5e5', fontSize: '12px', fontWeight: 500 }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : '—'}</div>
               </div>
             )}
             <div>
-              <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>Holdings</div>
-              <div style={{ color: '#e5e5e5', fontSize: '12px', fontWeight: 500 }}>{isCashIDR ? formatIDR(asset.jumlah) : `${(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} ${isSaham ? 'Lot' : asset.ticker}`}</div>
+              <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{t('holdings')}</div>
+              <div style={{ color: '#e5e5e5', fontSize: '12px', fontWeight: 500 }}>{isCashIDR ? formatIDR(asset.jumlah) : `${(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} ${isSaham ? t('sheet') : asset.ticker}`}</div>
             </div>
             {!isStable && !isCashIDR && pnl !== null && (
               <div>
@@ -266,7 +319,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
             )}
           </div>
           <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-            <button onClick={() => onEdit(asset)} style={{ backgroundColor: 'transparent', color: '#909090', border: '1px solid #333', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+            <button onClick={() => onEdit(asset)} style={{ backgroundColor: 'transparent', color: '#909090', border: '1px solid #333', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('edit')}</button>
             <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'transparent', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', cursor: 'pointer' }}>✕</button>
           </div>
         </div>
@@ -275,16 +328,16 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
   );
 }
 
-function ConfirmDeleteModal({ asset, onConfirm, onCancel }) {
+function ConfirmDeleteModal({ asset, onConfirm, onCancel, t }) {
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
       <div style={{ backgroundColor: '#111215', border: '1px solid #1e2026', borderRadius: '18px', padding: '28px 28px 24px', width: '340px', boxShadow: '0 24px 64px rgba(0,0,0,0.8)' }}>
         <div style={{ width: '52px', height: '52px', borderRadius: '14px', backgroundColor: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', fontSize: '24px' }}>🗑</div>
-        <h3 style={{ color: '#ffffff', fontSize: '20px', fontWeight: 800, margin: '0 0 10px' }}>Hapus {asset.ticker}?</h3>
+        <h3 style={{ color: '#ffffff', fontSize: '20px', fontWeight: 800, margin: '0 0 10px' }}>{t('delete')} {asset.ticker}?</h3>
         <p style={{ color: '#a3a3a3', fontSize: '14px', margin: '0 0 6px', lineHeight: 1.6 }}>Aset <span style={{ fontWeight: 700 }}>{asset.nama}</span> akan dihapus permanen.</p>
         <div style={{ display: 'flex', gap: '8px', marginTop: '24px' }}>
-          <button onClick={onCancel} style={{ flex: 1, backgroundColor: '#1a1a22', color: '#737373', border: '1px solid #242430', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-          <button onClick={onConfirm} style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>Hapus</button>
+          <button onClick={onCancel} style={{ flex: 1, backgroundColor: '#1a1a22', color: '#737373', border: '1px solid #242430', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
+          <button onClick={onConfirm} style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>{t('delete')}</button>
         </div>
       </div>
     </div>
@@ -292,38 +345,17 @@ function ConfirmDeleteModal({ asset, onConfirm, onCancel }) {
 }
 
 function SearchResultItem({ item, onSelect }) {
-  const typeColor = {
-    crypto:    '#f59e0b',
-    stock_idx: '#3b82f6',
-    stock_us:  '#ec4899',
-    stock:     '#a3a3a3',
-    index:     '#10b981',
-  }[item.type] || '#737373';
-
-  const typeLabel = {
-    crypto:    'Crypto',
-    stock_idx: 'IDX',
-    stock_us:  'US',
-    stock:     item.exchange || 'Stock',
-    index:     'Index',
-  }[item.type] || item.type;
+  const typeColor = { crypto: '#f59e0b', stock_idx: '#3b82f6', stock_us: '#ec4899', stock: '#a3a3a3', index: '#10b981' }[item.type] || '#737373';
+  const typeLabel = { crypto: 'Crypto', stock_idx: 'IDX', stock_us: 'US', stock: item.exchange || 'Stock', index: 'Index' }[item.type] || item.type;
 
   return (
     <div
       onClick={() => onSelect(item)}
-      style={{
-        display: 'flex', alignItems: 'center', gap: '10px',
-        padding: '10px 14px', cursor: 'pointer',
-        borderBottom: '1px solid #1a1a1a',
-        transition: 'background 0.15s',
-      }}
+      style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #1a1a1a', transition: 'background 0.15s' }}
       onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
-      {item.thumb
-        ? <img src={item.thumb} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} />
-        : <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: typeColor + '33', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: typeColor, fontWeight: 800 }}>{item.symbol?.substring(0, 2)}</div>
-      }
+      {item.thumb ? <img src={item.thumb} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} /> : <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: typeColor + '33', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: typeColor, fontWeight: 800 }}>{item.symbol?.substring(0, 2)}</div>}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ color: '#fff', fontWeight: 700, fontSize: '13px' }}>{item.symbol}</div>
         <div style={{ color: '#555', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
@@ -334,7 +366,7 @@ function SearchResultItem({ item, onSelect }) {
   );
 }
 
-function AddAssetModal({ onSave, onClose }) {
+function AddAssetModal({ onSave, onClose, t }) {
   const [form, setForm]           = useState({ nama: '', ticker: '', simbol: '', type: 'crypto', avg: '', jumlah: '', thumb: '' });
   const [loadingHarga, setLoading] = useState(false);
   const [infoHarga, setInfo]       = useState('');
@@ -366,63 +398,40 @@ function AddAssetModal({ onSave, onClose }) {
         const data = await res.json();
         setSearchResults(data.results || []);
         setShowDropdown(true);
-      } catch (e) {
-        setSearchResults([]);
-      }
+      } catch (e) { setSearchResults([]); }
       setSearching(false);
     }, 350); 
   };
 
   const handleSelectResult = async (item) => {
-    setShowDropdown(false);
-    setSearchResults([]);
-
-    const typeMap = {
-      crypto:    'crypto',
-      stock_idx: 'saham',
-      stock_us:  'saham_us',
-      stock:     'saham_us',
-      index:     'saham_us',
-    };
-    
+    setShowDropdown(false); setSearchResults([]);
+    const typeMap = { crypto: 'crypto', stock_idx: 'saham', stock_us: 'saham_us', stock: 'saham_us', index: 'saham_us' };
     const detectedType = isTypeLocked ? form.type : (typeMap[item.type] || form.type);
     const simbol = item.type === 'crypto' ? item.id : item.id;
 
-    set('ticker', item.symbol);
-    set('nama',   item.name || item.symbol);
-    set('type',   detectedType);
-    set('simbol', simbol);
-    set('thumb',  item.thumb || '');
+    set('ticker', item.symbol); set('nama', item.name || item.symbol);
+    set('type', detectedType); set('simbol', simbol); set('thumb', item.thumb || '');
 
-    setLoading(true);
-    setInfo('⏳ Mengambil harga live...');
+    setLoading(true); setInfo(t('fetching_live'));
     try {
       const res  = await fetchWithRetry(`${API_BASE}/api/price/${encodeURIComponent(item.symbol)}?type=${detectedType}`);
       const data = await res.json();
-
-      if (data.error) {
-        setInfo(`⚠️ ${data.error}`);
-      } else {
-        const harga    = data.price ?? 0;
-        const currency = data.currency || 'USD';
-        set('avg', harga);
-        setFetchedLivePrice(harga);
+      if (data.error) setInfo(`⚠️ ${data.error}`);
+      else {
+        const harga = data.price ?? 0;
+        set('avg', harga); setFetchedLivePrice(harga);
         if (data.coingecko_id) set('simbol', data.coingecko_id);
         if (data.name && !form.nama) set('nama', data.name);
         if (data.thumb) set('thumb', data.thumb);
-        setInfo(`✅ Live: ${currency === 'IDR' ? formatIDR(harga) : '$' + harga.toLocaleString(undefined, { maximumFractionDigits: 6 })} (${data.change >= 0 ? '+' : ''}${data.change?.toFixed(2)}% 24h)`);
+        setInfo(`✅ Live: ${data.currency === 'IDR' ? formatIDR(harga) : '$' + harga.toLocaleString(undefined, { maximumFractionDigits: 6 })} (${data.change >= 0 ? '+' : ''}${data.change?.toFixed(2)}% 24h)`);
       }
-    } catch (e) {
-      setInfo(`❌ Gagal fetch harga: ${e.message}`);
-    }
+    } catch (e) { setInfo(`❌ Error: ${e.message}`); }
     setLoading(false);
   };
 
   const cekHargaLive = async () => {
-    if (!form.ticker) return setInfo('⚠️ Tulis Ticker dulu! (Cth: BTC / BBCA)');
-    setLoading(true);
-    setInfo('⏳ Mencari di market...');
-    setShowDropdown(false);
+    if (!form.ticker) return setInfo(t('err_ticker_empty'));
+    setLoading(true); setInfo(t('searching_market')); setShowDropdown(false);
     try {
       const typeQuery = isTypeLocked ? `?type=${form.type}` : '';
       const res  = await fetchWithRetry(`${API_BASE}/api/price/${encodeURIComponent(form.ticker)}${typeQuery}`);
@@ -432,40 +441,27 @@ function AddAssetModal({ onSave, onClose }) {
         const sRes  = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(form.ticker)}${typeQuery.replace('?', '&')}`);
         const sData = await sRes.json();
         if (sData.results?.length > 0) {
-          setSearchResults(sData.results);
-          setShowDropdown(true);
-          setInfo(`⚠️ Ticker tidak ditemukan langsung. Pilih dari hasil di bawah.`);
-        } else {
-          setInfo(`❌ "${form.ticker}" tidak ditemukan.`);
-        }
+          setSearchResults(sData.results); setShowDropdown(true); setInfo(t('err_select_from_results'));
+        } else setInfo(`❌ "${form.ticker}" ${t('err_not_found')}`);
       } else {
-        const harga    = data.price ?? 0;
-        const currency = data.currency || 'USD';
-        set('avg', harga);
-        setFetchedLivePrice(harga);
+        const harga = data.price ?? 0;
+        set('avg', harga); setFetchedLivePrice(harga);
         if (data.coingecko_id) set('simbol', data.coingecko_id);
-        if (data.name)         set('nama',   data.name);
-        if (data.thumb)        set('thumb',  data.thumb);
-        
+        if (data.name) set('nama', data.name);
+        if (data.thumb) set('thumb', data.thumb);
         if (!isTypeLocked) {
-          if (data.type === 'crypto')    set('type', 'crypto');
+          if (data.type === 'crypto') set('type', 'crypto');
           if (data.type === 'stock_idx') set('type', 'saham');
           if (data.type === 'stock_us' || data.type === 'stock') set('type', 'saham_us');
         }
-        setInfo(`✅ ${data.name || form.ticker}: ${currency === 'IDR' ? formatIDR(harga) : '$' + harga.toLocaleString(undefined, { maximumFractionDigits: 6 })} (${data.change >= 0 ? '+' : ''}${data.change?.toFixed(2)}% 24h)`);
+        setInfo(`✅ ${data.name || form.ticker}: ${data.currency === 'IDR' ? formatIDR(harga) : '$' + harga.toLocaleString(undefined, { maximumFractionDigits: 6 })} (${data.change >= 0 ? '+' : ''}${data.change?.toFixed(2)}% 24h)`);
       }
-    } catch (e) {
-      setInfo(`❌ Error: ${e.message}`);
-    }
+    } catch (e) { setInfo(`❌ Error: ${e.message}`); }
     setLoading(false);
   };
 
   useEffect(() => {
-    const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowDropdown(false);
-      }
-    };
+    const handleClick = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setShowDropdown(false); };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
@@ -473,22 +469,10 @@ function AddAssetModal({ onSave, onClose }) {
   const handleSubmit = () => {
     if (!form.nama || !form.ticker || !form.jumlah) return;
     if (!isCashIDR && !form.avg) return;
-    onSave({
-      nama:   form.nama,
-      ticker: form.ticker.toUpperCase(),
-      simbol: form.simbol?.trim() || null,
-      type:   form.type,
-      avg:    isCashIDR ? 1 : parseFloat(form.avg),
-      jumlah: parseFloat(form.jumlah),
-      thumb:  form.thumb || null,
-    }, fetchedLivePrice);
+    onSave({ nama: form.nama, ticker: form.ticker.toUpperCase(), simbol: form.simbol?.trim() || null, type: form.type, avg: isCashIDR ? 1 : parseFloat(form.avg), jumlah: parseFloat(form.jumlah), thumb: form.thumb || null }, fetchedLivePrice);
   };
 
-  const typeMap = [
-    ['crypto', 'Crypto', '#f59e0b'], ['saham', 'IDX Saham', '#3b82f6'],
-    ['saham_us', 'US Saham', '#ec4899'], ['komoditas', 'Komoditas', '#eab308'],
-    ['stable', 'Stablecoin', '#10b981'], ['cash_idr', 'Cash IDR', '#8b5cf6'],
-  ];
+  const typeMap = [['crypto', t('cat_crypto'), '#f59e0b'], ['saham', t('cat_saham_idx'), '#3b82f6'], ['saham_us', t('cat_saham_us'), '#ec4899'], ['komoditas', t('cat_komoditas'), '#eab308'], ['stable', t('stablecoin'), '#10b981'], ['cash_idr', t('cash_idr'), '#8b5cf6']];
   const labelStyle = { color: '#606060', fontSize: '11px', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.6px' };
   const inputStyle = { width: '100%', backgroundColor: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 16px', color: '#e5e5e5', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontWeight: 500 };
 
@@ -497,15 +481,14 @@ function AddAssetModal({ onSave, onClose }) {
       <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '20px', width: '520px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
         <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid #1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h2 style={{ color: '#fff', fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>Tambah Aset Baru</h2>
-            <p style={{ color: '#606060', fontSize: '13px', margin: '4px 0 0' }}>Ketik ticker apapun — crypto, IDX, US, semua otomatis terdeteksi</p>
+            <h2 style={{ color: '#fff', fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('add_asset')}</h2>
           </div>
           <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', color: '#606060', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
 
         <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label style={labelStyle}>Tipe Aset <span style={{ color: '#383838', fontWeight: 400, textTransform: 'none' }}>(Klik untuk mengunci filter pencarian)</span></label>
+            <label style={labelStyle}>{t('asset_type')} <span style={{ color: '#383838', fontWeight: 400, textTransform: 'none' }}>{t('click_to_lock')}</span></label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px' }}>
               {typeMap.map(([val, lbl, col]) => (
                 <button key={val} onClick={() => { set('type', val); setIsTypeLocked(true); }} style={{ padding: '10px 6px', borderRadius: '10px', border: '1px solid', borderColor: form.type === val ? col : '#222', backgroundColor: form.type === val ? `${col}15` : '#0d0d0d', color: form.type === val ? col : '#484848', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s' }}>
@@ -517,96 +500,61 @@ function AddAssetModal({ onSave, onClose }) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '14px' }}>
             <div style={{ position: 'relative' }} ref={dropdownRef}>
-              <label style={labelStyle}>Ticker</label>
+              <label style={labelStyle}>{t('ticker')}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  value={form.ticker}
-                  onChange={e => handleTickerInput(e.target.value)}
-                  onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-                  placeholder="PUMP / BBCA"
-                  style={{ ...inputStyle, textTransform: 'uppercase', flex: 1 }}
-                  autoComplete="off"
-                />
-                <button
-                  onClick={cekHargaLive}
-                  disabled={loadingHarga}
-                  title="Cari harga manual"
-                  style={{ backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '0 12px', color: loadingHarga ? '#383838' : '#4ade80', cursor: loadingHarga ? 'default' : 'pointer', fontWeight: 'bold', flexShrink: 0, fontSize: '14px' }}
-                >
-                  {loadingHarga ? '⏳' : '🔎'}
-                </button>
+                <input value={form.ticker} onChange={e => handleTickerInput(e.target.value)} onFocus={() => searchResults.length > 0 && setShowDropdown(true)} placeholder="PUMP / AAPL" style={{ ...inputStyle, textTransform: 'uppercase', flex: 1 }} autoComplete="off" />
+                <button onClick={cekHargaLive} disabled={loadingHarga} style={{ backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '0 12px', color: loadingHarga ? '#383838' : '#4ade80', cursor: loadingHarga ? 'default' : 'pointer', fontWeight: 'bold', flexShrink: 0, fontSize: '14px' }}>{loadingHarga ? '⏳' : '🔎'}</button>
               </div>
 
               {showDropdown && searchResults.length > 0 && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0,
-                  backgroundColor: '#141414', border: '1px solid #2a2a2a',
-                  borderRadius: '12px', marginTop: '4px', zIndex: 999,
-                  maxHeight: '260px', overflowY: 'auto',
-                  boxShadow: '0 16px 40px rgba(0,0,0,0.7)',
-                }}>
-                  {searching && (
-                    <div style={{ padding: '10px 14px', color: '#555', fontSize: '12px' }}>Mencari...</div>
-                  )}
-                  {searchResults.map((item, i) => (
-                    <SearchResultItem key={`${item.type}:${item.symbol}:${i}`} item={item} onSelect={handleSelectResult} />
-                  ))}
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#141414', border: '1px solid #2a2a2a', borderRadius: '12px', marginTop: '4px', zIndex: 999, maxHeight: '260px', overflowY: 'auto', boxShadow: '0 16px 40px rgba(0,0,0,0.7)' }}>
+                  {searching && <div style={{ padding: '10px 14px', color: '#555', fontSize: '12px' }}>{t('searching_market')}</div>}
+                  {searchResults.map((item, i) => <SearchResultItem key={`${item.type}:${item.symbol}:${i}`} item={item} onSelect={handleSelectResult} />)}
                 </div>
               )}
             </div>
 
             <div>
-              <label style={labelStyle}>Nama Aset</label>
-              <input
-                value={form.nama}
-                onChange={e => set('nama', e.target.value)}
-                placeholder="Otomatis terisi"
-                style={inputStyle}
-              />
+              <label style={labelStyle}>{t('asset_name')}</label>
+              <input value={form.nama} onChange={e => set('nama', e.target.value)} placeholder={t('auto_filled')} style={inputStyle} />
             </div>
           </div>
 
           {infoHarga && (
-            <div style={{
-              color: infoHarga.startsWith('✅') ? '#4ade80' : '#f87171',
-              fontSize: '12px', fontWeight: 'bold',
-              padding: '8px 12px',
-              backgroundColor: infoHarga.startsWith('✅') ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)',
-              borderRadius: '6px', marginTop: '-10px',
-            }}>{infoHarga}</div>
+            <div style={{ color: infoHarga.startsWith('✅') ? '#4ade80' : '#f87171', fontSize: '12px', fontWeight: 'bold', padding: '8px 12px', backgroundColor: infoHarga.startsWith('✅') ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', borderRadius: '6px', marginTop: '-10px' }}>{infoHarga}</div>
           )}
 
           {['saham', 'saham_us', 'komoditas'].includes(form.type) && (
             <div>
-              <label style={labelStyle}>Simbol Yahoo Finance (Opsional)</label>
-              <input value={form.simbol} onChange={e => set('simbol', e.target.value)} placeholder="Misal: BBCA.JK" style={inputStyle} />
+              <label style={labelStyle}>{t('yahoo_symbol')}</label>
+              <input value={form.simbol} onChange={e => set('simbol', e.target.value)} placeholder={t('eg_bbca')} style={inputStyle} />
             </div>
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: isCashIDR ? '1fr' : '1fr 1fr', gap: '14px' }}>
             {!isCashIDR && (
               <div>
-                <label style={labelStyle}>Harga Beli AVG ({form.type === 'saham' ? 'IDR' : 'USD'})</label>
-                <input type="number" value={form.avg} onChange={e => set('avg', e.target.value)} placeholder="Auto-filled" style={inputStyle} />
+                <label style={labelStyle}>{t('avg_buy_price')} ({form.type === 'saham' ? 'IDR' : 'USD'})</label>
+                <input type="number" value={form.avg} onChange={e => set('avg', e.target.value)} placeholder={t('auto_filled')} style={inputStyle} />
               </div>
             )}
             <div>
-              <label style={labelStyle}>Jumlah ({form.type === 'saham' ? 'Lembar' : form.type === 'cash_idr' ? 'Rupiah' : 'Unit'})</label>
-              <input type="number" value={form.jumlah} onChange={e => set('jumlah', e.target.value)} placeholder={isCashIDR ? '10000000' : '0'} style={inputStyle} />
+              <label style={labelStyle}>{t('amount')} ({form.type === 'saham' ? t('sheet') : form.type === 'cash_idr' ? t('rupiah') : t('unit')})</label>
+              <input type="number" value={form.jumlah} onChange={e => set('jumlah', e.target.value)} placeholder="0" style={inputStyle} />
             </div>
           </div>
         </div>
 
         <div style={{ padding: '0 28px 28px', display: 'flex', gap: '10px' }}>
-          <button onClick={onClose} style={{ flex: 1, backgroundColor: '#1a1a1a', color: '#737373', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-          <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>+ Tambah Aset</button>
+          <button onClick={onClose} style={{ flex: 1, backgroundColor: '#1a1a1a', color: '#737373', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
+          <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>{t('add_asset')}</button>
         </div>
       </div>
     </div>
   );
 }
 
-function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, grandTotalIDR, overallPnlUSD, overallPnlPersen, marketData }) {
+function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, grandTotalIDR, overallPnlUSD, overallPnlPersen, marketData, t }) {
   const buildContext = () => {
     const detail = assets.map(a => {
       const isCrypto = a.type === 'crypto', isSaham = a.type === 'saham';
@@ -623,7 +571,7 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
     return `PORTFOLIO (${new Date().toLocaleString('id-ID')})\nTotal Net Worth : ${formatUSD(grandTotalUSD)}\nOverall PNL : ${overallPnlUSD >= 0 ? '+' : ''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)\nKurs USD/IDR : ${kursIdr.toLocaleString('id-ID')}\n\nDETAIL ASET:\n${detail}\n\nDATA PASAR REALTIME:\n${mkt}`;
   };
 
-  const welcome = `Halo! Saya **TotalFund AI**, konsultan keuangan personal kamu. ✦\n\nPortfolio kamu saat ini senilai **${formatUSD(grandTotalUSD)}** dengan PNL **${overallPnlUSD >= 0 ? '+' : ''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)**.\n\nTanyakan apa saja tentang portfolio, pasar, atau strategi investasimu!`;
+  const welcome = `${t('ai_welcome_1')} **${formatUSD(grandTotalUSD)}** ${t('ai_welcome_2')} **${overallPnlUSD >= 0 ? '+' : ''}${formatUSD(overallPnlUSD)} (${overallPnlPersen.toFixed(2)}%)**.\n\n${t('ai_welcome_3')}`;
 
   const [messages, setMessages] = useState([{ role: 'ai', text: welcome }]);
   const [input, setInput]       = useState('');
@@ -636,19 +584,16 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
   const send = async (text) => {
     const msg = text || input.trim();
     if (!msg || loading) return;
-    setInput('');
-    setMessages(prev => [...prev, { role: 'user', text: msg }]);
-    setLoading(true);
+    setInput(''); setMessages(prev => [...prev, { role: 'user', text: msg }]); setLoading(true);
     try {
       const history = messages.slice(-8).map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
       const res  = await fetch(`${API_BASE}/api/ai-chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg, context: buildContext(), history }) });
       const data = await res.json();
-      setMessages(prev => [...prev, { role: 'ai', text: data.response || 'Maaf, terjadi kesalahan.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: data.response || t('err_server') }]);
     } catch {
-      setMessages(prev => [...prev, { role: 'ai', text: '⚠️ Tidak bisa terhubung ke server.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: t('err_network') }]);
     }
-    setLoading(false);
-    inputRef.current?.focus();
+    setLoading(false); inputRef.current?.focus();
   };
 
   const isWelcome = messages.length === 1;
@@ -662,7 +607,7 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
             <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '15px' }}>TotalFund AI</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
               <div className="status-dot" style={{ width: 6, height: 6 }} />
-              <span style={{ color: '#6b7280', fontSize: '12px' }}>Online · Data portfolio real-time</span>
+              <span style={{ color: '#6b7280', fontSize: '12px' }}>{t('online')}</span>
             </div>
           </div>
         </div>
@@ -672,12 +617,7 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60%', textAlign: 'center', padding: '20px 0' }}>
             <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 8px 28px rgba(74,222,128,0.25)', marginBottom: 20 }}>✦</div>
             <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '22px', marginBottom: 8 }}>TotalFund AI</div>
-            <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: 28, maxWidth: 420, lineHeight: 1.6 }}>Konsultan keuangan personal kamu berbasis AI.</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', maxWidth: 560 }}>
-              {SUGGESTIONS.map((s, i) => (
-                <button key={i} onClick={() => send(s)} style={{ background: '#1a1a1a', color: '#a3a3a3', border: '1px solid #2a2a2a', borderRadius: '20px', padding: '8px 16px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>{s}</button>
-              ))}
-            </div>
+            <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: 28, maxWidth: 420, lineHeight: 1.6 }}>{t('ai_consultant')}</div>
           </div>
         )}
         {!isWelcome && (
@@ -704,7 +644,7 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
       </div>
       <div style={{ padding: '16px 24px', borderTop: '1px solid #1f1f1f', flexShrink: 0 }}>
         <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px' }}>
-          <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="Tanya sesuatu..." disabled={loading} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e5e5e5', fontSize: '14px', fontFamily: 'inherit' }} />
+          <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="..." disabled={loading} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e5e5e5', fontSize: '14px', fontFamily: 'inherit' }} />
           <button onClick={() => send()} disabled={loading || !input.trim()} style={{ width: '36px', height: '36px', borderRadius: '9px', background: input.trim() ? 'linear-gradient(135deg, #4ade80, #06b6d4)' : 'rgba(255,255,255,0.05)', border: 'none', color: input.trim() ? '#000' : '#4b5563', fontSize: '15px', fontWeight: 700, cursor: input.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▶</button>
         </div>
       </div>
@@ -713,6 +653,18 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
 }
 
 function App() {
+  const [lang, setLang] = useLocalStorage('totalfund_lang', getDefaultLang());
+  
+  // FIX: Fungsi translator tangguh anti-error format JSON di Local Storage
+  const t = useCallback((key) => {
+    let safeLang = 'en';
+    if (typeof lang === 'string') {
+      safeLang = lang.replace(/[^a-zA-Z]/g, '').toLowerCase();
+    }
+    const validLang = ['id', 'en', 'zh'].includes(safeLang) ? safeLang : 'en';
+    return DICTIONARY[validLang]?.[key] || DICTIONARY['en']?.[key] || key;
+  }, [lang]);
+
   const [activePage, setActivePage]       = useState('portfolio');
   const [assets, setAssets]               = useLocalStorage('totalfund_portfolio', []);
   const [hargaMap, setHargaMap]           = useState({});
@@ -730,7 +682,6 @@ function App() {
   const [cryptoLoaded, setCryptoLoaded]   = useState(false);
   const [marketLoaded, setMarketLoaded]   = useState(false);
 
-  // STATE BARU UNTUK PROFIL PENGGUNA
   const [username, setUsername]           = useLocalStorage('totalfund_username', 'User123');
   const [profilePic, setProfilePic]       = useLocalStorage('totalfund_profile_pic', '');
 
@@ -748,17 +699,12 @@ function App() {
   const { width } = useWindowSize();
   useEffect(() => { if (width >= 768) setSidebarOpen(false); }, [width]);
 
-  const cryptoAssets = useMemo(
-    () => assets.filter(a => a.type === 'crypto' && a.ticker),
-    [assets]
-  );
+  const cryptoAssets = useMemo(() => assets.filter(a => a.type === 'crypto' && a.ticker), [assets]);
 
   const fetchCryptoPrices = useCallback(async () => {
     try {
       const baseSymbols      = ['BTCUSDT', 'ETHUSDT'];
-      const portfolioSymbols = cryptoAssets
-        .filter(a => a.ticker)
-        .map(a => `${a.ticker.toUpperCase()}USDT`);
+      const portfolioSymbols = cryptoAssets.filter(a => a.ticker).map(a => `${a.ticker.toUpperCase()}USDT`);
       const allSymbols = [...new Set([...baseSymbols, ...portfolioSymbols])];
       const symbolsStr = allSymbols.join(',');
 
@@ -790,16 +736,11 @@ function App() {
       }));
 
       setCryptoLoaded(true);
-    } catch (err) {
-      setCryptoLoaded(true);
-    }
+    } catch (err) { setCryptoLoaded(true); }
   }, [cryptoAssets]);
 
   const nonCryptoSymbols = useMemo(() => {
-    return assets
-      .filter(a => ['saham', 'saham_us', 'komoditas'].includes(a.type))
-      .map(a => a.simbol || a.ticker)
-      .filter(Boolean);
+    return assets.filter(a => ['saham', 'saham_us', 'komoditas'].includes(a.type)).map(a => a.simbol || a.ticker).filter(Boolean);
   }, [assets]);
 
   const fetchMarketData = useCallback(async () => {
@@ -810,35 +751,24 @@ function App() {
 
       const stockUpdates = {};
       Object.keys(data).forEach(ticker => {
-        if (data[ticker]?.price !== undefined && data[ticker]?.price !== null) {
-          stockUpdates[ticker] = data[ticker].price;
-        }
+        if (data[ticker]?.price !== undefined && data[ticker]?.price !== null) stockUpdates[ticker] = data[ticker].price;
       });
       setHargaSaham(prev => ({ ...prev, ...stockUpdates }));
 
       const mk = (key, type) => {
         const entry = data[key];
         if (!entry || entry.price === undefined || entry.price === null) return null;
-        const price  = parseFloat(entry.price);
-        const change = parseFloat(entry.change ?? 0);
-        return { price, change, isUp: change >= 0, type };
+        return { price: parseFloat(entry.price), change: parseFloat(entry.change ?? 0), isUp: parseFloat(entry.change ?? 0) >= 0, type };
       };
 
       const updates = {};
-      const mapping = [
-        ['IHSG','idr'], ['SPX500','usd'], ['NASDAQ','usd'],
-        ['GOLD','usd'], ['XAG','usd'],   ['BRENT','usd'],
-      ];
-      mapping.forEach(([key, type]) => {
-        const result = mk(key, type);
-        if (result) updates[key] = result;
+      [['IHSG','idr'], ['SPX500','usd'], ['NASDAQ','usd'], ['GOLD','usd'], ['XAG','usd'], ['BRENT','usd']].forEach(([key, type]) => {
+        const result = mk(key, type); if (result) updates[key] = result;
       });
 
       setMarketData(prev => ({ ...prev, ...updates }));
       setMarketLoaded(true);
-    } catch (err) {
-      setMarketLoaded(true);
-    }
+    } catch (err) { setMarketLoaded(true); }
 
     try {
       const res  = await fetchWithRetry('https://api.exchangerate-api.com/v4/latest/USD');
@@ -847,17 +777,8 @@ function App() {
     } catch (err) {}
   }, [nonCryptoSymbols]);
 
-  useEffect(() => {
-    fetchCryptoPrices();
-    const interval = setInterval(fetchCryptoPrices, 60000);
-    return () => clearInterval(interval);
-  }, [fetchCryptoPrices]);
-
-  useEffect(() => {
-    fetchMarketData();
-    const interval = setInterval(fetchMarketData, 60000);
-    return () => clearInterval(interval);
-  }, [fetchMarketData]);
+  useEffect(() => { fetchCryptoPrices(); const i = setInterval(fetchCryptoPrices, 60000); return () => clearInterval(i); }, [fetchCryptoPrices]);
+  useEffect(() => { fetchMarketData(); const i = setInterval(fetchMarketData, 60000); return () => clearInterval(i); }, [fetchMarketData]);
 
   const getLivePrice = useCallback((asset) => {
     const key = asset.simbol || asset.ticker;
@@ -900,28 +821,23 @@ function App() {
       let valUSD = 0, change24h = 0;
       if (a.type === 'crypto') {
         const key = a.simbol || a.ticker;
-        valUSD    = (hargaMap[key]?.usd || a.avg) * a.jumlah;
-        change24h = hargaMap[key]?.change || 0;
+        valUSD = (hargaMap[key]?.usd || a.avg) * a.jumlah; change24h = hargaMap[key]?.change || 0;
       } else if (a.type === 'komoditas') {
         const key = a.simbol || a.ticker;
-        const price = hargaSaham[key] || a.avg;
-        valUSD    = price * a.jumlah;
+        valUSD = (hargaSaham[key] || a.avg) * a.jumlah;
         change24h = a.simbol === 'GC=F' ? (marketData.GOLD?.change || 0) : a.simbol === 'SI=F' ? (marketData.XAG?.change || 0) : 0;
       } else if (a.type === 'saham_us') {
         const key = a.simbol || a.ticker;
-        valUSD    = (hargaSaham[key] || a.avg) * a.jumlah;
-        change24h = marketData.SPX500?.change || 0;
+        valUSD = (hargaSaham[key] || a.avg) * a.jumlah; change24h = marketData.SPX500?.change || 0;
       } else if (a.type === 'saham') {
         const key = a.simbol || a.ticker;
-        valUSD    = ((hargaSaham[key] || a.avg) * a.jumlah) / kursIdr;
-        change24h = marketData.IHSG?.change || 0;
+        valUSD = ((hargaSaham[key] || a.avg) * a.jumlah) / kursIdr; change24h = marketData.IHSG?.change || 0;
       } else {
         valUSD = a.type === 'cash_idr' ? a.jumlah / kursIdr : a.avg * a.jumlah;
       }
       const denom = 1 + change24h / 100;
       const val0  = denom !== 0 ? valUSD / denom : valUSD;
-      pnl   += valUSD - val0;
-      modal += val0;
+      pnl += valUSD - val0; modal += val0;
     });
     return { dailyPnlUSD: pnl, dailyPnlPersen: modal > 0 ? (pnl / modal) * 100 : 0 };
   }, [assets, hargaMap, hargaSaham, marketData, kursIdr]);
@@ -937,8 +853,7 @@ function App() {
     const fetchChart = async () => {
       const cryptos  = assets.filter(a => a.type === 'crypto' && a.simbol);
       const baseline = baselineRef.current || 0;
-      const fetchDays = 1825;
-      const now = Date.now();
+      const fetchDays = 1825; const now = Date.now();
 
       const createDummyData = (baseVal) => {
         const arr = [];
@@ -947,9 +862,7 @@ function App() {
       };
 
       if (cryptos.length === 0) {
-        setChartData(createDummyData(baseline));
-        setPnlChart({ selisih: 0, persen: 0 });
-        return;
+        setChartData(createDummyData(baseline)); setPnlChart({ selisih: 0, persen: 0 }); return;
       }
 
       const process = (results) => {
@@ -965,47 +878,31 @@ function App() {
       };
 
       try {
-        const results = await Promise.all(
-          cryptos.map(a =>
-            fetchWithRetry(`${API_BASE}/api/chart?simbol=${a.simbol}&days=${fetchDays}`)
-              .then(r => r.json())
-              .catch(() => null)
-          )
-        );
+        const results = await Promise.all(cryptos.map(a => fetchWithRetry(`${API_BASE}/api/chart?simbol=${a.simbol}&days=${fetchDays}`).then(r => r.json()).catch(() => null)));
         if (results.some(r => r && r.prices)) {
           const combined = process(results);
           if (combined?.length >= 2) {
-            setChartData(combined);
-            const diff = combined[combined.length-1][1] - combined[0][1];
-            setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 });
-            return;
+            setChartData(combined); const diff = combined[combined.length-1][1] - combined[0][1];
+            setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 }); return;
           }
         }
       } catch (e) {}
 
       try {
-        const results = await Promise.all(
-          cryptos.map(a => {
-            const targetUrl = `https://api.coingecko.com/api/v3/coins/${a.simbol.toLowerCase()}/market_chart?vs_currency=usd&days=${fetchDays}`;
-            const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-            return fetchWithRetry(proxyUrl).then(r => r.json()).catch(() => null);
-          })
-        );
+        const results = await Promise.all(cryptos.map(a => {
+          const targetUrl = `https://api.coingecko.com/api/v3/coins/${a.simbol.toLowerCase()}/market_chart?vs_currency=usd&days=${fetchDays}`;
+          return fetchWithRetry(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`).then(r => r.json()).catch(() => null);
+        }));
         if (results.some(r => r && r.prices)) {
           const combined = process(results);
           if (combined?.length >= 2) {
-            setChartData(combined);
-            const diff = combined[combined.length-1][1] - combined[0][1];
-            setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 });
-            return;
+            setChartData(combined); const diff = combined[combined.length-1][1] - combined[0][1];
+            setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 }); return;
           }
         }
       } catch (e) {}
 
-      const fallbackCombined = createDummyData(grandTotalUSD);
-      setChartData(fallbackCombined);
-      setPnlChart({ selisih: 0, persen: 0 });
-      setChartError(true);
+      setChartData(createDummyData(grandTotalUSD)); setPnlChart({ selisih: 0, persen: 0 }); setChartError(true);
     };
     fetchChart();
   }, [assets, grandTotalUSD, hargaMap]);
@@ -1024,14 +921,10 @@ function App() {
   const handleAddAsset = useCallback((newAsset, livePrice) => {
     setAssets(prev => [...prev, { ...newAsset, id: Date.now() }]);
     setShowAddModal(false);
-    
     if (livePrice) {
       const key = newAsset.simbol || newAsset.ticker;
-      if (newAsset.type === 'crypto') {
-        setHargaMap(prev => ({ ...prev, [key]: { usd: livePrice, change: 0 } }));
-      } else if (['saham', 'saham_us', 'komoditas'].includes(newAsset.type)) {
-        setHargaSaham(prev => ({ ...prev, [key]: livePrice }));
-      }
+      if (newAsset.type === 'crypto') setHargaMap(prev => ({ ...prev, [key]: { usd: livePrice, change: 0 } }));
+      else if (['saham', 'saham_us', 'komoditas'].includes(newAsset.type)) setHargaSaham(prev => ({ ...prev, [key]: livePrice }));
     }
   }, [setAssets]);
 
@@ -1058,19 +951,9 @@ function App() {
       <div style={styles.marketCardMini} key={key}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ color: '#a3a3a3', fontWeight: 700, fontSize: '13px' }}>{displayName}</span>
-          {!loaded
-            ? <div className="skeleton" style={{ width: 42, height: 16 }} />
-            : hasData
-              ? <span style={{ color: data.isUp ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, background: data.isUp ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{data.isUp ? '+' : ''}{data.change.toFixed(2)}%</span>
-              : <span style={{ color: '#555', fontSize: '11px' }}>—</span>
-          }
+          {!loaded ? <div className="skeleton" style={{ width: 42, height: 16 }} /> : hasData ? <span style={{ color: data.isUp ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, background: data.isUp ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{data.isUp ? '+' : ''}{data.change.toFixed(2)}%</span> : <span style={{ color: '#555', fontSize: '11px' }}>—</span>}
         </div>
-        {!loaded
-          ? <div style={{ marginTop: '8px' }}><div className="skeleton" style={{ width: '80%', height: 20 }} /></div>
-          : hasData
-            ? <div style={{ color: 'white', fontWeight: 800, fontSize: '18px', marginTop: '6px', letterSpacing: '-0.5px' }}>{data.type === 'usd' ? '$' : ''}{data.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-            : <div style={{ color: '#555', fontWeight: 800, fontSize: '18px', marginTop: '6px' }}>—</div>
-        }
+        {!loaded ? <div style={{ marginTop: '8px' }}><div className="skeleton" style={{ width: '80%', height: 20 }} /></div> : hasData ? <div style={{ color: 'white', fontWeight: 800, fontSize: '18px', marginTop: '6px', letterSpacing: '-0.5px' }}>{data.type === 'usd' ? '$' : ''}{data.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div> : <div style={{ color: '#555', fontWeight: 800, fontSize: '18px', marginTop: '6px' }}>—</div>}
       </div>
     );
   };
@@ -1079,51 +962,39 @@ function App() {
     <div className="app-wrapper">
       <div className={`sidebar-overlay${sidebarOpen ? ' sidebar-open' : ''}`} onClick={() => setSidebarOpen(false)} />
       
-      {/* SIDEBAR DENGAN PROFIL PENGGUNA */}
-      <Sidebar 
-        activePage={activePage} 
-        setActivePage={setActivePage} 
-        onClose={() => setSidebarOpen(false)} 
-        isOpen={sidebarOpen}
-        username={username}
-        setUsername={setUsername}
-        profilePic={profilePic}
-        setProfilePic={setProfilePic}
-      />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} onClose={() => setSidebarOpen(false)} isOpen={sidebarOpen} username={username} setUsername={setUsername} profilePic={profilePic} setProfilePic={setProfilePic} t={t} />
 
       <div className="app-main">
         <div className="max-container">
           
-          {/* PAGE HEADER DENGAN IDENTITAS WEBSITE GLOBAL */}
           <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', width: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
-              
-              {/* LOGO TOTALFUND (Selalu Muncul di Semua Halaman) */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  viewBox="0 0 120 120" 
-                  style={{ width: '28px', height: '28px', flexShrink: 0 }}
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style={{ width: '28px', height: '28px', flexShrink: 0 }}>
                   <rect width="120" height="120" rx="28" fill="#0A0A0A" />
                   <rect width="120" height="120" rx="28" fill="none" stroke="#262626" strokeWidth="3" />
                   <path d="M 20 35 H 55 V 47 H 43.5 V 80 H 31.5 V 47 H 20 V 35 Z" fill="#F5F5F5" />
                   <circle cx="62" cy="74" r="6" fill="#F5F5F5" />
                   <path d="M 72 35 H 100 V 47 H 84 V 53 H 96 V 63 H 84 V 80 H 72 V 35 Z" fill="#F5F5F5" />
                 </svg>
-                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: '18px', letterSpacing: '-0.4px', display: 'flex', alignItems: 'center' }}>
-                  TOTAL<span style={{ color: '#16a34a' }}>FUND</span>
-                </span>
+                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: '18px', letterSpacing: '-0.4px', display: 'flex', alignItems: 'center' }}>TOTAL<span style={{ color: '#16a34a' }}>FUND</span></span>
               </div>
             </div>
 
-            {/* Nama Halaman Aktif di Kanan Atas (Agar user tau lagi buka apa) */}
-            {activePage !== 'portfolio' && (
-              <div style={{ color: '#737373', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                {activePage === 'networth-detail' ? 'Analytics' : 'AI Chat'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '4px', background: '#1a1a1a', padding: '4px', borderRadius: '8px', border: '1px solid #262626' }}>
+                <button onClick={() => setLang('id')} style={{ background: lang.includes('id') ? '#333' : 'transparent', color: lang.includes('id') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>ID</button>
+                <button onClick={() => setLang('en')} style={{ background: lang.includes('en') ? '#333' : 'transparent', color: lang.includes('en') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>EN</button>
+                <button onClick={() => setLang('zh')} style={{ background: lang.includes('zh') ? '#333' : 'transparent', color: lang.includes('zh') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>ZH</button>
               </div>
-            )}
+
+              {activePage !== 'portfolio' && (
+                <div style={{ color: '#737373', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', display: width < 600 ? 'none' : 'block' }}>
+                  {activePage === 'networth-detail' ? t('analytics') : t('ai_chat')}
+                </div>
+              )}
+            </div>
           </div>
 
           {activePage === 'portfolio' && (
@@ -1131,7 +1002,7 @@ function App() {
               <div className="summary-cards">
                 <div style={styles.summaryCard}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Total Net Worth</span>
+                    <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>{t('total_net_worth')}</span>
                     <span style={{ color: '#4ade80', fontSize: '11px', backgroundColor: 'rgba(74,222,128,0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
                   </div>
                   {cryptoLoaded ? (
@@ -1141,7 +1012,7 @@ function App() {
                       <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
                       <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{ flex: 1 }}>
-                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>Overall PnL</span>
+                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>{t('overall_pnl')}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>{isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}</span>
                             <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isOverallProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%</span>
@@ -1150,7 +1021,7 @@ function App() {
                         </div>
                         <div style={{ width: '1px', background: '#262626' }} />
                         <div style={{ flex: 1 }}>
-                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>1-Day PnL</span>
+                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>{t('day_pnl')}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>{isDailyProfit ? '+' : ''}{formatUSD(dailyPnlUSD)}</span>
                             <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isDailyProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{isDailyProfit ? '+' : ''}{dailyPnlPersen.toFixed(2)}%</span>
@@ -1173,14 +1044,14 @@ function App() {
                 </div>
 
                 <div style={styles.summaryCard}>
-                  <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px', display: 'block', marginBottom: '14px' }}>PnL Breakdown</span>
+                  <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px', display: 'block', marginBottom: '14px' }}>{t('pnl_breakdown')}</span>
                   {cryptoLoaded ? (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', flex: 1 }}>
                       {[
-                        { label: 'Kripto (USD)',    val: pnlCryptoUSD,    sub: formatIDR(pnlCryptoUSD * kursIdr),    fmt: formatUSD },
-                        { label: 'Komoditas (USD)', val: pnlKomoditasUSD, sub: formatIDR(pnlKomoditasUSD * kursIdr), fmt: formatUSD },
-                        { label: 'Saham IDX (IDR)', val: pnlSahamIDX_IDR, sub: formatUSD(pnlSahamIDX_IDR / kursIdr), fmt: formatIDR },
-                        { label: 'Saham US (USD)',  val: pnlSahamUS_USD,  sub: formatIDR(pnlSahamUS_USD * kursIdr),  fmt: formatUSD },
+                        { label: t('crypto_usd'),    val: pnlCryptoUSD,    sub: formatIDR(pnlCryptoUSD * kursIdr),    fmt: formatUSD },
+                        { label: t('commodities_usd'), val: pnlKomoditasUSD, sub: formatIDR(pnlKomoditasUSD * kursIdr), fmt: formatUSD },
+                        { label: t('stock_idx_idr'), val: pnlSahamIDX_IDR, sub: formatUSD(pnlSahamIDX_IDR / kursIdr), fmt: formatIDR },
+                        { label: t('stock_us_usd'),  val: pnlSahamUS_USD,  sub: formatIDR(pnlSahamUS_USD * kursIdr),  fmt: formatUSD },
                       ].map(({ label, val, sub, fmt }, idx) => (
                         <div key={label} style={{ padding: `${idx >= 2 ? '12px' : '0'} ${idx % 2 === 0 ? '12px' : '0'} ${idx < 2 ? '12px' : '0'} ${idx % 2 === 1 ? '12px' : '0'}`, borderRight: idx % 2 === 0 ? '1px solid #262626' : 'none', borderBottom: idx < 2 ? '1px solid #262626' : 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>{label}</span>
@@ -1196,15 +1067,7 @@ function App() {
                   )}
                 </div>
 
-                <NetWorthTrendCard
-                  data={chartData}
-                  color={chartColor}
-                  isError={chartError}
-                  period={period}
-                  setPeriod={setPeriod}
-                  periodsList={PERIODS}
-                  onDetailClick={() => setActivePage('networth-detail')}
-                />
+                <NetWorthTrendCard data={chartData} color={chartColor} isError={chartError} period={period} setPeriod={setPeriod} periodsList={PERIODS} onDetailClick={() => setActivePage('networth-detail')} t={t} />
               </div>
 
               <div className="market-section">
@@ -1219,7 +1082,7 @@ function App() {
                   {renderSingleCard('BRENT',  'Oil Brent')}
                 </div>
                 <div className="donut-card" style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 14, left: 18, color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>Current Allocation</div>
+                  <div style={{ position: 'absolute', top: 14, left: 18, color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>{t('current_allocation')}</div>
                   <div style={{ width: '130px', height: '130px', flexShrink: 0, marginTop: '20px' }}><DonutChart data={pieData} /></div>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '140px', overflowY: 'auto', paddingRight: '4px', marginTop: '20px' }}>
                     {pieData.map(d => (
@@ -1238,43 +1101,37 @@ function App() {
               <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
                 <div className="holdings-header" style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
                   <div>
-                    <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 800, margin: 0 }}>Holdings</h3>
-                    <span style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px', display: 'block' }}>{assets.length} aset terdaftar</span>
+                    <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 800, margin: 0 }}>{t('holdings')}</h3>
+                    <span style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px', display: 'block' }}>{assets.length} {t('registered_assets')}</span>
                   </div>
-                  <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)' }}>+ Tambah Aset</button>
+                  <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)' }}>{t('add_asset')}</button>
                 </div>
                 <div className="col-headers" style={{ alignItems: 'center', padding: '12px 28px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: '#0f0f0f' }}>
-                  {[['Aset', 2], ['Harga Live', 1.5], ['Holdings / AVG', 1.5], ['Nilai Aset', 1.5], ['Unrealized PNL', 1.5]].map(([h, f]) => (
+                  {[[t('asset'), 2], [t('price_live'), 1.5], [t('holdings_avg'), 1.5], [t('asset_value'), 1.5], [t('unrealized_pnl'), 1.5]].map(([h, f]) => (
                     <div key={h} style={{ flex: f, color: '#4b5563', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px' }}>{h}</div>
                   ))}
                   <div style={{ flexShrink: 0, width: '98px' }} />
                 </div>
                 <div style={{ paddingBottom: '18px' }}>
                   {[
-                    { type: 'crypto',     label: 'Crypto',        color: '#f59e0b', list: assets.filter(a => a.type === 'crypto') },
-                    { type: 'saham_us',   label: 'Saham US',      color: '#ec4899', list: assets.filter(a => a.type === 'saham_us') },
-                    { type: 'saham',      label: 'Saham IDX',     color: '#3b82f6', list: assets.filter(a => a.type === 'saham') },
-                    { type: 'komoditas',  label: 'Komoditas',     color: '#eab308', list: assets.filter(a => a.type === 'komoditas') },
-                    { type: 'cashstable', label: 'Cash & Stable', color: '#10b981', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
+                    { type: 'crypto',     label: t('cat_crypto'),    color: '#f59e0b', list: assets.filter(a => a.type === 'crypto') },
+                    { type: 'saham_us',   label: t('cat_saham_us'),  color: '#ec4899', list: assets.filter(a => a.type === 'saham_us') },
+                    { type: 'saham',      label: t('cat_saham_idx'), color: '#3b82f6', list: assets.filter(a => a.type === 'saham') },
+                    { type: 'komoditas',  label: t('cat_komoditas'), color: '#eab308', list: assets.filter(a => a.type === 'komoditas') },
+                    { type: 'cashstable', label: t('cash_stable'),   color: '#10b981', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
                   ].map(({ type, label, color, list }) => (
                     <div key={type}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 28px 8px' }}>
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color }} />
                         <span style={{ color: '#a3a3a3', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</span>
                         <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, #1f1f1f, transparent)' }} />
-                        <span style={{ color: '#4b5563', fontSize: '10px', fontWeight: 600 }}>{list.length} aset</span>
+                        <span style={{ color: '#4b5563', fontSize: '10px', fontWeight: 600 }}>{list.length} {t('assets_count')}</span>
                       </div>
                       {list.length > 0 ? list.map((asset, idx) => (
-                        <DataRow
-                          key={asset.id} asset={asset} isLast={idx === list.length - 1}
-                          hargaLiveUSD={['crypto', 'komoditas', 'saham_us'].includes(asset.type) ? getLivePrice(asset) : undefined}
-                          hargaLiveIDR={asset.type === 'saham' ? getLivePrice(asset) : undefined}
-                          kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD}
-                          onEdit={openEdit} onDelete={setDeleteConfirm}
-                        />
+                        <DataRow key={asset.id} asset={asset} isLast={idx === list.length - 1} hargaLiveUSD={['crypto', 'komoditas', 'saham_us'].includes(asset.type) ? getLivePrice(asset) : undefined} hargaLiveIDR={asset.type === 'saham' ? getLivePrice(asset) : undefined} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onEdit={openEdit} onDelete={setDeleteConfirm} t={t} />
                       )) : (
                         <div style={{ padding: '10px 28px 20px' }}>
-                          <div style={{ padding: '16px', border: '1px dashed #262626', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>Belum ada aset {label}</div>
+                          <div style={{ padding: '16px', border: '1px dashed #262626', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>{t('no_assets')} {label}</div>
                         </div>
                       )}
                     </div>
@@ -1285,48 +1142,36 @@ function App() {
           )}
 
           {activePage === 'ai' && (
-            <AIConsultant assets={assets} hargaMap={hargaMap} hargaSaham={hargaSaham} kursIdr={kursIdr} grandTotalUSD={grandTotalUSD} grandTotalIDR={grandTotalIDR} overallPnlUSD={overallPnlUSD} overallPnlPersen={overallPnlPersen} marketData={marketData} />
+            <AIConsultant assets={assets} hargaMap={hargaMap} hargaSaham={hargaSaham} kursIdr={kursIdr} grandTotalUSD={grandTotalUSD} grandTotalIDR={grandTotalIDR} overallPnlUSD={overallPnlUSD} overallPnlPersen={overallPnlPersen} marketData={marketData} t={t} />
           )}
 
           {activePage === 'networth-detail' && (
-            <NetWorthDetailPage
-              onBack={() => setActivePage('portfolio')}
-              chartData={chartData}
-              currentNetWorth={grandTotalUSD}
-              overallPnlUSD={overallPnlUSD}
-              overallPnlPersen={overallPnlPersen}
-              assets={assets}
-              dailyPnlUSD={dailyPnlUSD}
-              hargaMap={hargaMap}
-              hargaSaham={hargaSaham}
-              kursIdr={kursIdr}
-              marketData={marketData}
-            />
+            <NetWorthDetailPage onBack={() => setActivePage('portfolio')} chartData={chartData} currentNetWorth={grandTotalUSD} overallPnlUSD={overallPnlUSD} overallPnlPersen={overallPnlPersen} assets={assets} dailyPnlUSD={dailyPnlUSD} hargaMap={hargaMap} hargaSaham={hargaSaham} kursIdr={kursIdr} marketData={marketData} t={t} />
           )}
         </div>
       </div>
 
-      {showAddModal && <AddAssetModal onSave={handleAddAsset} onClose={() => setShowAddModal(false)} />}
-      {deleteConfirm && <ConfirmDeleteModal asset={deleteConfirm} onConfirm={() => { handleDeleteAsset(deleteConfirm.id); setDeleteConfirm(null); }} onCancel={() => setDeleteConfirm(null)} />}
+      {showAddModal && <AddAssetModal onSave={handleAddAsset} onClose={() => setShowAddModal(false)} t={t} />}
+      {deleteConfirm && <ConfirmDeleteModal asset={deleteConfirm} onConfirm={() => { handleDeleteAsset(deleteConfirm.id); setDeleteConfirm(null); }} onCancel={() => setDeleteConfirm(null)} t={t} />}
 
       {editingAsset && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '16px', padding: '32px', width: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
-            <h2 style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>Top Up {editingAsset.ticker}</h2>
-            <p style={{ color: '#a3a3a3', fontSize: '13px', margin: '0 0 24px' }}>Avg kamu saat ini: <b style={{ color: 'white' }}>{editingAsset.type === 'saham' ? 'Rp' : '$'}{editingAsset.avg}</b></p>
+            <h2 style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>{t('top_up')} {editingAsset.ticker}</h2>
+            <p style={{ color: '#a3a3a3', fontSize: '13px', margin: '0 0 24px' }}>{t('your_current_avg')} <b style={{ color: 'white' }}>{editingAsset.type === 'saham' ? 'Rp' : '$'}{editingAsset.avg}</b></p>
             {editingAsset.type !== 'cash_idr' && (
               <>
-                <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500 }}>Harga Beli Baru ({editingAsset.type === 'saham' ? 'IDR' : 'USD'})</label>
-                <input type="number" placeholder="Contoh: 65000" value={editForm.harga} onChange={e => setEditForm(p => ({ ...p, length: e.target.value }))} style={styles.modalInput} />
+                <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500 }}>{t('new_buy_price')} ({editingAsset.type === 'saham' ? 'IDR' : 'USD'})</label>
+                <input type="number" placeholder="0" value={editForm.harga} onChange={e => setEditForm(p => ({ ...p, harga: e.target.value }))} style={styles.modalInput} />
               </>
             )}
             <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500, marginTop: '16px', display: 'block' }}>
-              Penambahan Jumlah ({editingAsset.type === 'saham' ? 'Lembar' : editingAsset.type === 'cash_idr' ? 'Rupiah' : 'Koin'})
+              {t('amount_added')} ({editingAsset.type === 'saham' ? t('sheet') : editingAsset.type === 'cash_idr' ? t('rupiah') : t('coin')})
             </label>
-            <input type="number" placeholder="Contoh: 0.2" value={editForm.jumlah} onChange={e => setEditForm(p => ({ ...p, jumlah: e.target.value }))} style={styles.modalInput} />
+            <input type="number" placeholder="0" value={editForm.jumlah} onChange={e => setEditForm(p => ({ ...p, jumlah: e.target.value }))} style={styles.modalInput} />
             <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
-              <button onClick={() => setEditingAsset(null)} style={{ flex: 1, backgroundColor: '#262626', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>Batal</button>
-              <button onClick={() => handleSave(editingAsset.id, parseFloat(editForm.harga || 0), parseFloat(editForm.jumlah || 0))} style={{ flex: 1, backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>Tambah Muatan</button>
+              <button onClick={() => setEditingAsset(null)} style={{ flex: 1, backgroundColor: '#262626', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
+              <button onClick={() => handleSave(editingAsset.id, parseFloat(editForm.harga || 0), parseFloat(editForm.jumlah || 0))} style={{ flex: 1, backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>{t('save')}</button>
             </div>
           </div>
         </div>
@@ -1337,9 +1182,6 @@ function App() {
 
 const styles = {
   summaryCard:      { backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
-  periodRow:        { display: 'flex', gap: 4, backgroundColor: '#1a1a1a', padding: '4px', borderRadius: '8px' },
-  periodBtn:        { backgroundColor: 'transparent', color: '#737373', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' },
-  periodBtnActive:  { backgroundColor: '#333', color: 'white' },
   marketCardMini:   { backgroundColor: '#141414', borderRadius: '12px', padding: '12px 16px', border: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
   modalInput:       { width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '10px', padding: '12px 16px', color: 'white', fontSize: '16px', outline: 'none', marginTop: '8px', boxSizing: 'border-box', fontWeight: 500 },
 };
