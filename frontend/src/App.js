@@ -4,11 +4,12 @@ import './App.css';
 import { useLocalStorage } from './hooks/useLocalstorage';
 import { formatUSD, formatIDR, COLORS, renderAIText } from './utils/helpers';
 import { NetWorthTrendCard, NetWorthDetailPage } from './networthtrend';
+import Sidebar from './components/Sidebar';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 // ==========================================
-// KAMUS BAHASA (FULL TRANSLATE 100% + FIX)
+// KAMUS BAHASA
 // ==========================================
 const DICTIONARY = {
   id: {
@@ -17,7 +18,8 @@ const DICTIONARY = {
     pnl_breakdown: 'Rincian PnL', current_allocation: 'Alokasi Saat Ini', holdings: 'Aset Dimiliki',
     add_asset: '+ Tambah Aset', no_assets: 'Belum ada aset', save: 'Simpan', cancel: 'Batal',
     delete: 'Hapus', edit: 'Edit', price_live: 'Harga Live', registered_assets: 'Aset Terdaftar',
-    investor_account: 'Akun Investor', analytics: 'Analitik', ai_chat: 'Chat AI',
+    investor_account: 'Akun Investor', analytics: 'Analitik', ai_chat: 'Chat AI', market_news: 'Berita Pasar',
+    all: 'Semua', no_news_found: 'Belum ada berita untuk aset ini.', no_assets_news: 'Tambah aset ke portofolio untuk melihat berita.',
     crypto_usd: 'Kripto (USD)', commodities_usd: 'Komoditas (USD)', stock_idx_idr: 'Saham IDX (IDR)',
     stock_us_usd: 'Saham US (USD)', asset: 'Aset', holdings_avg: 'Holdings / AVG',
     asset_value: 'Nilai Aset', unrealized_pnl: 'Unrealized PNL', cash_stable: 'Cash & Stable',
@@ -41,7 +43,8 @@ const DICTIONARY = {
     pnl_breakdown: 'PnL Breakdown', current_allocation: 'Current Allocation', holdings: 'Holdings',
     add_asset: '+ Add Asset', no_assets: 'No assets in', save: 'Save', cancel: 'Cancel',
     delete: 'Delete', edit: 'Edit', price_live: 'Live Price', registered_assets: 'Registered Assets',
-    investor_account: 'Investor Account', analytics: 'Analytics', ai_chat: 'AI Chat',
+    investor_account: 'Investor Account', analytics: 'Analytics', ai_chat: 'AI Chat', market_news: 'Market News',
+    all: 'All', no_news_found: 'No news found for these assets.', no_assets_news: 'Add assets to your portfolio to see news.',
     crypto_usd: 'Crypto (USD)', commodities_usd: 'Commodities (USD)', stock_idx_idr: 'IDX Stock (IDR)',
     stock_us_usd: 'US Stock (USD)', asset: 'Asset', holdings_avg: 'Holdings / AVG',
     asset_value: 'Asset Value', unrealized_pnl: 'Unrealized PNL', cash_stable: 'Cash & Stable',
@@ -65,7 +68,8 @@ const DICTIONARY = {
     pnl_breakdown: '盈亏明细', current_allocation: '当前资产配置', holdings: '持仓',
     add_asset: '+ 添加资产', no_assets: '暂无资产', save: '保存', cancel: '取消',
     delete: '删除', edit: '编辑', price_live: '实时价格', registered_assets: '已注册资产',
-    investor_account: '投资者账户', analytics: '分析', ai_chat: 'AI 聊天',
+    investor_account: '投资者账户', analytics: '分析', ai_chat: 'AI 聊天', market_news: '市场新闻',
+    all: '全部', no_news_found: '未找到相关新闻。', no_assets_news: '在您的投资组合中添加资产以查看新闻。',
     crypto_usd: '加密货币 (USD)', commodities_usd: '大宗商品 (USD)', stock_idx_idr: '印尼股票 (IDR)',
     stock_us_usd: '美股 (USD)', asset: '资产', holdings_avg: '持仓 / 均价',
     asset_value: '资产价值', unrealized_pnl: '未实现盈亏', cash_stable: '现金与稳定币',
@@ -85,7 +89,6 @@ const DICTIONARY = {
   }
 };
 
-// Fungsi untuk deteksi bahasa browser (otomatis)
 function getDefaultLang() {
   const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
   if (browserLang.includes('id')) return 'id';
@@ -126,80 +129,53 @@ const PERIODS = [
   { label: 'All', days: null },
 ];
 
-function Sidebar({ activePage, setActivePage, onClose, isOpen, username, setUsername, profilePic, setProfilePic, t }) {
-  const fileInputRef = useRef(null);
-  const NAV_ITEMS = [
-    { key: 'portfolio', label: t('portfolio'), icon: '◈' },
-    { key: 'ai',        label: t('ai_consultant'), icon: '✦' },
-  ];
-
-  const handleImageClick = () => fileInputRef.current?.click();
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setProfilePic(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
-  return (
-    <div className={`app-sidebar${isOpen ? ' sidebar-open' : ''}`}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 20px', borderBottom: '1px solid #1f1f1f' }}>
-        <div 
-          onClick={handleImageClick}
-          style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: '#262626', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', border: '2px solid #333', flexShrink: 0, position: 'relative' }}
-          title={t('change_profile_pic')}
-        >
-          {profilePic ? (
-            <img src={profilePic} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          ) : (
-            <span style={{ color: '#737373', fontSize: '16px', fontWeight: 'bold' }}>{username ? username[0].toUpperCase() : 'U'}</span>
-          )}
-        </div>
-        <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" style={{ display: 'none' }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <input 
-            type="text" value={username} onChange={(e) => setUsername(e.target.value)}
-            placeholder={t('set_username')}
-            style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '14px', fontWeight: 600, outline: 'none', width: '100%', padding: 0 }}
-          />
-          <div style={{ color: '#555', fontSize: '11px', marginTop: '2px', fontWeight: 500 }}>{t('investor_account')}</div>
-        </div>
-        {onClose && <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#555', fontSize: '18px', cursor: 'pointer', lineHeight: 1, padding: '4px' }}>✕</button>}
-      </div>
-
-      <nav className="sidebar-nav">
-        {NAV_ITEMS.map(({ key, label, icon }) => (
-          <div key={key} className={`nav-item${activePage === key ? ' active' : ''}`} onClick={() => { setActivePage(key); onClose?.(); }}>
-            <span className="nav-icon">{icon}</span>{label}
-          </div>
-        ))}
-      </nav>
-      <div className="sidebar-footer">
-        <div className="status-dot" />
-        <span style={{ color: '#6b7280', fontSize: 12, fontWeight: 500 }}>{t('system_online')}</span>
-      </div>
-    </div>
-  );
-}
-
-function DonutChart({ data }) {
+function DonutChart({ data, hoveredPie, onHover }) {
   let cum = 0;
   const coords = (p) => [Math.cos(2 * Math.PI * p), Math.sin(2 * Math.PI * p)];
+  const activeData = data.find(d => d.ticker === hoveredPie);
+
   return (
-    <svg viewBox="-1 -1 2 2" style={{ width: '130px', height: '130px', transform: 'rotate(-90deg)' }}>
-      {data.map(slice => {
-        if (slice.pct <= 0) return null;
-        if (slice.pct >= 99.9) return <circle key={slice.ticker} r="0.8" fill="transparent" stroke={slice.color} strokeWidth="0.4" />;
-        const [sx, sy] = coords(cum);
-        cum += slice.pct / 100;
-        const [ex, ey] = coords(cum);
-        const large = slice.pct > 50 ? 1 : 0;
-        return <path key={slice.ticker} d={`M ${sx} ${sy} A 1 1 0 ${large} 1 ${ex} ${ey} L 0 0`} fill={slice.color} />;
-      })}
-      <circle r="0.6" cx="0" cy="0" fill="#141414" />
-    </svg>
+    <div style={{ position: 'relative', width: '130px', height: '130px' }}>
+      <svg viewBox="-1 -1 2 2" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)', overflow: 'visible' }}>
+        {data.map(slice => {
+          if (slice.pct <= 0) return null;
+          if (slice.pct >= 99.9) return <circle key={slice.ticker} r="0.8" fill="transparent" stroke={slice.color} strokeWidth="0.4" onMouseEnter={() => onHover(slice.ticker)} onMouseLeave={() => onHover(null)} style={{ cursor: 'pointer', transition: 'all 0.2s' }} />;
+          
+          const [sx, sy] = coords(cum);
+          cum += slice.pct / 100;
+          const [ex, ey] = coords(cum);
+          const large = slice.pct > 50 ? 1 : 0;
+          const isHovered = hoveredPie === slice.ticker;
+          
+          return (
+            <path
+              key={slice.ticker}
+              d={`M ${sx} ${sy} A 1 1 0 ${large} 1 ${ex} ${ey} L 0 0`}
+              fill={slice.color}
+              onMouseEnter={() => onHover(slice.ticker)}
+              onMouseLeave={() => onHover(null)}
+              style={{
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                opacity: hoveredPie && !isHovered ? 0.3 : 1,
+                transform: isHovered ? 'scale(1.08)' : 'scale(1)',
+                transformOrigin: '0 0'
+              }}
+            />
+          );
+        })}
+        <circle r="0.65" cx="0" cy="0" fill="#141414" style={{ pointerEvents: 'none' }} />
+      </svg>
+      
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', textAlign: 'center' }}>
+        {activeData && (
+          <>
+            <span style={{ color: activeData.color, fontSize: '13px', fontWeight: 800, letterSpacing: '-0.3px' }}>{activeData.ticker}</span>
+            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700 }}>{activeData.pct.toFixed(1)}%</span>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -231,7 +207,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
 
   return (
     <>
-      <div className="asset-row-desktop" style={{ alignItems: 'center', padding: '12px 28px', borderBottom: isLast ? 'none' : '1px solid #1f1f1f', gap: '16px', transition: 'background 0.2s' }}>
+      <div className="asset-row-desktop" style={{ alignItems: 'center', padding: '12px 28px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)', gap: '16px', transition: 'background 0.2s' }}>
         <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
             {asset.thumb ? <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : asset.ticker.substring(0, 4)}
@@ -283,7 +259,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
         </div>
       </div>
 
-      <div className="asset-row-mobile" style={{ borderBottom: '1px solid #1f1f1f', padding: '12px 16px' }}>
+      <div className="asset-row-mobile" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', padding: '12px 16px' }}>
         <div className="asset-row-mobile-top">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
@@ -554,6 +530,150 @@ function AddAssetModal({ onSave, onClose, t }) {
   );
 }
 
+function MarketNewsPage({ assets, t }) {
+  const [news, setNews] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      const validAssets = assets.filter(a => ['crypto', 'saham', 'saham_us', 'komoditas'].includes(a.type));
+      if (validAssets.length === 0) return;
+      
+      setLoading(true);
+      // Di sini kita pastikan data dikirim pakai label "assets" dengan format Ticker|Nama
+      const tickersStr = validAssets.map(a => `${a.ticker}|${a.nama}`).join(',');
+      
+      try {
+        const res = await fetch(`${API_BASE}/api/market-news?assets=${encodeURIComponent(tickersStr)}`);
+        const data = await res.json();
+        setNews(data.news || []);
+      } catch (e) {
+        console.error("Gagal menarik berita:", e);
+      }
+      setLoading(false);
+    };
+    fetchNews();
+  }, [assets]);
+
+  const filteredNews = useMemo(() => {
+    if (activeTab === 'all') return news;
+    const validTickers = assets.filter(a => {
+      if (activeTab === 'crypto') return a.type === 'crypto';
+      if (activeTab === 'saham_idx') return a.type === 'saham';
+      if (activeTab === 'saham_us') return a.type === 'saham_us';
+      if (activeTab === 'komoditas') return a.type === 'komoditas';
+      return false;
+    }).map(a => a.ticker);
+    
+    return news.filter(n => validTickers.includes(n.ticker));
+  }, [news, activeTab, assets]);
+
+  const tabs = [
+    { id: 'all', label: t('all') },
+    { id: 'crypto', label: t('cat_crypto') },
+    { id: 'saham_idx', label: t('cat_saham_idx') },
+    { id: 'saham_us', label: t('cat_saham_us') },
+    { id: 'komoditas', label: t('cat_komoditas') }
+  ];
+
+  if (assets.filter(a => ['crypto', 'saham', 'saham_us', 'komoditas'].includes(a.type)).length === 0) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#141414', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '20px' }}>
+        <div style={{ fontSize: '40px', marginBottom: '16px' }}>📰</div>
+        <div style={{ color: '#fff', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>{t('no_news_found')}</div>
+        <div style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500 }}>{t('no_assets_news')}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '40px' }}>
+      <div>
+        <h2 style={{ color: '#fff', fontSize: '22px', fontWeight: 800, letterSpacing: '-0.5px', margin: '0 0 16px' }}>{t('market_news')}</h2>
+        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '99px',
+                border: '1px solid',
+                borderColor: activeTab === tab.id ? '#16a34a' : 'rgba(255,255,255,0.1)',
+                backgroundColor: activeTab === tab.id ? 'rgba(22, 163, 74, 0.1)' : 'transparent',
+                color: activeTab === tab.id ? '#4ade80' : '#a3a3a3',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s',
+                flexShrink: 0
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="skeleton" style={{ height: '240px', borderRadius: '16px' }} />
+          ))}
+        </div>
+      ) : filteredNews.length > 0 ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          {filteredNews.map((item, idx) => (
+            <a
+              key={idx}
+              href={item.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                backgroundColor: '#141414',
+                border: '1px solid rgba(255,255,255,0.06)',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                textDecoration: 'none',
+                transition: 'transform 0.2s, borderColor 0.2s'
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+            >
+              {item.thumbnail ? (
+                <img src={item.thumbnail} alt="" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '160px', backgroundColor: '#1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>
+                  📰
+                </div>
+              )}
+              <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#e5e5e5', fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>{item.ticker}</span>
+                  <span style={{ color: '#737373', fontSize: '11px', fontWeight: 500 }}>{new Date(item.published_at * 1000).toLocaleDateString()}</span>
+                </div>
+                <h3 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: '0 0 8px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {item.title}
+                </h3>
+                <span style={{ color: '#a3a3a3', fontSize: '12px', marginTop: 'auto', fontWeight: 500 }}>{item.publisher}</span>
+              </div>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#141414', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ fontSize: '32px', marginBottom: '12px' }}>📰</div>
+          <div style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500 }}>{t('no_news_found')}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, grandTotalIDR, overallPnlUSD, overallPnlPersen, marketData, t }) {
   const buildContext = () => {
     const detail = assets.map(a => {
@@ -599,8 +719,8 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
   const isWelcome = messages.length === 1;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', borderRadius: '20px', border: '1px solid #262626', backgroundColor: '#141414', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid #1f1f1f', flexShrink: 0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#141414', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(74,222,128,0.3)', flexShrink: 0 }}>✦</div>
           <div>
@@ -625,7 +745,7 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
             {messages.map((msg, i) => (
               <div key={i} style={{ display: 'flex', gap: '10px', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-start' }}>
                 {msg.role === 'ai' && <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #4ade80, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>✦</div>}
-                <div style={{ maxWidth: '74%', padding: '13px 17px', borderRadius: msg.role === 'ai' ? '2px 14px 14px 14px' : '14px 2px 14px 14px', background: msg.role === 'ai' ? '#1a1a1a' : 'linear-gradient(135deg, #166534, #14532d)', border: msg.role === 'ai' ? '1px solid #262626' : '1px solid rgba(74,222,128,0.2)', color: '#e5e5e5', fontSize: '14px', lineHeight: '1.7' }}>
+                <div style={{ maxWidth: '74%', padding: '13px 17px', borderRadius: msg.role === 'ai' ? '2px 14px 14px 14px' : '14px 2px 14px 14px', background: msg.role === 'ai' ? '#1a1a1a' : 'linear-gradient(135deg, #166534, #14532d)', border: msg.role === 'ai' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(74,222,128,0.2)', color: '#e5e5e5', fontSize: '14px', lineHeight: '1.7' }}>
                   {msg.role === 'ai' ? <div dangerouslySetInnerHTML={{ __html: renderAIText(msg.text) }} /> : <span style={{ fontWeight: 500 }}>{msg.text}</span>}
                 </div>
               </div>
@@ -633,7 +753,7 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
             {loading && (
               <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                 <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #4ade80, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>✦</div>
-                <div style={{ padding: '13px 17px', borderRadius: '2px 14px 14px 14px', background: '#1a1a1a', border: '1px solid #262626', display: 'flex', gap: '5px', alignItems: 'center' }}>
+                <div style={{ padding: '13px 17px', borderRadius: '2px 14px 14px 14px', background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '5px', alignItems: 'center' }}>
                   {[0,1,2].map(j => <div key={j} style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4ade80', animation: `bounce 1.2s ease-in-out ${j*0.2}s infinite` }} />)}
                 </div>
               </div>
@@ -642,8 +762,8 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
           </div>
         )}
       </div>
-      <div style={{ padding: '16px 24px', borderTop: '1px solid #1f1f1f', flexShrink: 0 }}>
-        <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '12px' }}>
+      <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}>
           <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="..." disabled={loading} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e5e5e5', fontSize: '14px', fontFamily: 'inherit' }} />
           <button onClick={() => send()} disabled={loading || !input.trim()} style={{ width: '36px', height: '36px', borderRadius: '9px', background: input.trim() ? 'linear-gradient(135deg, #4ade80, #06b6d4)' : 'rgba(255,255,255,0.05)', border: 'none', color: input.trim() ? '#000' : '#4b5563', fontSize: '15px', fontWeight: 700, cursor: input.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▶</button>
         </div>
@@ -655,7 +775,6 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
 function App() {
   const [lang, setLang] = useLocalStorage('totalfund_lang', getDefaultLang());
   
-  // FIX: Fungsi translator tangguh anti-error format JSON di Local Storage
   const t = useCallback((key) => {
     let safeLang = 'en';
     if (typeof lang === 'string') {
@@ -681,6 +800,8 @@ function App() {
   const [editForm, setEditForm]           = useState({ harga: '', jumlah: '' });
   const [cryptoLoaded, setCryptoLoaded]   = useState(false);
   const [marketLoaded, setMarketLoaded]   = useState(false);
+  
+  const [hoveredPie, setHoveredPie]       = useState(null);
 
   const [username, setUsername]           = useLocalStorage('totalfund_username', 'User123');
   const [profilePic, setProfilePic]       = useLocalStorage('totalfund_profile_pic', '');
@@ -915,8 +1036,23 @@ function App() {
     if (a.type === 'saham')    valUSD = (getLivePrice(a) * a.jumlah) / kursIdr;
     if (a.type === 'stable')   valUSD = a.avg * a.jumlah;
     if (a.type === 'cash_idr') valUSD = a.jumlah / kursIdr;
-    return { ticker: a.ticker, val: valUSD, pct: grandTotalUSD > 0 ? (valUSD / grandTotalUSD) * 100 : 0, color: COLORS[i % COLORS.length] };
+
+    const modalUSD = a.type === 'saham' ? (a.avg * a.jumlah) / kursIdr : (a.type === 'cash_idr' ? a.jumlah / kursIdr : a.avg * a.jumlah);
+    const pnlUSD = !['stable', 'cash_idr'].includes(a.type) ? valUSD - modalUSD : null;
+
+    return { 
+      ticker: a.ticker, 
+      val: valUSD, 
+      pct: grandTotalUSD > 0 ? (valUSD / grandTotalUSD) * 100 : 0, 
+      color: COLORS[i % COLORS.length],
+      avg: a.avg,
+      jumlah: a.jumlah,
+      type: a.type,
+      pnl: pnlUSD
+    };
   }).filter(d => d.val > 0).sort((a, b) => b.val - a.val), [assets, getLivePrice, kursIdr, grandTotalUSD]);
+
+  const activePieData = pieData.find(d => d.ticker === hoveredPie);
 
   const handleAddAsset = useCallback((newAsset, livePrice) => {
     setAssets(prev => [...prev, { ...newAsset, id: Date.now() }]);
@@ -971,19 +1107,19 @@ function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style={{ width: '28px', height: '28px', flexShrink: 0 }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style={{ width: '34px', height: '34px', flexShrink: 0 }}>
                   <rect width="120" height="120" rx="28" fill="#0A0A0A" />
                   <rect width="120" height="120" rx="28" fill="none" stroke="#262626" strokeWidth="3" />
                   <path d="M 20 35 H 55 V 47 H 43.5 V 80 H 31.5 V 47 H 20 V 35 Z" fill="#F5F5F5" />
                   <circle cx="62" cy="74" r="6" fill="#F5F5F5" />
                   <path d="M 72 35 H 100 V 47 H 84 V 53 H 96 V 63 H 84 V 80 H 72 V 35 Z" fill="#F5F5F5" />
                 </svg>
-                <span style={{ color: '#ffffff', fontWeight: 800, fontSize: '18px', letterSpacing: '-0.4px', display: 'flex', alignItems: 'center' }}>TOTAL<span style={{ color: '#16a34a' }}>FUND</span></span>
+                <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '22px', letterSpacing: '-0.6px', display: 'flex', alignItems: 'center' }}>TOTAL<span style={{ color: '#16a34a' }}>FUND</span></span>
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ display: 'flex', gap: '4px', background: '#1a1a1a', padding: '4px', borderRadius: '8px', border: '1px solid #262626' }}>
+              <div style={{ display: 'flex', gap: '4px', background: '#1a1a1a', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <button onClick={() => setLang('id')} style={{ background: lang.includes('id') ? '#333' : 'transparent', color: lang.includes('id') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>ID</button>
                 <button onClick={() => setLang('en')} style={{ background: lang.includes('en') ? '#333' : 'transparent', color: lang.includes('en') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>EN</button>
                 <button onClick={() => setLang('zh')} style={{ background: lang.includes('zh') ? '#333' : 'transparent', color: lang.includes('zh') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>ZH</button>
@@ -991,7 +1127,7 @@ function App() {
 
               {activePage !== 'portfolio' && (
                 <div style={{ color: '#737373', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', display: width < 600 ? 'none' : 'block' }}>
-                  {activePage === 'networth-detail' ? t('analytics') : t('ai_chat')}
+                  {activePage === 'networth-detail' ? t('analytics') : activePage === 'news' ? t('market_news') : t('ai_chat')}
                 </div>
               )}
             </div>
@@ -1009,7 +1145,7 @@ function App() {
                     <>
                       <div style={{ color: 'white', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>{formatUSD(grandTotalUSD)}</div>
                       <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginTop: '2px' }}>{formatIDR(grandTotalIDR)}</div>
-                      <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
+                      <div style={{ margin: '14px 0', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
                       <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{ flex: 1 }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>{t('overall_pnl')}</span>
@@ -1019,7 +1155,7 @@ function App() {
                           </div>
                           <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}</div>
                         </div>
-                        <div style={{ width: '1px', background: '#262626' }} />
+                        <div style={{ width: '1px', background: 'rgba(255,255,255,0.06)' }} />
                         <div style={{ flex: 1 }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>{t('day_pnl')}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1034,7 +1170,7 @@ function App() {
                     <>
                       <div className="skeleton" style={{ width: '70%', height: 32, marginBottom: 6 }} />
                       <div className="skeleton" style={{ width: '50%', height: 16 }} />
-                      <div style={{ margin: '14px 0', height: '1px', background: '#262626' }} />
+                      <div style={{ margin: '14px 0', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
                       <div style={{ display: 'flex', gap: '16px' }}>
                         <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
                         <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
@@ -1053,7 +1189,7 @@ function App() {
                         { label: t('stock_idx_idr'), val: pnlSahamIDX_IDR, sub: formatUSD(pnlSahamIDX_IDR / kursIdr), fmt: formatIDR },
                         { label: t('stock_us_usd'),  val: pnlSahamUS_USD,  sub: formatIDR(pnlSahamUS_USD * kursIdr),  fmt: formatUSD },
                       ].map(({ label, val, sub, fmt }, idx) => (
-                        <div key={label} style={{ padding: `${idx >= 2 ? '12px' : '0'} ${idx % 2 === 0 ? '12px' : '0'} ${idx < 2 ? '12px' : '0'} ${idx % 2 === 1 ? '12px' : '0'}`, borderRight: idx % 2 === 0 ? '1px solid #262626' : 'none', borderBottom: idx < 2 ? '1px solid #262626' : 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div key={label} style={{ padding: `${idx >= 2 ? '12px' : '0'} ${idx % 2 === 0 ? '12px' : '0'} ${idx < 2 ? '12px' : '0'} ${idx % 2 === 1 ? '12px' : '0'}`, borderRight: idx % 2 === 0 ? '1px solid rgba(255,255,255,0.06)' : 'none', borderBottom: idx < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>{label}</span>
                           <span style={{ color: val >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>{val >= 0 ? '+' : ''}{fmt(val)}</span>
                           <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{val >= 0 ? '+' : ''}{sub}</span>
@@ -1081,10 +1217,17 @@ function App() {
                   {renderSingleCard('NASDAQ', 'Nasdaq')}
                   {renderSingleCard('BRENT',  'Oil Brent')}
                 </div>
+                
                 <div className="donut-card" style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 14, left: 18, color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>{t('current_allocation')}</div>
-                  <div style={{ width: '130px', height: '130px', flexShrink: 0, marginTop: '20px' }}><DonutChart data={pieData} /></div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '140px', overflowY: 'auto', paddingRight: '4px', marginTop: '20px' }}>
+                  <div style={{ position: 'absolute', top: 14, left: 18, color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>
+                    {activePieData ? t('asset_value') : t('current_allocation')}
+                  </div>
+                  
+                  <div style={{ width: '130px', height: '130px', flexShrink: 0, marginTop: '20px' }}>
+                    <DonutChart data={pieData} hoveredPie={hoveredPie} onHover={setHoveredPie} />
+                  </div>
+                  
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '140px', paddingRight: '4px', marginTop: '20px', overflowY: 'auto' }}>
                     {pieData.map(d => (
                       <div key={d.ticker} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1098,13 +1241,13 @@ function App() {
                 </div>
               </div>
 
-              <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.06)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 4px 24px rgba(0,0,0,0.4)' }}>
-                <div className="holdings-header" style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(255,255,255,0.02)' }}>
+              <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}>
+                <div className="holdings-header" style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)' }}>
                   <div>
                     <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 800, margin: 0 }}>{t('holdings')}</h3>
                     <span style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px', display: 'block' }}>{assets.length} {t('registered_assets')}</span>
                   </div>
-                  <button onClick={() => setShowAddModal(true)} style={{ backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)' }}>{t('add_asset')}</button>
+                  <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 16px rgba(34, 197, 94, 0.25)' }}>{t('add_asset')}</button>
                 </div>
                 <div className="col-headers" style={{ alignItems: 'center', padding: '12px 28px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: '#0f0f0f' }}>
                   {[[t('asset'), 2], [t('price_live'), 1.5], [t('holdings_avg'), 1.5], [t('asset_value'), 1.5], [t('unrealized_pnl'), 1.5]].map(([h, f]) => (
@@ -1124,14 +1267,14 @@ function App() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 28px 8px' }}>
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color }} />
                         <span style={{ color: '#a3a3a3', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</span>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, #1f1f1f, transparent)' }} />
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(255,255,255,0.05), transparent)' }} />
                         <span style={{ color: '#4b5563', fontSize: '10px', fontWeight: 600 }}>{list.length} {t('assets_count')}</span>
                       </div>
                       {list.length > 0 ? list.map((asset, idx) => (
                         <DataRow key={asset.id} asset={asset} isLast={idx === list.length - 1} hargaLiveUSD={['crypto', 'komoditas', 'saham_us'].includes(asset.type) ? getLivePrice(asset) : undefined} hargaLiveIDR={asset.type === 'saham' ? getLivePrice(asset) : undefined} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onEdit={openEdit} onDelete={setDeleteConfirm} t={t} />
                       )) : (
                         <div style={{ padding: '10px 28px 20px' }}>
-                          <div style={{ padding: '16px', border: '1px dashed #262626', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>{t('no_assets')} {label}</div>
+                          <div style={{ padding: '16px', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>{t('no_assets')} {label}</div>
                         </div>
                       )}
                     </div>
@@ -1147,6 +1290,10 @@ function App() {
 
           {activePage === 'networth-detail' && (
             <NetWorthDetailPage onBack={() => setActivePage('portfolio')} chartData={chartData} currentNetWorth={grandTotalUSD} overallPnlUSD={overallPnlUSD} overallPnlPersen={overallPnlPersen} assets={assets} dailyPnlUSD={dailyPnlUSD} hargaMap={hargaMap} hargaSaham={hargaSaham} kursIdr={kursIdr} marketData={marketData} t={t} />
+          )}
+          
+          {activePage === 'news' && (
+            <MarketNewsPage assets={assets} t={t} />
           )}
         </div>
       </div>
@@ -1181,8 +1328,8 @@ function App() {
 }
 
 const styles = {
-  summaryCard:      { backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
-  marketCardMini:   { backgroundColor: '#141414', borderRadius: '12px', padding: '12px 16px', border: '1px solid #262626', display: 'flex', flexDirection: 'column', justifyContent: 'center' },
+  summaryCard:      { backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' },
+  marketCardMini:   { backgroundColor: '#141414', borderRadius: '12px', padding: '12px 16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' },
   modalInput:       { width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '10px', padding: '12px 16px', color: 'white', fontSize: '16px', outline: 'none', marginTop: '8px', boxSizing: 'border-box', fontWeight: 500 },
 };
 

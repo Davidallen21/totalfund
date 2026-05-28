@@ -2,6 +2,9 @@ import os
 import json
 import random
 import time
+import urllib.parse
+import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 from dotenv import load_dotenv
 load_dotenv()
 import requests
@@ -21,11 +24,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Header lama yang ketahuan bot kalau dipakai ke Google
 YF_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
     "Accept-Language": "en-US,en;q=0.9",
     "Referer": "https://finance.yahoo.com/",
+}
+
+# Header baru yang bersih, meniru browser Mac asli
+CLEAN_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "application/rss+xml, application/xml, text/xml, */*",
+    "Accept-Language": "en-US,en;q=0.9",
 }
 
 # --- SIMPLE CACHE (Biar ga kena Block / Rate Limit API!) ---
@@ -252,7 +263,7 @@ def get_crypto_prices(symbols: str = Query(..., description="Comma separated, e.
             timeout=15
         )
         data = res.json()
-        if isinstance(data, dict): # Rate limited
+        if isinstance(data, dict):
             return []
 
         result = []
@@ -404,7 +415,6 @@ def get_bot_status():
 # ═══════════════════════════════════════════════════════════════
 
 def search_coingecko(query: str) -> list:
-    """Search semua coin di CoinGecko pakai CACHE memory biar ga kena limit"""
     query_key = query.lower()
     if query_key in CG_SEARCH_CACHE and time.time() - CG_SEARCH_CACHE[query_key]['time'] < 60:
         return CG_SEARCH_CACHE[query_key]['data']
@@ -429,11 +439,9 @@ def search_coingecko(query: str) -> list:
             return results
         return []
     except Exception as e:
-        print(f"[Search CoinGecko] Error: {e}")
         return []
 
 def search_yahoo_finance(query: str) -> list:
-    """Search semua saham via Yahoo Finance"""
     try:
         res = requests.get(
             "https://query2.finance.yahoo.com/v1/finance/search",
@@ -458,7 +466,6 @@ def search_yahoo_finance(query: str) -> list:
             })
         return results
     except Exception as e:
-        print(f"[Search Yahoo] Error: {e}")
         return []
 
 @app.get("/api/search")
@@ -493,7 +500,6 @@ def fetch_price_crypto_by_id(coingecko_id: str) -> dict | None:
         )
         coins = res.json()
         if isinstance(coins, dict) and ("status" in coins or "error" in coins): 
-            # ERROR RATE LIMIT COINGECKO DETECTED!
             return None
         if not coins:
             return None
@@ -550,7 +556,6 @@ def auto_price(ticker: str, type: Optional[str] = Query(None)):
     is_crypto_only = type in ['crypto']
     is_stock_only  = type in ['saham', 'saham_us', 'komoditas', 'stock', 'stock_idx', 'stock_us', 'index']
 
-    # 1. FAST PATH
     if not is_stock_only and ticker_clean in COINGECKO_IDS:
         result = fetch_price_crypto_by_id(COINGECKO_IDS[ticker_clean])
         if result: return result
@@ -559,7 +564,6 @@ def auto_price(ticker: str, type: Optional[str] = Query(None)):
         result = fetch_price_stock_by_symbol(MARKET_SYMBOLS[ticker_clean])
         if result: return result
 
-    # 2. SLOW PATH COINGECKO
     if not is_stock_only:
         try:
             cg = requests.get("https://api.coingecko.com/api/v3/search", params={"query": ticker_clean}, timeout=8).json()
@@ -574,14 +578,11 @@ def auto_price(ticker: str, type: Optional[str] = Query(None)):
         except Exception:
             pass
             
-        # 3. FALLBACK YAHOO CRYPTO (Mencegah Limit CoinGecko Error!)
-        # Kalau limit Coingecko abis, dia curi data dari Yahoo khusus untuk BTC/ETH dkk!
         result = fetch_price_stock_by_symbol(f"{ticker_clean}-USD")
         if result:
             result["type"] = "crypto"
             return result
 
-    # 4. SLOW PATH YAHOO FINANCE SAHAM
     if not is_crypto_only:
         for yf_sym in [ticker_clean, ticker_clean + ".JK", ticker_clean + ".US"]:
             result = fetch_price_stock_by_symbol(yf_sym)
@@ -604,6 +605,132 @@ def bulk_auto_price(req: BulkPriceRequest):
             try: results[ticker.upper()] = future.result()
             except Exception as e: results[ticker.upper()] = {"error": str(e)}
     return results
+
+@app.get("/api/market-news")
+def get_market_news(
+    tickers: Optional[str] = Query(None, description="Format lama (opsional)"),
+    assets: Optional[str] = Query(None, description="Format baru (opsional)")
+):
+    raw_data = assets or tickers or ""
+    if not raw_data:
+        return {"news": []}
+
+    asset_list = []
+    for a in raw_data.split(","):
+        parts = a.split("|")
+        if parts:
+            tck = parts[0].strip().upper()
+            name = parts[1].strip() if len(parts) > 1 else ""
+            if name.lower() in ["undefined", "null", "none"]:
+                name = ""
+            if tck:
+                asset_list.append((tck, name))
+                
+    all_news = []
+    seen_links = set()
+
+    def fetch_news(tck, name):
+        # 1. Kripto ke CryptoCompare
+        clean_tck = tck.replace("USDT", "")
+        if clean_tck in COINGECKO_IDS or clean_tck in ["BTC", "ETH", "SOL", "DOGE"]:
+            try:
+                res = requests.get(f"https://min-api.cryptocompare.com/data/v2/news/?categories={clean_tck}&lang=EN", timeout=10)
+                data = res.json()
+                news_list = data.get("Data", [])
+                
+                parsed = []
+                for n in news_list:
+                    link = n.get("url", "")
+                    if not link or link in seen_links: continue
+                    seen_links.add(link)
+                    
+                    publisher_info = n.get("source_info")
+                    publisher_name = publisher_info.get("name", "Crypto News") if isinstance(publisher_info, dict) else "Crypto News"
+                    
+                    parsed.append({
+                        "ticker": tck,
+                        "title": n.get("title", "No Title"),
+                        "publisher": publisher_name,
+                        "link": link,
+                        "published_at": n.get("published_on", int(time.time())),
+                        "thumbnail": n.get("imageurl", "")
+                    })
+                if parsed:
+                    return parsed
+            except Exception:
+                pass
+
+        # 2. Saham/Komoditas (Google News RSS dengan Identitas Bersih)
+        yf_sym = MARKET_SYMBOLS.get(tck, tck)
+        
+        try:
+            is_idx = ".JK" in yf_sym
+            
+            # Format kata kunci pencarian yang beda untuk Indo dan US
+            if is_idx or tck in ["BBCA", "BBRI", "BMRI", "GOTO", "TLKM"]:
+                search_query = f"Saham {tck}"
+                url = f"https://news.google.com/rss/search?q={urllib.parse.quote(search_query)}&hl=id&gl=ID&ceid=ID:id"
+            else:
+                search_query = f"{tck} stock market"
+                url = f"https://news.google.com/rss/search?q={urllib.parse.quote(search_query)}&hl=en-US&gl=US&ceid=US:en"
+            
+            # KITA PAKAI CLEAN_HEADERS, BUKAN YF_HEADERS
+            res = requests.get(url, headers=CLEAN_HEADERS, timeout=10)
+            
+            if res.status_code == 200:
+                root = ET.fromstring(res.content)
+                parsed = []
+                
+                for item in root.findall('.//channel/item')[:6]:
+                    title = item.find('title').text if item.find('title') is not None else "No Title"
+                    link = item.find('link').text if item.find('link') is not None else ""
+                    
+                    if not link or link in seen_links: continue
+                    seen_links.add(link)
+                    
+                    pub_str = item.find('pubDate').text if item.find('pubDate') is not None else ""
+                    try:
+                        dt = parsedate_to_datetime(pub_str)
+                        pub_ts = int(dt.timestamp())
+                    except:
+                        pub_ts = int(time.time())
+                        
+                    # Pisahkan Nama Publisher dari Judul Google News (Biasanya di belakang tanda ' - ')
+                    publisher = "Google News"
+                    if " - " in title:
+                        parts = title.rsplit(" - ", 1)
+                        title = parts[0]
+                        publisher = parts[1]
+                        
+                    parsed.append({
+                        "ticker": tck,
+                        "title": title.strip(),
+                        "publisher": publisher.strip(),
+                        "link": link,
+                        "published_at": pub_ts,
+                        "thumbnail": ""
+                    })
+                if parsed:
+                    return parsed
+            else:
+                # Kalau gagal, kasih tahu di terminal Mac biar kita tahu penyebabnya
+                print(f"[News Error] Google News nolak {tck} dengan kode status: {res.status_code}")
+                
+        except Exception as e:
+            print(f"[News Error] Proses pencarian {tck} terhenti karena: {e}")
+            pass
+            
+        return []
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(fetch_news, tck, name) for tck, name in asset_list]
+        for future in as_completed(futures):
+            result = future.result()
+            if result:
+                all_news.extend(result)
+                
+    all_news.sort(key=lambda x: x["published_at"], reverse=True)
+    return {"news": all_news[:30]}
 
 if __name__ == "__main__":
     import uvicorn
