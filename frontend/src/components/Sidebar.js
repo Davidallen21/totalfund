@@ -6,6 +6,7 @@ export default function Sidebar({ activePage, setActivePage, onClose, isOpen, us
   const NAV_ITEMS = [
     { key: 'portfolio', label: t('portfolio'), icon: '◈' },
     { key: 'networth-detail', label: t('analytics'), icon: '❖' },
+    { key: 'market-explorer', label: t('market_explorer'), icon: '◱' },
     { key: 'news', label: t('market_news'), icon: '▤' },
     { key: 'ai', label: t('ai_consultant'), icon: '✦' },
   ];

@@ -4,6 +4,7 @@ import random
 import time
 import urllib.parse
 import xml.etree.ElementTree as ET
+import re
 from email.utils import parsedate_to_datetime
 from dotenv import load_dotenv
 load_dotenv()
@@ -24,18 +25,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Header lama yang ketahuan bot kalau dipakai ke Google
 YF_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "application/json, text/plain, */*",
+    "Accept": "application/rss+xml, application/xml, application/json, text/plain, */*",
     "Accept-Language": "en-US,en;q=0.9",
     "Referer": "https://finance.yahoo.com/",
 }
 
-# Header baru yang bersih, meniru browser Mac asli
 CLEAN_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-    "Accept": "application/rss+xml, application/xml, text/xml, */*",
+    "Accept": "application/json, text/plain, */*",
     "Accept-Language": "en-US,en;q=0.9",
 }
 
@@ -55,9 +54,7 @@ def fetch_yahoo(symbol: str):
     except Exception:
         return None
 
-# ── Symbol map: key yang dipakai React → Yahoo Finance symbol ──
 MARKET_SYMBOLS = {
-    # IDX Stocks — Blue Chip
     "BBCA":  "BBCA.JK",
     "BBRI":  "BBRI.JK",
     "BMRI":  "BMRI.JK",
@@ -98,7 +95,6 @@ MARKET_SYMBOLS = {
     "SIDO":  "SIDO.JK",
     "HEAL":  "HEAL.JK",
     "MIKA":  "MIKA.JK",
-    # US Stocks populer
     "AAPL":  "AAPL",
     "MSFT":  "MSFT",
     "GOOGL": "GOOGL",
@@ -116,11 +112,9 @@ MARKET_SYMBOLS = {
     "PLTR":  "PLTR",
     "COIN":  "COIN",
     "MSTR":  "MSTR",
-    # Indices
     "IHSG":   "^JKSE",
     "SPX500": "^GSPC",
     "NASDAQ": "^IXIC",
-    # Commodities
     "GOLD":  "GC=F",
     "XAG":   "SI=F",
     "BRENT": "BZ=F",
@@ -151,9 +145,7 @@ def get_market_data(symbols: str = Query(None, description="Comma separated symb
 
     return results
 
-# ── CRYPTO PRICES via CoinGecko ──
 COINGECKO_IDS = {
-    # Major
     "BTC":    "bitcoin",
     "ETH":    "ethereum",
     "BNB":    "binancecoin",
@@ -175,7 +167,6 @@ COINGECKO_IDS = {
     "OP":     "optimism",
     "ARB":    "arbitrum",
     "SUI":    "sui",
-    # Trending / Populer
     "SEI":    "sei-network",
     "TAO":    "bittensor",
     "TIA":    "celestia",
@@ -304,7 +295,7 @@ def get_market_chart(market_type: str):
 def analisa_sentimen_dan_teknikal():
     try:
         url = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN"
-        response = requests.get(url, timeout=10).json()
+        response = requests.get(url, headers=YF_HEADERS, timeout=10).json()
         berita_list = response.get("Data", [])[:3]
 
         kata_positif = ["bull", "surge", "high", "gain", "adopt", "success", "buy", "growth"]
@@ -409,10 +400,6 @@ def get_chart(simbol: str, days: int = 1):
 def get_bot_status():
     return analisa_sentimen_dan_teknikal()
 
-
-# ═══════════════════════════════════════════════════════════════
-# UNIVERSAL SEARCH & AUTO-PRICE
-# ═══════════════════════════════════════════════════════════════
 
 def search_coingecko(query: str) -> list:
     query_key = query.lower()
@@ -629,12 +616,21 @@ def get_market_news(
     all_news = []
     seen_links = set()
 
-    def fetch_news(tck, name):
+    # Fungsi penarik berita sekarang diantre satu-satu dengan jeda biar aman dari blokir
+    def fetch_news(tck, name, delay):
+        if delay > 0:
+            time.sleep(delay)
+            
         # 1. Kripto ke CryptoCompare
         clean_tck = tck.replace("USDT", "")
         if clean_tck in COINGECKO_IDS or clean_tck in ["BTC", "ETH", "SOL", "DOGE"]:
             try:
-                res = requests.get(f"https://min-api.cryptocompare.com/data/v2/news/?categories={clean_tck}&lang=EN", timeout=10)
+                # Sekarang request Kripto dilindungi Headers
+                res = requests.get(
+                    f"https://min-api.cryptocompare.com/data/v2/news/?categories={clean_tck}&lang=EN", 
+                    headers=YF_HEADERS, 
+                    timeout=10
+                )
                 data = res.json()
                 news_list = data.get("Data", [])
                 
@@ -660,13 +656,50 @@ def get_market_news(
             except Exception:
                 pass
 
-        # 2. Saham/Komoditas (Google News RSS dengan Identitas Bersih)
+        # 2. Saham/Komoditas via Yahoo Finance
         yf_sym = MARKET_SYMBOLS.get(tck, tck)
-        
+        queries = [yf_sym, tck]
+        if name and name.upper() != tck:
+            queries.append(name)
+            
+        for q in queries:
+            try:
+                # Memakai YF_HEADERS yang lengkap untuk mencegah deteksi bot
+                res = requests.get(
+                    "https://query2.finance.yahoo.com/v1/finance/search",
+                    params={"q": q, "newsCount": 6, "quotesCount": 1},
+                    headers=YF_HEADERS,
+                    timeout=8
+                )
+                if res.status_code == 200:
+                    news_items = res.json().get("news", [])
+                    if news_items:
+                        parsed = []
+                        for n in news_items:
+                            link = n.get("link", "")
+                            if not link or link in seen_links: continue
+                            seen_links.add(link)
+                            
+                            thumb = ""
+                            if n.get("thumbnail") and n["thumbnail"].get("resolutions"):
+                                thumb = n["thumbnail"]["resolutions"][0].get("url", "")
+                                
+                            parsed.append({
+                                "ticker": tck,
+                                "title": n.get("title", "No Title"),
+                                "publisher": n.get("publisher", "Yahoo Finance"),
+                                "link": link,
+                                "published_at": n.get("providerPublishTime", int(time.time())),
+                                "thumbnail": thumb
+                            })
+                        if parsed:
+                            return parsed
+            except Exception:
+                pass
+
+        # 3. Fallback ke Google News (Hanya terpakai kalau Yahoo error parah)
         try:
             is_idx = ".JK" in yf_sym
-            
-            # Format kata kunci pencarian yang beda untuk Indo dan US
             if is_idx or tck in ["BBCA", "BBRI", "BMRI", "GOTO", "TLKM"]:
                 search_query = f"Saham {tck}"
                 url = f"https://news.google.com/rss/search?q={urllib.parse.quote(search_query)}&hl=id&gl=ID&ceid=ID:id"
@@ -674,34 +707,26 @@ def get_market_news(
                 search_query = f"{tck} stock market"
                 url = f"https://news.google.com/rss/search?q={urllib.parse.quote(search_query)}&hl=en-US&gl=US&ceid=US:en"
             
-            # KITA PAKAI CLEAN_HEADERS, BUKAN YF_HEADERS
-            res = requests.get(url, headers=CLEAN_HEADERS, timeout=10)
-            
+            res = requests.get(url, headers=CLEAN_HEADERS, timeout=8)
             if res.status_code == 200:
                 root = ET.fromstring(res.content)
                 parsed = []
-                
                 for item in root.findall('.//channel/item')[:6]:
                     title = item.find('title').text if item.find('title') is not None else "No Title"
                     link = item.find('link').text if item.find('link') is not None else ""
-                    
                     if not link or link in seen_links: continue
                     seen_links.add(link)
                     
                     pub_str = item.find('pubDate').text if item.find('pubDate') is not None else ""
-                    try:
-                        dt = parsedate_to_datetime(pub_str)
-                        pub_ts = int(dt.timestamp())
-                    except:
-                        pub_ts = int(time.time())
+                    try: pub_ts = int(parsedate_to_datetime(pub_str).timestamp())
+                    except: pub_ts = int(time.time())
                         
-                    # Pisahkan Nama Publisher dari Judul Google News (Biasanya di belakang tanda ' - ')
                     publisher = "Google News"
                     if " - " in title:
                         parts = title.rsplit(" - ", 1)
                         title = parts[0]
                         publisher = parts[1]
-                        
+
                     parsed.append({
                         "ticker": tck,
                         "title": title.strip(),
@@ -710,20 +735,20 @@ def get_market_news(
                         "published_at": pub_ts,
                         "thumbnail": ""
                     })
-                if parsed:
-                    return parsed
-            else:
-                # Kalau gagal, kasih tahu di terminal Mac biar kita tahu penyebabnya
-                print(f"[News Error] Google News nolak {tck} dengan kode status: {res.status_code}")
-                
-        except Exception as e:
-            print(f"[News Error] Proses pencarian {tck} terhenti karena: {e}")
+                if parsed: return parsed
+        except Exception:
             pass
             
         return []
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [executor.submit(fetch_news, tck, name) for tck, name in asset_list]
+    # Mengeksekusi penarikan berita secara bergilir (staggered)
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = []
+        for idx, (tck, name) in enumerate(asset_list):
+            # Mengatur jeda 0.3 detik antar request agar tidak diblokir Yahoo (429 Rate Limit)
+            delay = idx * 0.3
+            futures.append(executor.submit(fetch_news, tck, name, delay))
+            
         for future in as_completed(futures):
             result = future.result()
             if result:

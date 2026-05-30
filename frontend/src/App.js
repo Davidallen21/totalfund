@@ -5,6 +5,7 @@ import { useLocalStorage } from './hooks/useLocalstorage';
 import { formatUSD, formatIDR, COLORS, renderAIText } from './utils/helpers';
 import { NetWorthTrendCard, NetWorthDetailPage } from './networthtrend';
 import Sidebar from './components/Sidebar';
+import MarketExplorerPage from './components/MarketExplorerPage'; // Mengambil file terpisah
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -19,6 +20,7 @@ const DICTIONARY = {
     add_asset: '+ Tambah Aset', no_assets: 'Belum ada aset', save: 'Simpan', cancel: 'Batal',
     delete: 'Hapus', edit: 'Edit', price_live: 'Harga Live', registered_assets: 'Aset Terdaftar',
     investor_account: 'Akun Investor', analytics: 'Analitik', ai_chat: 'Chat AI', market_news: 'Berita Pasar',
+    market_explorer: 'Market Explorer', search_asset: 'Cari koin atau saham...',
     all: 'Semua', no_news_found: 'Belum ada berita untuk aset ini.', no_assets_news: 'Tambah aset ke portofolio untuk melihat berita.',
     crypto_usd: 'Kripto (USD)', commodities_usd: 'Komoditas (USD)', stock_idx_idr: 'Saham IDX (IDR)',
     stock_us_usd: 'Saham US (USD)', asset: 'Aset', holdings_avg: 'Holdings / AVG',
@@ -44,6 +46,7 @@ const DICTIONARY = {
     add_asset: '+ Add Asset', no_assets: 'No assets in', save: 'Save', cancel: 'Cancel',
     delete: 'Delete', edit: 'Edit', price_live: 'Live Price', registered_assets: 'Registered Assets',
     investor_account: 'Investor Account', analytics: 'Analytics', ai_chat: 'AI Chat', market_news: 'Market News',
+    market_explorer: 'Market Explorer', search_asset: 'Search coin or stock...',
     all: 'All', no_news_found: 'No news found for these assets.', no_assets_news: 'Add assets to your portfolio to see news.',
     crypto_usd: 'Crypto (USD)', commodities_usd: 'Commodities (USD)', stock_idx_idr: 'IDX Stock (IDR)',
     stock_us_usd: 'US Stock (USD)', asset: 'Asset', holdings_avg: 'Holdings / AVG',
@@ -69,6 +72,7 @@ const DICTIONARY = {
     add_asset: '+ 添加资产', no_assets: '暂无资产', save: '保存', cancel: '取消',
     delete: '删除', edit: '编辑', price_live: '实时价格', registered_assets: '已注册资产',
     investor_account: '投资者账户', analytics: '分析', ai_chat: 'AI 聊天', market_news: '市场新闻',
+    market_explorer: '市场资源管理器', search_asset: '搜索硬币或股票...',
     all: '全部', no_news_found: '未找到相关新闻。', no_assets_news: '在您的投资组合中添加资产以查看新闻。',
     crypto_usd: '加密货币 (USD)', commodities_usd: '大宗商品 (USD)', stock_idx_idr: '印尼股票 (IDR)',
     stock_us_usd: '美股 (USD)', asset: '资产', holdings_avg: '持仓 / 均价',
@@ -541,7 +545,6 @@ function MarketNewsPage({ assets, t }) {
       if (validAssets.length === 0) return;
       
       setLoading(true);
-      // Di sini kita pastikan data dikirim pakai label "assets" dengan format Ticker|Nama
       const tickersStr = validAssets.map(a => `${a.ticker}|${a.nama}`).join(',');
       
       try {
@@ -1127,7 +1130,7 @@ function App() {
 
               {activePage !== 'portfolio' && (
                 <div style={{ color: '#737373', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', display: width < 600 ? 'none' : 'block' }}>
-                  {activePage === 'networth-detail' ? t('analytics') : activePage === 'news' ? t('market_news') : t('ai_chat')}
+                  {activePage === 'networth-detail' ? t('analytics') : activePage === 'market-explorer' ? t('market_explorer') : activePage === 'news' ? t('market_news') : t('ai_chat')}
                 </div>
               )}
             </div>
@@ -1282,6 +1285,10 @@ function App() {
                 </div>
               </div>
             </>
+          )}
+
+          {activePage === 'market-explorer' && (
+            <MarketExplorerPage t={t} />
           )}
 
           {activePage === 'ai' && (
