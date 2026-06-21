@@ -40,6 +40,31 @@ CLEAN_HEADERS = {
 
 # --- SIMPLE CACHE (Biar ga kena Block / Rate Limit API!) ---
 CG_SEARCH_CACHE = {}
+_OVERVIEW_CACHE = {}
+
+def _cache_get(key: str, ttl_seconds: int):
+    entry = _OVERVIEW_CACHE.get(key)
+    if entry and (time.time() - entry["time"] < ttl_seconds):
+        return entry["data"]
+    return None
+
+def _cache_set(key: str, data):
+    _OVERVIEW_CACHE[key] = {"time": time.time(), "data": data}
+
+def _request_with_retry(url, params=None, headers=None, timeout=12, retries=2):
+    last_err = None
+    for attempt in range(retries + 1):
+        try:
+            res = requests.get(url, params=params, headers=headers or CLEAN_HEADERS, timeout=timeout)
+            if res.status_code == 429:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            res.raise_for_status()
+            return res
+        except Exception as e:
+            last_err = e
+            time.sleep(0.8 * (attempt + 1))
+    raise last_err
 
 def fetch_yahoo(symbol: str):
     url = f"https://query2.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=2d"
@@ -119,31 +144,6 @@ MARKET_SYMBOLS = {
     "XAG":   "SI=F",
     "BRENT": "BZ=F",
 }
-
-@app.get("/api/market-data")
-def get_market_data(symbols: str = Query(None, description="Comma separated symbols")):
-    results = {}
-    target_symbols = MARKET_SYMBOLS.copy()
-
-    if symbols:
-        extra_symbols = symbols.split(",")
-        for sym in extra_symbols:
-            sym = sym.strip()
-            if sym not in target_symbols.values():
-                target_symbols[sym] = sym
-
-    with ThreadPoolExecutor(max_workers=15) as executor:
-        futures = {executor.submit(fetch_yahoo, sym): key for key, sym in target_symbols.items()}
-        for future in as_completed(futures):
-            key = futures[future]
-            try:
-                res = future.result()
-                if res is not None:
-                    results[key] = res
-            except Exception as e:
-                results[key] = None
-
-    return results
 
 COINGECKO_IDS = {
     "BTC":    "bitcoin",
@@ -231,6 +231,46 @@ COINGECKO_IDS = {
     "ALT":    "altlayer",
     "LIT":    "litentry",
 }
+
+STABLECOIN_IDS = {
+    "tether", "usd-coin", "dai", "binance-usd", "true-usd", "first-digital-usd",
+    "usdd", "frax", "paxos-standard", "gemini-dollar", "ethena-usde",
+}
+
+IDX_TICKERS = [t for t, sym in MARKET_SYMBOLS.items() if sym.endswith(".JK")]
+US_TICKERS = [
+    t for t, sym in MARKET_SYMBOLS.items()
+    if not sym.endswith(".JK") and not sym.startswith("^")
+    and sym not in ("GC=F", "SI=F", "BZ=F")
+]
+COMMODITY_TICKERS = ["GOLD", "XAG", "BRENT"]
+
+# ── CORE ENDPOINTS ──
+
+@app.get("/api/market-data")
+def get_market_data(symbols: str = Query(None, description="Comma separated symbols")):
+    results = {}
+    target_symbols = MARKET_SYMBOLS.copy()
+
+    if symbols:
+        extra_symbols = symbols.split(",")
+        for sym in extra_symbols:
+            sym = sym.strip()
+            if sym not in target_symbols.values():
+                target_symbols[sym] = sym
+
+    with ThreadPoolExecutor(max_workers=15) as executor:
+        futures = {executor.submit(fetch_yahoo, sym): key for key, sym in target_symbols.items()}
+        for future in as_completed(futures):
+            key = futures[future]
+            try:
+                res = future.result()
+                if res is not None:
+                    results[key] = res
+            except Exception as e:
+                results[key] = None
+
+    return results
 
 @app.get("/api/crypto-prices")
 def get_crypto_prices(symbols: str = Query(..., description="Comma separated, e.g. BTCUSDT,ETHUSDT")):
@@ -400,7 +440,6 @@ def get_chart(simbol: str, days: int = 1):
 def get_bot_status():
     return analisa_sentimen_dan_teknikal()
 
-
 def search_coingecko(query: str) -> list:
     query_key = query.lower()
     if query_key in CG_SEARCH_CACHE and time.time() - CG_SEARCH_CACHE[query_key]['time'] < 60:
@@ -477,7 +516,6 @@ def universal_search(q: str = Query(..., description="Ticker atau nama"), type: 
             final.append(item)
     return {"results": final[:20]}
 
-
 def fetch_price_crypto_by_id(coingecko_id: str) -> dict | None:
     try:
         res = requests.get(
@@ -506,7 +544,6 @@ def fetch_price_crypto_by_id(coingecko_id: str) -> dict | None:
         }
     except Exception:
         return None
-
 
 def fetch_price_stock_by_symbol(yahoo_symbol: str) -> dict | None:
     try:
@@ -616,16 +653,13 @@ def get_market_news(
     all_news = []
     seen_links = set()
 
-    # Fungsi penarik berita sekarang diantre satu-satu dengan jeda biar aman dari blokir
     def fetch_news(tck, name, delay):
         if delay > 0:
             time.sleep(delay)
             
-        # 1. Kripto ke CryptoCompare
         clean_tck = tck.replace("USDT", "")
         if clean_tck in COINGECKO_IDS or clean_tck in ["BTC", "ETH", "SOL", "DOGE"]:
             try:
-                # Sekarang request Kripto dilindungi Headers
                 res = requests.get(
                     f"https://min-api.cryptocompare.com/data/v2/news/?categories={clean_tck}&lang=EN", 
                     headers=YF_HEADERS, 
@@ -656,7 +690,6 @@ def get_market_news(
             except Exception:
                 pass
 
-        # 2. Saham/Komoditas via Yahoo Finance
         yf_sym = MARKET_SYMBOLS.get(tck, tck)
         queries = [yf_sym, tck]
         if name and name.upper() != tck:
@@ -664,7 +697,6 @@ def get_market_news(
             
         for q in queries:
             try:
-                # Memakai YF_HEADERS yang lengkap untuk mencegah deteksi bot
                 res = requests.get(
                     "https://query2.finance.yahoo.com/v1/finance/search",
                     params={"q": q, "newsCount": 6, "quotesCount": 1},
@@ -697,7 +729,6 @@ def get_market_news(
             except Exception:
                 pass
 
-        # 3. Fallback ke Google News (Hanya terpakai kalau Yahoo error parah)
         try:
             is_idx = ".JK" in yf_sym
             if is_idx or tck in ["BBCA", "BBRI", "BMRI", "GOTO", "TLKM"]:
@@ -741,11 +772,9 @@ def get_market_news(
             
         return []
 
-    # Mengeksekusi penarikan berita secara bergilir (staggered)
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = []
         for idx, (tck, name) in enumerate(asset_list):
-            # Mengatur jeda 0.3 detik antar request agar tidak diblokir Yahoo (429 Rate Limit)
             delay = idx * 0.3
             futures.append(executor.submit(fetch_news, tck, name, delay))
             
@@ -756,6 +785,261 @@ def get_market_news(
                 
     all_news.sort(key=lambda x: x["published_at"], reverse=True)
     return {"news": all_news[:30]}
+
+
+# ============================================================================
+# ENDPOINTS TAMBAHAN MARKET OVERVIEW PAGE & ADVANCED FUTURES METRICS
+# ============================================================================
+
+@app.get("/api/fear-greed")
+def get_fear_greed():
+    cached = _cache_get("fear_greed", ttl_seconds=900)
+    if cached:
+        return cached
+
+    try:
+        res = _request_with_retry("https://api.alternative.me/fng/?limit=2")
+        data = res.json()
+        entries = data.get("data", [])
+        if not entries:
+            return {"value": None, "classification": None, "error": "no_data"}
+
+        today = entries[0]
+        yesterday = entries[1] if len(entries) > 1 else None
+
+        result = {
+            "value": int(today["value"]),
+            "classification": today["value_classification"],
+            "timestamp": int(today["timestamp"]),
+            "previous_value": int(yesterday["value"]) if yesterday else None,
+        }
+        _cache_set("fear_greed", result)
+        return result
+    except Exception as e:
+        stale = _OVERVIEW_CACHE.get("fear_greed", {}).get("data")
+        if stale:
+            return stale
+        return {"value": None, "classification": None, "error": str(e)}
+
+@app.get("/api/altseason")
+def get_altseason():
+    cached = _cache_get("altseason", ttl_seconds=14400)
+    if cached:
+        return cached
+
+    try:
+        res = _request_with_retry(
+            "https://api.coingecko.com/api/v3/coins/markets",
+            params={
+                "vs_currency": "usd",
+                "order": "market_cap_desc",
+                "per_page": 60,
+                "page": 1,
+                "price_change_percentage": "90d",
+            },
+        )
+        coins = res.json()
+        if not isinstance(coins, list):
+            raise ValueError("unexpected response shape")
+
+        btc = next((c for c in coins if c["id"] == "bitcoin"), None)
+        if not btc or btc.get("price_change_percentage_90d_in_currency") is None:
+            raise ValueError("btc 90d change not available")
+
+        btc_90d = btc["price_change_percentage_90d_in_currency"]
+
+        candidates = [
+            c for c in coins
+            if c["id"] != "bitcoin"
+            and c["id"] not in STABLECOIN_IDS
+            and c.get("price_change_percentage_90d_in_currency") is not None
+        ][:50]
+
+        if len(candidates) < 10:
+            raise ValueError("not enough candidate coins")
+
+        outperforming = sum(1 for c in candidates if c["price_change_percentage_90d_in_currency"] > btc_90d)
+        index_value = round((outperforming / len(candidates)) * 100)
+
+        if index_value >= 75:
+            classification = "Altcoin Season"
+        elif index_value <= 25:
+            classification = "Bitcoin Season"
+        else:
+            classification = "Neutral"
+
+        result = {
+            "value": index_value,
+            "classification": classification,
+            "btc_90d_change": round(btc_90d, 2),
+            "coins_sampled": len(candidates),
+            "outperforming_btc": outperforming,
+        }
+        _cache_set("altseason", result)
+        return result
+    except Exception as e:
+        stale = _OVERVIEW_CACHE.get("altseason", {}).get("data")
+        if stale:
+            return stale
+        return {"value": None, "classification": None, "error": str(e)}
+
+@app.get("/api/btc-dominance")
+def get_btc_dominance():
+    cached = _cache_get("btc_dominance", ttl_seconds=1800)
+    if cached:
+        return cached
+
+    try:
+        res = _request_with_retry("https://api.coingecko.com/api/v3/global")
+        data = res.json().get("data", {})
+        btc_pct = data.get("market_cap_percentage", {}).get("btc")
+        eth_pct = data.get("market_cap_percentage", {}).get("eth")
+        total_mcap_usd = data.get("total_market_cap", {}).get("usd")
+
+        if btc_pct is None:
+            raise ValueError("btc dominance not available")
+
+        result = {
+            "btc_dominance": round(btc_pct, 2),
+            "eth_dominance": round(eth_pct, 2) if eth_pct else None,
+            "total_market_cap_usd": total_mcap_usd,
+        }
+        _cache_set("btc_dominance", result)
+        return result
+    except Exception as e:
+        stale = _OVERVIEW_CACHE.get("btc_dominance", {}).get("data")
+        if stale:
+            return stale
+        return {"btc_dominance": None, "error": str(e)}
+
+def _movers_from_yahoo(tickers: list, limit: int = 5):
+    rows = []
+    with ThreadPoolExecutor(max_workers=15) as executor:
+        futures = {executor.submit(fetch_yahoo, MARKET_SYMBOLS[t]): t for t in tickers if t in MARKET_SYMBOLS}
+        for future in as_completed(futures):
+            ticker = futures[future]
+            try:
+                res = future.result()
+                if res is not None:
+                    rows.append({"symbol": ticker, "price": res["price"], "change": res["change"]})
+            except Exception:
+                continue
+
+    rows_sorted = sorted(rows, key=lambda r: r["change"], reverse=True)
+    gainers = rows_sorted[:limit]
+    losers = list(reversed(rows_sorted[-limit:])) if len(rows_sorted) >= limit else list(reversed(rows_sorted))
+    return {"gainers": gainers, "losers": losers, "total_scanned": len(rows)}
+
+def _movers_from_coingecko(limit: int = 5):
+    try:
+        res = _request_with_retry(
+            "https://api.coingecko.com/api/v3/coins/markets",
+            params={
+                "vs_currency": "usd",
+                "order": "market_cap_desc",
+                "per_page": 100,
+                "page": 1,
+                "price_change_percentage": "24h",
+            },
+        )
+        coins = res.json()
+        if not isinstance(coins, list):
+            return {"gainers": [], "losers": [], "total_scanned": 0}
+
+        rows = [
+            {
+                "symbol": c["symbol"].upper(),
+                "name": c["name"],
+                "price": c.get("current_price", 0),
+                "change": round(c.get("price_change_percentage_24h") or 0, 2),
+                "thumb": c.get("image", ""),
+            }
+            for c in coins
+            if c.get("price_change_percentage_24h") is not None
+        ]
+        rows_sorted = sorted(rows, key=lambda r: r["change"], reverse=True)
+        gainers = rows_sorted[:limit]
+        losers = list(reversed(rows_sorted[-limit:])) if len(rows_sorted) >= limit else list(reversed(rows_sorted))
+        return {"gainers": gainers, "losers": losers, "total_scanned": len(rows)}
+    except Exception:
+        return {"gainers": [], "losers": [], "total_scanned": 0}
+
+@app.get("/api/market-movers")
+def get_market_movers(
+    category: str = Query(..., description="crypto | saham_idx | saham_us | komoditas"),
+    limit: int = Query(5, ge=1, le=20),
+):
+    cache_key = f"movers_{category}_{limit}"
+    cached = _cache_get(cache_key, ttl_seconds=300)
+    if cached:
+        return cached
+
+    try:
+        if category == "crypto":
+            result = _movers_from_coingecko(limit)
+        elif category == "saham_idx":
+            result = _movers_from_yahoo(IDX_TICKERS, limit)
+        elif category == "saham_us":
+            result = _movers_from_yahoo(US_TICKERS, limit)
+        elif category == "komoditas":
+            result = _movers_from_yahoo(COMMODITY_TICKERS, limit)
+        else:
+            return {"error": f"Unknown category: {category}", "gainers": [], "losers": []}
+
+        _cache_set(cache_key, result)
+        return result
+    except Exception as e:
+        stale = _OVERVIEW_CACHE.get(cache_key, {}).get("data")
+        if stale:
+            return stale
+        return {"gainers": [], "losers": [], "error": str(e)}
+
+@app.get("/api/market-overview-summary")
+def get_market_overview_summary():
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        f_fng = executor.submit(get_fear_greed)
+        f_alt = executor.submit(get_altseason)
+        f_dom = executor.submit(get_btc_dominance)
+
+        return {
+            "fear_greed": f_fng.result(),
+            "altseason": f_alt.result(),
+            "btc_dominance": f_dom.result(),
+        }
+
+@app.get("/api/crypto-futures-data")
+def get_crypto_futures_data():
+    cached = _cache_get("crypto_futures_data", ttl_seconds=300)
+    if cached:
+        return cached
+
+    try:
+        # 1. Ambil Akun Top Long/Short Ratio BTC dari Binance Futures
+        res_ls = requests.get(
+            "https://fapi.binance.com/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1d&limit=1",
+            timeout=8
+        )
+        ls_data = res_ls.json()
+        long_pct = float(ls_data[0]["longAccount"]) * 100
+        short_pct = float(ls_data[0]["shortAccount"]) * 100
+        
+        # 2. Ambil Open Interest (OI) & Harga Pasar Terkini
+        res_oi = requests.get("https://fapi.binance.com/fapi/v1/openInterest?symbol=BTCUSDT", timeout=8)
+        res_price = requests.get("https://fapi.binance.com/fapi/v1/ticker/price?symbol=BTCUSDT", timeout=8)
+        
+        oi_btc = float(res_oi.json()["openInterest"])
+        btc_price = float(res_price.json()["price"])
+        
+        result = {
+            "longPct": round(long_pct, 1),
+            "shortPct": round(short_pct, 1),
+            "openInterestUSD": oi_btc * btc_price
+        }
+        _cache_set("crypto_futures_data", result)
+        return result
+    except Exception:
+        return {"longPct": 50, "shortPct": 50, "openInterestUSD": 0}
+
 
 if __name__ == "__main__":
     import uvicorn
