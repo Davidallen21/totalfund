@@ -202,8 +202,6 @@ function LongShortRatio({ data }) {
 
 // ── HALAMAN UTAMA ──
 export default function MarketOverviewPage({ t }) {
-  const getText = (key, fallback) => (t && t(key) !== key) ? t(key) : fallback;
-
   const width = useWindowSize();
   const isMobile = width <= 768;
 
