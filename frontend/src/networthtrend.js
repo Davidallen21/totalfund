@@ -1,5 +1,5 @@
 // src/networthtrend.js
-// v10 — Fixed Language Jumper Bug (Robust Local Storage Parsing) & ESLint warnings
+// v11 — Fixed Duplicate Export Bug, Added Stroke & Grid, Fullscreen Support
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
@@ -69,14 +69,11 @@ const LOCAL_DICT = {
   }
 };
 
-// FIX: Pengecekan bahasa yang anti-error JSON parse 
 const getLocalT = (key, globalT) => {
   try {
     let rawLang = window.localStorage.getItem('totalfund_lang') || '';
-    // Hilangkan karakter aneh / tanda kutip biar aman, cuma ambil hurufnya aja
     let lang = rawLang.replace(/[^a-zA-Z]/g, '').toLowerCase();
 
-    // Kalau kosong atau bahasanya nggak valid, fallback ke setting browser
     if (!['id', 'en', 'zh'].includes(lang)) {
       const bLang = (navigator.language || '').toLowerCase();
       lang = bLang.includes('id') ? 'id' : bLang.includes('zh') ? 'zh' : 'en';
@@ -87,7 +84,6 @@ const getLocalT = (key, globalT) => {
     return (globalT && globalT(key)) || key;
   }
 };
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // UTILS
@@ -620,15 +616,16 @@ export function NetWorthTrendCard({
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartPoints}>
+            <AreaChart data={chartPoints} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={color} stopOpacity={0.3} />
+                  <stop offset="5%"  stopColor={color} stopOpacity={0.4} />
                   <stop offset="95%" stopColor={color} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#333', strokeWidth: 1, strokeDasharray: '4 4' }} />
-              <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fillOpacity={1} fill="url(#colorValue)" dot={false} />
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="rgba(255, 255, 255, 0.08)" />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#555', strokeWidth: 1, strokeDasharray: '4 4' }} />
+              <Area type="monotone" dataKey="value" stroke={color} strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -654,7 +651,11 @@ export function NetWorthDetailPage({
   const [showDrawdown, setShowDrawdown]     = useState(false);
   const [targetNW, setTargetNW]             = useState('');
   const [editingTarget, setEditingTarget]   = useState(false);
+  
+  const [isFullscreen, setIsFullscreen]     = useState(false);
+  
   const targetInputRef                      = useRef(null);
+  const chartWrapperRef                     = useRef(null);
 
   const allChartPoints  = useMemo(() => safeChartPoints(chartData), [chartData]);
   const chartPoints     = useMemo(() => filterByPeriod(allChartPoints, activePeriod.days), [allChartPoints, activePeriod]);
@@ -731,6 +732,38 @@ export function NetWorthDetailPage({
     const labelSuffix = name === 'value' ? tL('portfolio') : `${name}${isRealtime ? '' : ' (sim)'}`;
     if (returnMode === 'pct') return [`${val >= 0 ? '+' : ''}${Number(val).toFixed(2)}%`, labelSuffix];
     return [formatCurrency(val), labelSuffix];
+  };
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    if (!chartWrapperRef.current) return;
+
+    if (!document.fullscreenElement) {
+      try {
+        await chartWrapperRef.current.requestFullscreen();
+        if (window.screen && window.screen.orientation && window.screen.orientation.lock) {
+          await window.screen.orientation.lock('landscape').catch(() => {});
+        }
+      } catch (err) {
+        console.warn("Gagal masuk fullscreen:", err);
+      }
+    } else {
+      try {
+        await document.exitFullscreen();
+        if (window.screen && window.screen.orientation && window.screen.orientation.unlock) {
+          window.screen.orientation.unlock();
+        }
+      } catch (err) {
+        console.warn("Gagal keluar fullscreen:", err);
+      }
+    }
   };
 
   return (
@@ -823,11 +856,25 @@ export function NetWorthDetailPage({
         </div>
       </div>
 
-      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: '20px 16px', marginBottom: 16, overflowX: 'hidden' }}>
+      <div 
+        ref={chartWrapperRef} 
+        style={{ 
+          backgroundColor: '#141414', 
+          border: isFullscreen ? 'none' : '1px solid #262626', 
+          borderRadius: isFullscreen ? '0' : 16, 
+          padding: '20px 16px', 
+          marginBottom: 16, 
+          overflowX: 'hidden',
+          width: '100%',
+          height: isFullscreen ? '100vh' : 'auto',
+          position: 'relative'
+        }}
+      >
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff' }}>{tL('perf_history')}</h2>
+            
             <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: 1, backgroundColor: '#1a1a1a', padding: 3, borderRadius: 8 }}>
                 {[{ v: 'abs', lbl: '$' }, { v: 'pct', lbl: '%' }].map(({ v, lbl }) => (
@@ -838,6 +885,27 @@ export function NetWorthDetailPage({
               </div>
               <button onClick={() => setShowDrawdown((v) => !v)} style={{ backgroundColor: showDrawdown ? '#ef444418' : 'transparent', color: showDrawdown ? '#f87171' : '#737373', border: `1px solid ${showDrawdown ? '#ef4444' : '#333'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <BarChart2 size={13} />DD
+              </button>
+
+              <button
+                onClick={toggleFullscreen}
+                style={{
+                  backgroundColor: 'rgba(20, 20, 20, 0.75)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#e5e5e5',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  transition: 'all 0.2s ease',
+                  marginLeft: '4px'
+                }}
+              >
+                {isFullscreen ? 'Keluar ⤓' : 'Perluas ⛶'}
               </button>
             </div>
           </div>
@@ -890,7 +958,7 @@ export function NetWorthDetailPage({
           </div>
         )}
 
-        <div style={{ height: 300, width: '100%' }}>
+        <div style={{ height: isFullscreen ? 'calc(100vh - 140px)' : 300, width: '100%', transition: 'height 0.3s ease' }}>
           {chartPoints.length >= 2 ? (
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={mergedChartData}>

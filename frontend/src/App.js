@@ -6,6 +6,7 @@ import { formatUSD, formatIDR, COLORS, renderAIText } from './utils/helpers';
 import { NetWorthTrendCard, NetWorthDetailPage } from './networthtrend';
 import Sidebar from './components/Sidebar';
 import MarketExplorerPage from './components/MarketExplorerPage'; // Mengambil file terpisah
+import MarketOverviewPage from './components/MarketOverviewPage'; // Menambahkan halaman baru
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -14,13 +15,13 @@ const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 // ==========================================
 const DICTIONARY = {
   id: {
-    portfolio: 'Portofolio Saya', ai_consultant: 'Konsultan AI', system_online: 'Sistem Online', online: 'Online',
+    dashboard: 'Dashboard', ai_consultant: 'Konsultan AI', system_online: 'Sistem Online', online: 'Online',
     total_net_worth: 'Total Kekayaan', overall_pnl: 'Total PnL', day_pnl: 'PnL 1 Hari',
     pnl_breakdown: 'Rincian PnL', current_allocation: 'Alokasi Saat Ini', holdings: 'Aset Dimiliki',
     add_asset: '+ Tambah Aset', no_assets: 'Belum ada aset', save: 'Simpan', cancel: 'Batal',
     delete: 'Hapus', edit: 'Edit', price_live: 'Harga Live', registered_assets: 'Aset Terdaftar',
     investor_account: 'Akun Investor', analytics: 'Analitik', ai_chat: 'Chat AI', market_news: 'Berita Pasar',
-    market_explorer: 'Market Explorer', search_asset: 'Cari koin atau saham...',
+    market_explorer: 'Market Explorer', market_overview: 'Market Overview', search_asset: 'Cari koin atau saham...',
     all: 'Semua', no_news_found: 'Belum ada berita untuk aset ini.', no_assets_news: 'Tambah aset ke portofolio untuk melihat berita.',
     crypto_usd: 'Kripto (USD)', commodities_usd: 'Komoditas (USD)', stock_idx_idr: 'Saham IDX (IDR)',
     stock_us_usd: 'Saham US (USD)', asset: 'Aset', holdings_avg: 'Holdings / AVG',
@@ -37,16 +38,19 @@ const DICTIONARY = {
     cat_crypto: 'Kripto', cat_saham_us: 'Saham US', cat_saham_idx: 'Saham IDX', cat_komoditas: 'Komoditas', stablecoin: 'Stablecoin', cash_idr: 'Cash IDR',
     set_username: 'Set Username', change_profile_pic: 'Klik untuk ubah foto profil',
     err_ticker_empty: '⚠️ Tulis Ticker!', err_select_from_results: '⚠️ Pilih dari hasil di bawah.', err_not_found: 'tidak ditemukan.',
-    eg_bbca: 'Misal: BBCA.JK', err_server: 'Maaf, terjadi kesalahan.', err_network: '⚠️ Tidak bisa terhubung ke server.'
+    eg_bbca: 'Misal: BBCA.JK', err_server: 'Maaf, terjadi kesalahan.', err_network: '⚠️ Tidak bisa terhubung ke server.',
+    edit_asset: 'Edit Aset', delete_asset: 'Hapus Aset', asset_actions: 'Aksi Aset',
+    open_account_settings: 'Buka pengaturan akun', account_settings: 'Pengaturan Akun', email: 'Email',
+    email_placeholder: 'nama@email.com', full_name: 'Nama', close: 'Tutup', view_assets: 'Lihat Aset'
   },
   en: {
-    portfolio: 'My Portfolio', ai_consultant: 'AI Consultant', system_online: 'System Online', online: 'Online',
+    dashboard: 'Dashboard', ai_consultant: 'AI Consultant', system_online: 'System Online', online: 'Online',
     total_net_worth: 'Total Net Worth', overall_pnl: 'Overall PnL', day_pnl: '1-Day PnL',
     pnl_breakdown: 'PnL Breakdown', current_allocation: 'Current Allocation', holdings: 'Holdings',
     add_asset: '+ Add Asset', no_assets: 'No assets in', save: 'Save', cancel: 'Cancel',
     delete: 'Delete', edit: 'Edit', price_live: 'Live Price', registered_assets: 'Registered Assets',
     investor_account: 'Investor Account', analytics: 'Analytics', ai_chat: 'AI Chat', market_news: 'Market News',
-    market_explorer: 'Market Explorer', search_asset: 'Search coin or stock...',
+    market_explorer: 'Market Explorer', market_overview: 'Market Overview', search_asset: 'Search coin or stock...',
     all: 'All', no_news_found: 'No news found for these assets.', no_assets_news: 'Add assets to your portfolio to see news.',
     crypto_usd: 'Crypto (USD)', commodities_usd: 'Commodities (USD)', stock_idx_idr: 'IDX Stock (IDR)',
     stock_us_usd: 'US Stock (USD)', asset: 'Asset', holdings_avg: 'Holdings / AVG',
@@ -63,16 +67,19 @@ const DICTIONARY = {
     cat_crypto: 'Crypto', cat_saham_us: 'US Stock', cat_saham_idx: 'IDX Stock', cat_komoditas: 'Commodities', stablecoin: 'Stablecoin', cash_idr: 'Cash IDR',
     set_username: 'Set Username', change_profile_pic: 'Click to change profile pic',
     err_ticker_empty: '⚠️ Enter Ticker!', err_select_from_results: '⚠️ Select from results below.', err_not_found: 'not found.',
-    eg_bbca: 'e.g., AAPL', err_server: 'Sorry, an error occurred.', err_network: '⚠️ Cannot connect to server.'
+    eg_bbca: 'e.g., AAPL', err_server: 'Sorry, an error occurred.', err_network: '⚠️ Cannot connect to server.',
+    edit_asset: 'Edit Asset', delete_asset: 'Delete Asset', asset_actions: 'Asset Actions',
+    open_account_settings: 'Open account settings', account_settings: 'Account Settings', email: 'Email',
+    email_placeholder: 'name@email.com', full_name: 'Name', close: 'Close', view_assets: 'View Assets'
   },
   zh: {
-    portfolio: '我的投资组合', ai_consultant: 'AI 顾问', system_online: '系统在线', online: '在线',
+    dashboard: '我的投资组合', ai_consultant: 'AI 顾问', system_online: '系统在线', online: '在线',
     total_net_worth: '净资产总额', overall_pnl: '总盈亏', day_pnl: '单日盈亏',
     pnl_breakdown: '盈亏明细', current_allocation: '当前资产配置', holdings: '持仓',
     add_asset: '+ 添加资产', no_assets: '暂无资产', save: '保存', cancel: '取消',
     delete: '删除', edit: '编辑', price_live: '实时价格', registered_assets: '已注册资产',
     investor_account: '投资者账户', analytics: '分析', ai_chat: 'AI 聊天', market_news: '市场新闻',
-    market_explorer: '市场资源管理器', search_asset: '搜索硬币或股票...',
+    market_explorer: '市场资源管理器', market_overview: '市场概览', search_asset: '搜索硬币或股票...',
     all: '全部', no_news_found: '未找到相关新闻。', no_assets_news: '在您的投资组合中添加资产以查看新闻。',
     crypto_usd: '加密货币 (USD)', commodities_usd: '大宗商品 (USD)', stock_idx_idr: '印尼股票 (IDR)',
     stock_us_usd: '美股 (USD)', asset: '资产', holdings_avg: '持仓 / 均价',
@@ -89,7 +96,10 @@ const DICTIONARY = {
     cat_crypto: '加密货币', cat_saham_us: '美股', cat_saham_idx: '印尼股票', cat_komoditas: '大宗商品', stablecoin: '稳定币', cash_idr: '印尼盾现金',
     set_username: '设置用户名', change_profile_pic: '点击更改头像',
     err_ticker_empty: '⚠️ 请输入代码！', err_select_from_results: '⚠️ 请从下方结果中选择。', err_not_found: '未找到。',
-    eg_bbca: '例如：AAPL', err_server: '抱歉，发生错误。', err_network: '⚠️ 无法连接到服务器。'
+    eg_bbca: '例如：AAPL', err_server: '抱歉，发生错误。', err_network: '⚠️ 无法连接到服务器。',
+    edit_asset: '编辑资产', delete_asset: '删除资产', asset_actions: '资产操作',
+    open_account_settings: '打开账户设置', account_settings: '账户设置', email: '电子邮箱',
+    email_placeholder: 'name@email.com', full_name: '姓名', close: '关闭', view_assets: '查看资产'
   }
 };
 
@@ -183,7 +193,72 @@ function DonutChart({ data, hoveredPie, onHover }) {
   );
 }
 
-function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD, onEdit, onDelete, isLast, t }) {
+// ── FLOATING ACTION MENU (Task 3) ──────────────────────────────────────────
+// Dipanggil saat asset row di-tap/klik. Render dropdown kecil di desktop
+// (nempel di posisi klik) atau bottom sheet slide-up di mobile.
+// Isi minimal: Edit Asset & Delete Asset (delete tetap lewat confirm modal
+// terpisah yang sudah ada di App, menu ini cuma trigger-nya).
+function AssetActionMenu({ asset, anchorPos, isMobile, onEdit, onDelete, onClose, t }) {
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) onClose();
+    };
+    // delay sedikit biar klik yang men-trigger menu ini sendiri gak langsung nutup
+    const timer = setTimeout(() => document.addEventListener('mousedown', handleClick), 0);
+    return () => { clearTimeout(timer); document.removeEventListener('mousedown', handleClick); };
+  }, [onClose]);
+
+  useEffect(() => {
+    const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleEsc);
+    return () => document.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  if (!asset) return null;
+
+  const menuItems = (
+    <>
+      <div className="action-menu-item" onClick={() => { onEdit(asset); onClose(); }}>
+        <span style={{ fontSize: '15px' }}>✎</span> {t('edit_asset')}
+      </div>
+      <div className="action-menu-item danger" onClick={() => { onDelete(asset); onClose(); }}>
+        <span style={{ fontSize: '15px' }}>🗑</span> {t('delete_asset')}
+      </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <div className="action-menu-backdrop" onClick={onClose} />
+        <div className="action-menu-sheet" ref={menuRef}>
+          <div className="action-menu-sheet-handle" />
+          <div className="action-menu-sheet-title">{asset.ticker} — {t('asset_actions')}</div>
+          {menuItems}
+        </div>
+      </>
+    );
+  }
+
+  // Desktop: dropdown nempel di posisi klik, dijaga gak keluar viewport
+  const style = {
+    top: Math.min(anchorPos?.y ?? 0, window.innerHeight - 120),
+    left: Math.min(anchorPos?.x ?? 0, window.innerWidth - 200),
+  };
+
+  return (
+    <>
+      <div className="action-menu-backdrop" style={{ background: 'transparent', backdropFilter: 'none' }} onClick={onClose} />
+      <div className="action-menu-dropdown" style={style} ref={menuRef}>
+        {menuItems}
+      </div>
+    </>
+  );
+}
+
+function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD, onRowClick, isLast, t }) {
   const isCrypto    = asset.type === 'crypto';
   const isSaham     = asset.type === 'saham';
   const isSahamUS   = asset.type === 'saham_us';
@@ -209,9 +284,18 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
     cash_idr:  { color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)'  },
   }[asset.type] || { color: '#737373', bg: 'rgba(115,115,115,0.15)' };
 
+  // Task 3: row jadi satu-satunya trigger aksi (tidak ada button inline lagi).
+  // Klik di mana saja pada row (desktop) membuka dropdown nempel di posisi klik;
+  // tap di mobile membuka bottom sheet.
+  const handleClick = (e) => onRowClick(asset, { x: e.clientX, y: e.clientY });
+
   return (
     <>
-      <div className="asset-row-desktop" style={{ alignItems: 'center', padding: '12px 28px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)', gap: '16px', transition: 'background 0.2s' }}>
+      <div
+        className="asset-row-desktop"
+        onClick={handleClick}
+        style={{ alignItems: 'center', padding: '12px 28px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)', gap: '16px', transition: 'background 0.2s' }}
+      >
         <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
             {asset.thumb ? <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : asset.ticker.substring(0, 4)}
@@ -257,13 +341,11 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
             </>
           ) : <span style={{ color: '#383838', fontSize: '16px' }}>—</span>}
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-          <button onClick={() => onEdit(asset)} style={{ backgroundColor: 'transparent', color: '#909090', border: '1px solid #333', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('edit')}</button>
-          <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'transparent', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer' }}>✕</button>
-        </div>
+        {/* Inline Edit/Delete button dihapus (Task 3) — aksi sekarang lewat floating menu saat row diklik. */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: '32px', color: '#454545', fontSize: '16px' }}>⋯</div>
       </div>
 
-      <div className="asset-row-mobile" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', padding: '12px 16px' }}>
+      <div className="asset-row-mobile" onClick={handleClick}>
         <div className="asset-row-mobile-top">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
@@ -279,8 +361,8 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
             <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
           </div>
         </div>
-        <div className="asset-row-mobile-bottom" style={{ marginTop: '12px' }}>
-          <div className="asset-row-mobile-stats" style={{ gap: '16px' }}>
+        <div className="asset-row-mobile-bottom">
+          <div className="asset-row-mobile-stats">
             {!isCashIDR && (
               <div>
                 <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{t('price_live')}</div>
@@ -291,17 +373,18 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
               <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{t('holdings')}</div>
               <div style={{ color: '#e5e5e5', fontSize: '12px', fontWeight: 500 }}>{isCashIDR ? formatIDR(asset.jumlah) : `${(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} ${isSaham ? t('sheet') : asset.ticker}`}</div>
             </div>
+            {/* FIX TASK 2: sebelumnya cuma render nilai dollar/rupiah PNL tanpa persentase.
+                Sekarang disamakan dengan desktop: nilai + baris persen ▲/▼ X.XX% di bawahnya. */}
             {!isStable && !isCashIDR && pnl !== null && (
               <div>
                 <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>PNL</div>
-                <span style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '12px', fontWeight: 600 }}>{profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}</span>
+                <div style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '12px', fontWeight: 600 }}>{profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}</div>
+                <div style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 600, marginTop: '1px' }}>{profit ? '▲' : '▼'} {Math.abs(pnlPersen).toFixed(2)}%</div>
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-            <button onClick={() => onEdit(asset)} style={{ backgroundColor: 'transparent', color: '#909090', border: '1px solid #333', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('edit')}</button>
-            <button onClick={() => onDelete(asset)} style={{ backgroundColor: 'transparent', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '6px', padding: '6px 8px', fontSize: '12px', cursor: 'pointer' }}>✕</button>
-          </div>
+          {/* Inline Edit/Delete button dihapus (Task 3) — tap row untuk buka bottom sheet aksi. */}
+          <span style={{ color: '#454545', fontSize: '16px', flexShrink: 0, padding: '4px 6px' }}>⋯</span>
         </div>
       </div>
     </>
@@ -318,6 +401,83 @@ function ConfirmDeleteModal({ asset, onConfirm, onCancel, t }) {
         <div style={{ display: 'flex', gap: '8px', marginTop: '24px' }}>
           <button onClick={onCancel} style={{ flex: 1, backgroundColor: '#1a1a22', color: '#737373', border: '1px solid #242430', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
           <button onClick={onConfirm} style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>{t('delete')}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ACCOUNT SETTINGS MODAL ──────────────────────────────────────────────────
+// Floating modal (center overlay) dibuka lewat klik area profil di Sidebar.
+// Field saat ini: Nama, Foto, Email — semua disimpan ke localStorage lewat
+// useLocalStorage (lihat App: username, profilePic, email). Field baru bisa
+// ditambah ke sini nanti, dan saat database masuk, fungsi handleSave cukup
+// diubah supaya juga mengirim ke API alih-alih (atau selain) localStorage.
+function AccountSettingsModal({ username, profilePic, email, onSave, onClose, t }) {
+  const [nameDraft, setNameDraft]   = useState(username || '');
+  const [emailDraft, setEmailDraft] = useState(email || '');
+  const fileInputRef = useRef(null);
+  const [picDraft, setPicDraft]     = useState(profilePic || '');
+
+  const handleImageClick = () => fileInputRef.current?.click();
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setPicDraft(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = () => {
+    onSave({ username: nameDraft.trim(), email: emailDraft.trim(), profilePic: picDraft });
+  };
+
+  const labelStyle = { color: '#606060', fontSize: '11px', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.6px' };
+  const inputStyle = { width: '100%', backgroundColor: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 16px', color: '#e5e5e5', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontWeight: 500 };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '20px', width: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
+        <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid #1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ color: '#fff', fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('account_settings')}</h2>
+          <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', color: '#606060', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+        </div>
+
+        <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Foto profil */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div
+              onClick={handleImageClick}
+              style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#262626', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', border: '2px solid #333', flexShrink: 0 }}
+              title={t('change_profile_pic')}
+            >
+              {picDraft ? (
+                <img src={picDraft} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span style={{ color: '#737373', fontSize: '22px', fontWeight: 'bold' }}>{nameDraft ? nameDraft[0].toUpperCase() : 'U'}</span>
+              )}
+            </div>
+            <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" style={{ display: 'none' }} />
+            <div>
+              <button onClick={handleImageClick} style={{ backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '8px 14px', color: '#a3a3a3', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('change_profile_pic')}</button>
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>{t('full_name')}</label>
+            <input value={nameDraft} onChange={e => setNameDraft(e.target.value)} placeholder={t('set_username')} style={inputStyle} />
+          </div>
+
+          <div>
+            <label style={labelStyle}>{t('email')}</label>
+            <input type="email" value={emailDraft} onChange={e => setEmailDraft(e.target.value)} placeholder={t('email_placeholder')} style={inputStyle} />
+          </div>
+        </div>
+
+        <div style={{ padding: '0 28px 28px', display: 'flex', gap: '10px' }}>
+          <button onClick={onClose} style={{ flex: 1, backgroundColor: '#1a1a1a', color: '#737373', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
+          <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>{t('save')}</button>
         </div>
       </div>
     </div>
@@ -806,8 +966,14 @@ function App() {
   
   const [hoveredPie, setHoveredPie]       = useState(null);
 
+  // Task 3: state untuk floating action menu (dropdown desktop / bottom sheet mobile)
+  const [actionMenuAsset, setActionMenuAsset] = useState(null);
+  const [actionMenuPos, setActionMenuPos]     = useState({ x: 0, y: 0 });
+
   const [username, setUsername]           = useLocalStorage('totalfund_username', 'User123');
   const [profilePic, setProfilePic]       = useLocalStorage('totalfund_profile_pic', '');
+  const [email, setEmail]                 = useLocalStorage('totalfund_email', '');
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
 
   const [marketData, setMarketData] = useState({
     BTC:    { price: 0, change: 0, isUp: true,  type: 'usd' },
@@ -821,6 +987,7 @@ function App() {
   });
 
   const { width } = useWindowSize();
+  const isMobileViewport = width <= 768;
   useEffect(() => { if (width >= 768) setSidebarOpen(false); }, [width]);
 
   const cryptoAssets = useMemo(() => assets.filter(a => a.type === 'crypto' && a.ticker), [assets]);
@@ -1070,6 +1237,28 @@ function App() {
   const handleDeleteAsset = useCallback((id) => { setAssets(prev => prev.filter(a => a.id !== id)); }, [setAssets]);
   const openEdit          = useCallback((asset) => { setEditingAsset(asset); setEditForm({ harga: '', jumlah: '' }); }, []);
 
+  // Task 3: row diklik -> simpan asset + posisi klik untuk floating menu
+  const handleRowClick = useCallback((asset, pos) => {
+    setActionMenuAsset(asset);
+    setActionMenuPos(pos);
+  }, []);
+  // Ref ke section Holdings - dipakai tombol "Lihat Aset" di mobile buat scroll langsung ke situ.
+  const holdingsRef = useRef(null);
+  const scrollToHoldings = useCallback(() => {
+    holdingsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+  const closeActionMenu = useCallback(() => setActionMenuAsset(null), []);
+
+  // Account settings: simpan ketiga field sekaligus, lalu tutup modal.
+  // Saat database masuk nanti, cukup tambahkan call API di sini (di samping
+  // atau menggantikan localStorage lewat useLocalStorage di atas).
+  const handleSaveAccountSettings = useCallback(({ username: newName, email: newEmail, profilePic: newPic }) => {
+    setUsername(newName);
+    setEmail(newEmail);
+    setProfilePic(newPic);
+    setShowAccountSettings(false);
+  }, [setUsername, setEmail, setProfilePic]);
+
   function handleSave(id, hargaBaru, jumlahTambah) {
     setAssets(prev => prev.map(a => {
       if (a.id !== id) return a;
@@ -1101,7 +1290,7 @@ function App() {
     <div className="app-wrapper">
       <div className={`sidebar-overlay${sidebarOpen ? ' sidebar-open' : ''}`} onClick={() => setSidebarOpen(false)} />
       
-      <Sidebar activePage={activePage} setActivePage={setActivePage} onClose={() => setSidebarOpen(false)} isOpen={sidebarOpen} username={username} setUsername={setUsername} profilePic={profilePic} setProfilePic={setProfilePic} t={t} />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} onClose={() => setSidebarOpen(false)} isOpen={sidebarOpen} username={username} setUsername={setUsername} profilePic={profilePic} setProfilePic={setProfilePic} onOpenAccountSettings={() => setShowAccountSettings(true)} t={t} />
 
       <div className="app-main">
         <div className="max-container">
@@ -1130,7 +1319,7 @@ function App() {
 
               {activePage !== 'portfolio' && (
                 <div style={{ color: '#737373', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', display: width < 600 ? 'none' : 'block' }}>
-                  {activePage === 'networth-detail' ? t('analytics') : activePage === 'market-explorer' ? t('market_explorer') : activePage === 'news' ? t('market_news') : t('ai_chat')}
+                  {activePage === 'networth-detail' ? t('analytics') : activePage === 'market-explorer' ? t('market_explorer') : activePage === 'market-overview' ? t('market_overview') : activePage === 'news' ? t('market_news') : t('ai_chat')}
                 </div>
               )}
             </div>
@@ -1142,12 +1331,24 @@ function App() {
                 <div style={styles.summaryCard}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>{t('total_net_worth')}</span>
-                    <span style={{ color: '#4ade80', fontSize: '11px', backgroundColor: 'rgba(74,222,128,0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
+                    {isMobileViewport ? (
+                      <button
+                        onClick={scrollToHoldings}
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#4ade80', fontSize: '11px', fontWeight: 700, backgroundColor: 'rgba(74,222,128,0.1)', border: 'none', padding: '4px 9px', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        {t('view_assets')} <span style={{ fontSize: '12px' }}>›</span>
+                      </button>
+                    ) : (
+                      <span style={{ color: '#4ade80', fontSize: '11px', backgroundColor: 'rgba(74,222,128,0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
+                    )}
                   </div>
                   {cryptoLoaded ? (
                     <>
                       <div style={{ color: 'white', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>{formatUSD(grandTotalUSD)}</div>
                       <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginTop: '2px' }}>{formatIDR(grandTotalIDR)}</div>
+                      {isMobileViewport && (
+                        <div style={{ color: '#454545', fontSize: '10px', fontWeight: 600, marginTop: '4px' }}>IDR: {kursIdr.toLocaleString('id-ID')}</div>
+                      )}
                       <div style={{ margin: '14px 0', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
                       <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{ flex: 1 }}>
@@ -1244,7 +1445,7 @@ function App() {
                 </div>
               </div>
 
-              <div style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}>
+              <div ref={holdingsRef} style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}>
                 <div className="holdings-header" style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)' }}>
                   <div>
                     <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 800, margin: 0 }}>{t('holdings')}</h3>
@@ -1256,7 +1457,7 @@ function App() {
                   {[[t('asset'), 2], [t('price_live'), 1.5], [t('holdings_avg'), 1.5], [t('asset_value'), 1.5], [t('unrealized_pnl'), 1.5]].map(([h, f]) => (
                     <div key={h} style={{ flex: f, color: '#4b5563', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px' }}>{h}</div>
                   ))}
-                  <div style={{ flexShrink: 0, width: '98px' }} />
+                  <div style={{ flexShrink: 0, width: '32px' }} />
                 </div>
                 <div style={{ paddingBottom: '18px' }}>
                   {[
@@ -1274,7 +1475,7 @@ function App() {
                         <span style={{ color: '#4b5563', fontSize: '10px', fontWeight: 600 }}>{list.length} {t('assets_count')}</span>
                       </div>
                       {list.length > 0 ? list.map((asset, idx) => (
-                        <DataRow key={asset.id} asset={asset} isLast={idx === list.length - 1} hargaLiveUSD={['crypto', 'komoditas', 'saham_us'].includes(asset.type) ? getLivePrice(asset) : undefined} hargaLiveIDR={asset.type === 'saham' ? getLivePrice(asset) : undefined} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onEdit={openEdit} onDelete={setDeleteConfirm} t={t} />
+                        <DataRow key={asset.id} asset={asset} isLast={idx === list.length - 1} hargaLiveUSD={['crypto', 'komoditas', 'saham_us'].includes(asset.type) ? getLivePrice(asset) : undefined} hargaLiveIDR={asset.type === 'saham' ? getLivePrice(asset) : undefined} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onRowClick={handleRowClick} t={t} />
                       )) : (
                         <div style={{ padding: '10px 28px 20px' }}>
                           <div style={{ padding: '16px', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>{t('no_assets')} {label}</div>
@@ -1289,6 +1490,11 @@ function App() {
 
           {activePage === 'market-explorer' && (
             <MarketExplorerPage t={t} />
+          )}
+
+          {/* Menambahkan kondisi untuk memunculkan Market Overview Page */}
+          {activePage === 'market-overview' && (
+            <MarketOverviewPage t={t} />
           )}
 
           {activePage === 'ai' && (
@@ -1307,6 +1513,31 @@ function App() {
 
       {showAddModal && <AddAssetModal onSave={handleAddAsset} onClose={() => setShowAddModal(false)} t={t} />}
       {deleteConfirm && <ConfirmDeleteModal asset={deleteConfirm} onConfirm={() => { handleDeleteAsset(deleteConfirm.id); setDeleteConfirm(null); }} onCancel={() => setDeleteConfirm(null)} t={t} />}
+
+      {showAccountSettings && (
+        <AccountSettingsModal
+          username={username}
+          profilePic={profilePic}
+          email={email}
+          onSave={handleSaveAccountSettings}
+          onClose={() => setShowAccountSettings(false)}
+          t={t}
+        />
+      )}
+
+      {/* Task 3: Floating action menu — muncul saat asset row diklik/tap.
+          Desktop: dropdown nempel di posisi klik. Mobile: bottom sheet slide-up. */}
+      {actionMenuAsset && (
+        <AssetActionMenu
+          asset={actionMenuAsset}
+          anchorPos={actionMenuPos}
+          isMobile={isMobileViewport}
+          onEdit={openEdit}
+          onDelete={setDeleteConfirm}
+          onClose={closeActionMenu}
+          t={t}
+        />
+      )}
 
       {editingAsset && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>

@@ -1,16 +1,52 @@
 import React, { useState, useEffect, useRef } from 'react';
 import TradingViewWidget from './TradingViewWidget';
 
+function useWindowSize() {
+  const [width, setWidth] = useState(window.innerWidth);
+  useEffect(() => {
+    const handler = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return width;
+}
+
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 const WATCHLIST_KEY = 'totalfund_watchlist';
+const SEEDED_KEY = 'totalfund_watchlist_seeded';
 
-const TYPE_COLOR = { crypto: '#f59e0b', stock_idx: '#3b82f6', stock_us: '#ec4899', stock: '#ec4899', index: '#10b981' };
-const TYPE_LABEL = { crypto: 'Crypto', stock_idx: 'IDX', stock_us: 'US', stock: 'US', index: 'Index' };
+const TYPE_COLOR = {
+  crypto: '#f59e0b',
+  stock_idx: '#3b82f6',
+  stock_us: '#ec4899',
+  stock: '#ec4899',
+  index: '#10b981',
+  commodity: '#eab308',
+};
+const TYPE_LABEL = {
+  crypto: 'Crypto',
+  stock_idx: 'IDX',
+  stock_us: 'US',
+  stock: 'US',
+  index: 'Index',
+  commodity: 'Comdty',
+};
 
+// Kategori tab di atas — urutan sesuai keputusan: Crypto | Saham IDX | Saham US | Commodities
 const GROUPS = [
-  { id: 'crypto',    label: 'Crypto',    types: ['crypto'] },
-  { id: 'saham_idx', label: 'Saham IDX', types: ['stock_idx'] },
-  { id: 'saham_us',  label: 'US Stock',  types: ['stock_us', 'stock', 'index'] },
+  { id: 'crypto',      label: 'Crypto',      icon: '◆', types: ['crypto'] },
+  { id: 'saham_idx',   label: 'Saham IDX',   icon: '🇮🇩', types: ['stock_idx'] },
+  { id: 'saham_us',    label: 'Saham US',    icon: '🇺🇸', types: ['stock_us', 'stock', 'index'] },
+  { id: 'commodities', label: 'Commodities', icon: '●', types: ['commodity'] },
+];
+
+// Default seed — biar watchlist gak pernah kosong total di first-run.
+// tvSymbol dipakai langsung oleh TradingViewWidget.
+const DEFAULT_WATCHLIST = [
+  { symbol: 'BTC',  name: 'Bitcoin',            tvSymbol: 'BINANCE:BTCUSDT', type: 'crypto' },
+  { symbol: 'BBCA', name: 'Bank Central Asia',  tvSymbol: 'IDX:BBCA',        type: 'stock_idx' },
+  { symbol: 'NVDA', name: 'NVIDIA Corp',        tvSymbol: 'NVDA',            type: 'stock_us' },
+  { symbol: 'XAU',  name: 'Gold Spot / USD',    tvSymbol: 'OANDA:XAUUSD',    type: 'commodity' },
 ];
 
 export default function MarketExplorerPage({ t }) {
@@ -19,22 +55,51 @@ export default function MarketExplorerPage({ t }) {
   const [activeAsset, setActiveAsset]   = useState(null); // { symbol, name, type }
   const [results, setResults]           = useState([]);
   const [isSearching, setIsSearching]   = useState(false);
+  const [activeTab, setActiveTab]       = useState(GROUPS[0].id);
   const [watchlist, setWatchlist]       = useState(() => {
-    try { return JSON.parse(localStorage.getItem(WATCHLIST_KEY)) || []; }
-    catch { return []; }
+    try {
+      const saved = JSON.parse(localStorage.getItem(WATCHLIST_KEY));
+      if (saved && saved.length > 0) return saved;
+      // First run / pernah dikosongkan total sebelum ada seeding — isi default.
+      const alreadySeeded = localStorage.getItem(SEEDED_KEY);
+      if (!alreadySeeded) return DEFAULT_WATCHLIST;
+      return saved || [];
+    } catch {
+      return DEFAULT_WATCHLIST;
+    }
   });
   const searchTimeout = useRef(null);
+  const width          = useWindowSize();
+  const isMobile        = width <= 480;
 
   useEffect(() => {
     localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+    localStorage.setItem(SEEDED_KEY, '1');
   }, [watchlist]);
 
+  // Initial load saja: kalau belum ada aset aktif sama sekali, pilih default
+  // dari tab pertama yang aktif (GROUPS[0], yaitu Crypto).
   useEffect(() => {
     if (!activeSymbol && watchlist.length > 0) {
-      setActiveSymbol(watchlist[0].tvSymbol);
-      setActiveAsset(watchlist[0]);
+      const firstInTab = watchlist.find(w => GROUPS.find(g => g.id === activeTab)?.types.includes(w.type));
+      const fallback = firstInTab || watchlist[0];
+      setActiveSymbol(fallback.tvSymbol);
+      setActiveAsset(fallback);
     }
-  }, [watchlist, activeSymbol]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchlist]);
+
+  // Ganti tab kategori -> chart ikut loncat ke aset pertama di kategori itu
+  // (kalau watchlist kategori itu kosong, chart dibiarkan seperti sebelumnya).
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const group = GROUPS.find(g => g.id === tabId);
+    const firstInGroup = watchlist.find(w => group?.types.includes(w.type));
+    if (firstInGroup) {
+      setActiveSymbol(firstInGroup.tvSymbol);
+      setActiveAsset(firstInGroup);
+    }
+  };
 
   // Search debounce
   useEffect(() => {
@@ -49,6 +114,7 @@ export default function MarketExplorerPage({ t }) {
           let tvSymbol = item.symbol;
           if (item.type === 'crypto')                                 tvSymbol = `BINANCE:${item.symbol}USDT`;
           else if (item.symbol.endsWith('.JK'))                       tvSymbol = `IDX:${item.symbol.replace('.JK', '')}`;
+          else if (item.type === 'commodity')                         tvSymbol = item.tvSymbol || `OANDA:${item.symbol}USD`;
           else if (item.type === 'stock_us' || item.type === 'stock') tvSymbol = item.symbol;
           return { ...item, tvSymbol };
         });
@@ -85,28 +151,35 @@ export default function MarketExplorerPage({ t }) {
     }
   };
 
-  // Kelompokkan watchlist per grup
-  const groupedWatchlist = GROUPS.map(g => ({
-    ...g,
-    items: watchlist.filter(w => g.types.includes(w.type))
-  })).filter(g => g.items.length > 0);
+  // Hitung jumlah aset per grup (dipakai utk badge counter di tab)
+  const groupCounts = GROUPS.reduce((acc, g) => {
+    acc[g.id] = watchlist.filter(w => g.types.includes(w.type)).length;
+    return acc;
+  }, {});
 
+  const currentGroup = GROUPS.find(g => g.id === activeTab);
+  const currentItems = watchlist.filter(w => currentGroup.types.includes(w.type));
   const totalAssets = watchlist.length;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', gap: '16px', paddingBottom: '20px' }}>
 
       {/* ── Header ── */}
-      <h2 style={{ color: '#fff', fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>
-        {t('market_explorer') || 'Market Explorer'}
-      </h2>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <h2 style={{ color: '#fff', fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>
+          {t('market_explorer') || 'Market Explorer'}
+        </h2>
+        <span style={{ color: '#525252', fontSize: '12px', fontWeight: 600 }}>
+          {totalAssets} aset dipantau
+        </span>
+      </div>
 
       {/* ── Search bar ── */}
       <div style={{ position: 'relative' }}>
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Cari aset... (BTC, AAPL, BBCA)"
+          placeholder="Cari aset... (BTC, AAPL, BBCA, Gold)"
           style={{
             width: '100%', padding: '13px 40px 13px 16px', borderRadius: '12px',
             background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
@@ -175,76 +248,108 @@ export default function MarketExplorerPage({ t }) {
         )}
       </div>
 
-      {/* ── Watchlist grouped ── */}
-      {totalAssets === 0 && !query ? (
+      {/* ── Tab kategori ── */}
+      <div style={{
+        display: 'flex', gap: isMobile ? '5px' : '6px', flexShrink: 0,
+        overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch',
+        paddingBottom: isMobile ? '2px' : 0
+      }}>
+        {GROUPS.map(g => {
+          const isActive = activeTab === g.id;
+          const col = TYPE_COLOR[g.types[0]] || '#737373';
+          const count = groupCounts[g.id] || 0;
+          // Label dipendekin khusus mobile biar gak numpuk/wrap
+          const mobileLabel = { crypto: 'Crypto', saham_idx: 'IDX', saham_us: 'US', commodities: 'Comdty' }[g.id] || g.label;
+          return (
+            <button
+              key={g.id}
+              onClick={() => handleTabChange(g.id)}
+              style={{
+                flex: isMobile ? '0 0 auto' : 1,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '5px' : '6px',
+                padding: isMobile ? '8px 12px' : '10px 12px', borderRadius: '10px', cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                border: `1px solid ${isActive ? col : 'rgba(255,255,255,0.06)'}`,
+                background: isActive ? `linear-gradient(180deg, ${col}22, ${col}0d)` : '#141414',
+                color: isActive ? '#fff' : '#737373',
+                fontSize: isMobile ? '12px' : '12.5px', fontWeight: 700, letterSpacing: '0.1px',
+                transition: 'all 0.18s', boxShadow: isActive ? `0 0 0 1px ${col}33, 0 4px 12px ${col}1a` : 'none'
+              }}
+            >
+              {!isMobile && <span style={{ fontSize: '11px', opacity: isActive ? 1 : 0.6 }}>{g.icon}</span>}
+              {isMobile && <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: col, flexShrink: 0, opacity: isActive ? 1 : 0.5 }} />}
+              <span>{isMobile ? mobileLabel : g.label}</span>
+              <span style={{
+                fontSize: '10px', fontWeight: 700, minWidth: '16px', textAlign: 'center',
+                color: isActive ? col : '#444',
+                backgroundColor: isActive ? '#0a0a0a' : 'rgba(255,255,255,0.04)',
+                borderRadius: '5px', padding: '1px 5px'
+              }}>{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Watchlist tab aktif ── */}
+      {currentItems.length === 0 && !query ? (
         <div style={{
           padding: '18px', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)',
           backgroundColor: '#0d0d0d', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0
         }}>
-          <span style={{ fontSize: '22px' }}>⭐</span>
+          <span style={{ fontSize: '22px' }}>{currentGroup.icon}</span>
           <div>
-            <div style={{ color: '#e5e5e5', fontSize: '14px', fontWeight: 600 }}>Watchlist kosong</div>
+            <div style={{ color: '#e5e5e5', fontSize: '14px', fontWeight: 600 }}>
+              Belum ada aset {currentGroup.label} di watchlist
+            </div>
             <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>
               Cari aset di atas lalu tekan <b style={{ color: '#4ade80' }}>+</b> untuk tambahkan
             </div>
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
-          {groupedWatchlist.map(group => (
-            <div key={group.id}>
-              {/* Label group */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '7px' }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: TYPE_COLOR[group.types[0]] || '#737373' }} />
-                <span style={{ color: '#606060', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                  {group.label}
-                </span>
-                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(255,255,255,0.05), transparent)' }} />
-                <span style={{ color: '#404040', fontSize: '10px', fontWeight: 600 }}>{group.items.length}</span>
-              </div>
-
-              {/* Chip aset — lebar fixed 120px, konsisten */}
-              <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
-                {group.items.map((item, idx) => {
-                  const isActive = activeSymbol === item.tvSymbol;
-                  const col = TYPE_COLOR[item.type] || '#737373';
-                  const displaySymbol = item.symbol.replace('.JK', '');
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => selectAsset(item)}
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        width: '120px', flexShrink: 0,
-                        background: isActive ? '#1a1a1a' : '#141414',
-                        border: `1px solid ${isActive ? col : 'rgba(255,255,255,0.06)'}`,
-                        padding: '8px 8px 8px 11px', borderRadius: '10px',
-                        cursor: 'pointer', transition: 'all 0.2s',
-                        boxShadow: isActive ? `0 0 0 1px ${col}33` : 'none'
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 1 }}>
-                        <span style={{ color: isActive ? '#fff' : '#d4d4d4', fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displaySymbol}</span>
-                        <span style={{ color: '#555', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
-                      </div>
-                      <button
-                        onClick={e => { e.stopPropagation(); removeFromWatchlist(item.tvSymbol); }}
-                        style={{
-                          width: 17, height: 17, borderRadius: '5px', border: 'none', flexShrink: 0,
-                          backgroundColor: 'transparent', color: '#383838', fontSize: '11px',
-                          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          marginLeft: '4px', transition: 'color 0.15s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.color = '#f87171'}
-                        onMouseLeave={e => e.currentTarget.style.color = '#383838'}
-                        title="Hapus dari watchlist"
-                      >✕</button>
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
+            {currentItems.map((item, idx) => {
+              const isActive = activeSymbol === item.tvSymbol;
+              const col = TYPE_COLOR[item.type] || '#737373';
+              const displaySymbol = item.symbol.replace('.JK', '');
+              return (
+                <div
+                  key={idx}
+                  onClick={() => selectAsset(item)}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    width: '130px', flexShrink: 0,
+                    background: isActive ? `linear-gradient(180deg, ${col}1f, #161616)` : '#141414',
+                    border: `1px solid ${isActive ? col : 'rgba(255,255,255,0.06)'}`,
+                    padding: '9px 9px 9px 11px', borderRadius: '10px',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                    boxShadow: isActive ? `0 0 0 1px ${col}33, 0 6px 16px ${col}1a` : 'none'
+                  }}
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: col, flexShrink: 0, boxShadow: isActive ? `0 0 6px ${col}` : 'none' }} />
+                      <span style={{ color: isActive ? '#fff' : '#d4d4d4', fontSize: '13px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displaySymbol}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+                    <span style={{ color: '#555', fontSize: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingLeft: '10px' }}>{item.name}</span>
+                  </div>
+                  <button
+                    onClick={e => { e.stopPropagation(); removeFromWatchlist(item.tvSymbol); }}
+                    style={{
+                      width: 17, height: 17, borderRadius: '5px', border: 'none', flexShrink: 0,
+                      backgroundColor: 'transparent', color: '#383838', fontSize: '11px',
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      marginLeft: '4px', transition: 'color 0.15s'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#f87171'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#383838'}
+                    title="Hapus dari watchlist"
+                  >✕</button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -256,7 +361,8 @@ export default function MarketExplorerPage({ t }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
               width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-              backgroundColor: TYPE_COLOR[activeAsset.type] || '#737373'
+              backgroundColor: TYPE_COLOR[activeAsset.type] || '#737373',
+              boxShadow: `0 0 8px ${TYPE_COLOR[activeAsset.type] || '#737373'}66`
             }} />
             <span style={{ color: '#fff', fontSize: '16px', fontWeight: 800, letterSpacing: '-0.3px' }}>
               {activeAsset.symbol.replace('.JK', '')}

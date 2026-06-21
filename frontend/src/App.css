@@ -183,6 +183,7 @@ html, body, #root {
   margin: 0 auto;
   overflow-x: hidden;
   min-width: 0;
+  transition: max-width 0.3s ease;
 }
 
 /* =========================================
@@ -234,8 +235,6 @@ html, body, #root {
 
 /* =========================================
    SUMMARY CARDS
-   — align-items: stretch agar NetWorthTrendCard
-     tingginya sama dengan 2 card sebelahnya
    ========================================= */
 .summary-cards {
   display: grid;
@@ -289,14 +288,13 @@ html, body, #root {
   justify-content: space-between;
 }
 
-/* Desktop asset row */
-.asset-row-desktop {
-  display: flex;
-}
+.asset-row-desktop { display: flex; cursor: pointer; }
+.asset-row-mobile { display: none; }
 
-/* Mobile asset row */
-.asset-row-mobile {
-  display: none;
+/* Area row jadi tappable (task 3: row click membuka floating menu) */
+.asset-row-desktop:hover,
+.asset-row-mobile:active {
+  background: rgba(255,255,255,0.025);
 }
 
 /* =========================================
@@ -335,13 +333,7 @@ html, body, #root {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
 .fade-up { animation: fadeUp 0.35s ease both; }
-
-@keyframes bounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30%            { transform: translateY(-6px); opacity: 1; }
-}
 
 @keyframes shimmer {
   0%   { background-position: -400px 0; }
@@ -356,8 +348,108 @@ html, body, #root {
 }
 
 /* =========================================
-   TABLET  (max 1100px)
+   FLOATING ACTION MENU (task 3)
    ========================================= */
+
+/* Backdrop di belakang sheet/dropdown */
+.action-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(3px);
+  z-index: 150;
+  animation: fadeUp 0.18s ease both;
+}
+
+/* Desktop: dropdown kecil nempel di posisi klik */
+.action-menu-dropdown {
+  position: fixed;
+  z-index: 151;
+  min-width: 180px;
+  background: #16171c;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+  overflow: hidden;
+  animation: fadeUp 0.15s ease both;
+}
+
+.action-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5e5e5;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.action-menu-item:hover { background: rgba(255,255,255,0.06); }
+.action-menu-item.danger { color: #f87171; }
+.action-menu-item.danger:hover { background: rgba(248,113,113,0.08); }
+
+/* Mobile: bottom sheet slide-up */
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+.action-menu-sheet {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 151;
+  background: #16171c;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px 20px 0 0;
+  padding: 8px 0 max(20px, env(safe-area-inset-bottom));
+  box-shadow: 0 -16px 50px rgba(0,0,0,0.5);
+  animation: slideUpSheet 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.action-menu-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255,255,255,0.15);
+  margin: 8px auto 14px;
+}
+
+.action-menu-sheet-title {
+  padding: 0 20px 14px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 4px;
+}
+
+.action-menu-sheet .action-menu-item {
+  padding: 16px 20px;
+  font-size: 15px;
+}
+
+/* =========================================
+   SISTEM RESPONSIVITY (MEDIA QUERIES)
+   ========================================= */
+
+/* 1. LAYAR LEBAR / ULTRA-WIDE (> 1440px) */
+@media (min-width: 1441px) {
+  .max-container { 
+    max-width: 1600px; /* Melebarkan kontainer untuk monitor besar */
+  }
+  .summary-cards { 
+    gap: 24px; 
+  }
+  .market-section {
+    gap: 24px;
+  }
+}
+
+/* 2. LAPTOP SEMPIT / TABLET LANDSCAPE (max-width: 1100px) */
 @media (max-width: 1100px) {
   .app-main { padding: 24px 28px; }
 
@@ -365,27 +457,37 @@ html, body, #root {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
-
-  /* NetWorthTrendCard jadi full width di baris ke-2 */
+  /* Chart turun jadi full-width di baris kedua */
   .summary-cards > *:nth-child(3) {
     grid-column: 1 / -1;
   }
 
-  .market-section { flex-wrap: wrap; }
+  .market-mini-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3 Kolom biar gak terlalu dempet */
+  }
+}
 
+/* 3. TABLET PORTRAIT (max-width: 992px) */
+@media (max-width: 992px) {
+  .market-section { 
+    flex-wrap: wrap; 
+  }
   .market-mini-grid {
     grid-template-columns: repeat(4, 1fr);
     flex: none;
     width: 100%;
   }
-
-  .donut-card { flex: none; width: 100%; min-width: unset; }
+  /* Donut Card turun ke bawah Market Grid */
+  .donut-card { 
+    flex: none; 
+    width: 100%; 
+    justify-content: space-around;
+  }
 }
 
-/* =========================================
-   MOBILE  (max 768px)
-   ========================================= */
+/* 4. MOBILE / SMARTPHONE (max-width: 768px) */
 @media (max-width: 768px) {
+  /* Sidebar sembunyi di kiri */
   .app-sidebar {
     position: fixed;
     left: 0; top: 0; bottom: 0;
@@ -409,13 +511,12 @@ html, body, #root {
 
   .page-header { margin-bottom: 16px; }
 
+  /* Kartu ringkasan bertumpuk 1 kolom */
   .summary-cards {
     grid-template-columns: 1fr;
     gap: 12px;
     margin-bottom: 16px;
   }
-
-  /* Reset full-width override, semua 1 kolom */
   .summary-cards > *:nth-child(3) {
     grid-column: 1;
   }
@@ -426,6 +527,7 @@ html, body, #root {
     margin-bottom: 20px;
   }
 
+  /* Kartu harga koin jadi 2 kolom */
   .market-mini-grid {
     width: 100%;
     flex: none;
@@ -434,18 +536,27 @@ html, body, #root {
     gap: 8px;
   }
 
-  .donut-card { width: 100%; min-width: unset; flex: none; }
+  .donut-card { width: 100%; justify-content: flex-start; }
 
-  .col-headers { display: none; }
+  /* Ganti tabel holdings jadi desain card mobile */
+  .col-headers { display: none !important; }
   .holdings-header { flex-wrap: wrap; gap: 10px; }
-  .asset-row-desktop { display: none; }
+  .asset-row-desktop { display: none !important; }
+
+  /* FIX TASK 1: padding dikompres. Sebelumnya CSS class (padding 16px,
+     margin-bottom 8px) ditumpuk dengan inline style App.js (padding 12px 16px)
+     pada elemen yang sama, plus margin/padding tambahan di -top dan -bottom.
+     Sekarang: hanya CSS class ini yang mengatur padding/margin row;
+     App.js tidak lagi mengirim inline padding/margin yang konflik. */
   .asset-row-mobile {
     display: block;
-    padding: 16px;
-    border-radius: 14px;
-    margin-bottom: 8px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 6px;
     background: var(--card);
     border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
   }
   .asset-row-mobile-top {
     display: flex;
@@ -457,18 +568,18 @@ html, body, #root {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 14px;
-    padding-top: 14px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid rgba(255,255,255,0.05);
     gap: 8px;
   }
-  .asset-row-mobile-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+  .asset-row-mobile-stats { display: flex; gap: 14px; flex-wrap: wrap; }
 }
 
-/* =========================================
-   MOBILE SMALL  (max 480px)
-   ========================================= */
+/* 5. HP KECIL (max-width: 480px) */
 @media (max-width: 480px) {
   .app-main { padding: 12px; }
   .market-mini-grid { gap: 6px; }
+  .donut-card { flex-direction: column; align-items: stretch; }
+  .donut-card > div:first-child { align-self: center; } /* Memposisikan teks/judul agar tetap rapi */
 }
