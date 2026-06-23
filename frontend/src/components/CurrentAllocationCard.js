@@ -86,7 +86,7 @@ function DonutChart({ data, hoveredPie, onHover }) {
             />
           );
         })}
-        <circle r="0.65" cx="0" cy="0" fill="#0f1014" style={{ pointerEvents: 'none' }} />
+        <circle r="0.65" cx="0" cy="0" fill="#0F1929" style={{ pointerEvents: 'none' }} />
       </svg>
 
       {/* Center: top asset by default, hovered on hover */}
@@ -109,26 +109,26 @@ export function AssetClassCard({ assets, getLivePrice, grandTotalUSD, kursIdr })
   const classData = useClassData(pieData, assets, grandTotalUSD);
 
   return (
-    <div className="donut-card" style={{ flex: '0.8', minWidth: '160px', flexDirection: 'column', alignItems: 'stretch', gap: 0, padding: '14px 16px' }}>
-      <span style={{ color: '#737373', fontSize: '10px', fontWeight: 700, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block' }}>
-        Asset Class
+    <div className="donut-card" style={{ background: '#0F1929', border: '1px solid rgba(59,130,246,0.12)', flex: '0.8', minWidth: '160px', flexDirection: 'column', alignItems: 'stretch', gap: 0, padding: '16px 18px' }}>
+      <span style={{ color: '#64748B', fontSize: '10px', fontWeight: 700, marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block' }}>
+        Asset Allocation
       </span>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', flex: 1, justifyContent: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, justifyContent: 'center' }}>
         {classData.map((c, i) => {
           const isEmpty = c.pct === 0;
           return (
             <div key={i} style={{ opacity: isEmpty ? 0.35 : 1, transition: 'opacity 0.3s' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '3px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <div style={{ width: '6px', height: '6px', borderRadius: '2px', backgroundColor: c.color, flexShrink: 0 }} />
-                  <span style={{ color: '#a3a3a3', fontSize: '11px', fontWeight: 500 }}>{c.label}</span>
+                  <span style={{ color: '#94A3B8', fontSize: '11px', fontWeight: 500 }}>{c.label}</span>
                 </div>
-                <span style={{ color: isEmpty ? '#555' : '#fff', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace' }}>
+                <span style={{ color: isEmpty ? '#334155' : '#E2E8F0', fontSize: '11px', fontWeight: 700, fontFamily: 'monospace' }}>
                   {isEmpty ? '—' : `${c.pct.toFixed(1)}%`}
                 </span>
               </div>
-              <div style={{ width: '100%', height: '3px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '3px', backgroundColor: 'rgba(59,130,246,0.08)', borderRadius: '99px', overflow: 'hidden' }}>
                 <div style={{
                   height: '100%', width: `${c.pct}%`,
                   background: `linear-gradient(90deg, ${c.color}88, ${c.color})`,
@@ -151,8 +151,8 @@ export function PositionsCard({ assets, getLivePrice, grandTotalUSD, kursIdr }) 
   const [hovered, setHovered] = useState(null);
 
   return (
-    <div className="donut-card" style={{ flex: '0.8', minWidth: '200px', flexDirection: 'column', alignItems: 'stretch', gap: 0, padding: '14px 16px' }}>
-      <span style={{ color: '#737373', fontSize: '10px', fontWeight: 700, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block' }}>
+    <div className="donut-card" style={{ background: '#0F1929', border: '1px solid rgba(59,130,246,0.12)', flex: '0.8', minWidth: '200px', flexDirection: 'column', alignItems: 'stretch', gap: 0, padding: '16px 18px' }}>
+      <span style={{ color: '#64748B', fontSize: '10px', fontWeight: 700, marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block' }}>
         Positions
       </span>
 
@@ -168,15 +168,15 @@ export function PositionsCard({ assets, getLivePrice, grandTotalUSD, kursIdr }) 
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '3px 5px', borderRadius: '4px',
-                background: hovered === d.ticker ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.025)',
+                background: hovered === d.ticker ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.03)',
                 cursor: 'default', transition: 'background 0.12s',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <div style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: d.color, flexShrink: 0 }} />
-                <span style={{ color: '#d4d4d4', fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', maxWidth: '44px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.ticker}</span>
+                <span style={{ color: '#CBD5E1', fontSize: '10px', fontWeight: 700, fontFamily: 'monospace', maxWidth: '44px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.ticker}</span>
               </div>
-              <span style={{ color: '#737373', fontSize: '10px', fontWeight: 600, fontFamily: 'monospace' }}>{d.pct.toFixed(1)}%</span>
+              <span style={{ color: '#64748B', fontSize: '10px', fontWeight: 600, fontFamily: 'monospace' }}>{d.pct.toFixed(1)}%</span>
             </div>
           ))}
         </div>

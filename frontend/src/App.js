@@ -211,6 +211,28 @@ function AssetActionMenu({ asset, anchorPos, isMobile, onEdit, onDelete, onClose
   );
 }
 
+const COMMODITY_EMOJI = { GOLD:'🥇', XAU:'🥇', XAG:'🥈', BRENT:'🛢️', WTI:'🛢️', OIL:'🛢️', NG:'💨', HG:'⚙️', PLAT:'🔷', PALL:'🔹', CORN:'🌽', WHEAT:'🌾', COFFEE:'☕', COCOA:'🍫', SUGAR:'🍬', COTTON:'🪡', ALU:'⚙️' };
+
+function AssetIcon({ asset }) {
+  const [err, setErr] = useState(false);
+  const tk = asset.ticker?.toUpperCase() || '';
+  const simbol = (asset.simbol || tk).replace('.JK', '');
+  let src = null;
+  if (!err) {
+    if (asset.thumb) {
+      src = asset.thumb;
+    } else if (asset.type === 'saham_us') {
+      src = `https://financialmodelingprep.com/image-stock/${tk}.png`;
+    } else if (asset.type === 'saham') {
+      src = `https://financialmodelingprep.com/image-stock/${simbol}.png`;
+    }
+  }
+  if (src) return <img src={src} alt={tk} style={{ width:'100%', height:'100%', objectFit:'contain' }} onError={() => setErr(true)} />;
+  const emoji = COMMODITY_EMOJI[tk];
+  if (emoji) return <span style={{ fontSize:'18px', lineHeight:1 }}>{emoji}</span>;
+  return <span>{tk.substring(0, 4)}</span>;
+}
+
 function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD, onRowClick, isLast, t }) {
   const isCrypto    = asset.type === 'crypto';
   const isSaham     = asset.type === 'saham';
@@ -235,7 +257,7 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
     komoditas: { color: '#eab308', bg: 'rgba(234,179,8,0.15)'   },
     stable:    { color: '#10b981', bg: 'rgba(16,185,129,0.15)'  },
     cash_idr:  { color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)'  },
-  }[asset.type] || { color: '#737373', bg: 'rgba(115,115,115,0.15)' };
+  }[asset.type] || { color: '#64748B', bg: 'rgba(115,115,115,0.15)' };
 
   // Task 3: row jadi satu-satunya trigger aksi (tidak ada button inline lagi).
   // Klik di mana saja pada row (desktop) membuka dropdown nempel di posisi klik;
@@ -247,63 +269,77 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
       <div
         className="asset-row-desktop"
         onClick={handleClick}
-        style={{ alignItems: 'center', padding: '14px 24px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)', gap: '16px', transition: 'background 0.2s' }}
+        style={{ alignItems: 'center', padding: '13px 20px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.035)', gap: '12px', transition: 'background 0.18s' }}
       >
-        <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden', border: `1px solid ${typeConfig.color}22` }}>
-            {asset.thumb ? <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : asset.ticker.substring(0, 4)}
+        {/* ── Section 1: identity + live price ── */}
+        <div style={{ flex: 2.4, display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden', border: `1px solid ${typeConfig.color}22` }}>
+            <AssetIcon asset={asset} />
           </div>
           <div style={{ minWidth: 0 }}>
             <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', letterSpacing: '-0.2px' }}>{asset.ticker}</div>
-            <div style={{ color: '#525252', fontSize: '11px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.nama}</div>
+            <div style={{ color: '#484848', fontSize: '11px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.nama}</div>
+            {!isCashIDR && (
+              <div style={{ color: '#475569', fontSize: '11px', marginTop: '3px', fontFamily: 'monospace' }}>
+                {hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : '—'}
+              </div>
+            )}
           </div>
         </div>
-        <div style={{ flex: 1.5 }}>
-          {isCashIDR ? <span style={{ color: '#404040', fontSize: '13px' }}>{t('pegged')}</span> : (
-            <>
-              <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : <span style={{ color: '#383838' }}>—</span>}</div>
-              <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{hargaAcuan ? (isSaham ? formatUSD(hargaAcuan / kursIdr) : formatIDR(hargaAcuan * kursIdr)) : ''}</div>
-            </>
-          )}
-        </div>
-        <div style={{ flex: 1.5 }}>
+
+        {/* ── Section 2: holdings qty + avg ── */}
+        <div style={{ flex: 1.4, minWidth: 0 }}>
           {isCashIDR ? (
-            <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{formatIDR(asset.jumlah).replace('Rp ', '')} <span style={{ color: '#555', fontSize: '11px', fontWeight: 400 }}>IDR</span></div>
+            <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{formatIDR(asset.jumlah).replace('Rp ', '')} <span style={{ color: '#444', fontSize: '11px', fontWeight: 400 }}>IDR</span></div>
           ) : (
             <>
-              <div style={{ color: '#e5e5e5', fontWeight: 500, fontSize: '13px' }}>{(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} <span style={{ color: '#555', fontSize: '11px', fontWeight: 400 }}>{isSaham ? t('sheet') : asset.ticker}</span></div>
-              <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>Avg: {isSaham ? formatIDR(asset.avg) : formatUSD(asset.avg)}</div>
+              <div style={{ color: '#d4d4d4', fontWeight: 500, fontSize: '13px' }}>
+                {(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()}
+                <span style={{ color: '#444', fontSize: '11px', fontWeight: 400, marginLeft: '4px' }}>{isSaham ? t('sheet') : asset.ticker}</span>
+              </div>
+              <div style={{ color: '#3e3e3e', fontSize: '11px', marginTop: '2px' }}>Avg {isSaham ? formatIDR(asset.avg) : formatUSD(asset.avg)}</div>
             </>
           )}
         </div>
-        <div style={{ flex: 1.5 }}>
-          <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '13px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
-          <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-            <div style={{ width: '56px', height: '3px', backgroundColor: '#1e1e1e', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ width: `${Math.min(parseFloat(pct), 100)}%`, height: '100%', background: `linear-gradient(90deg, ${typeConfig.color}88, ${typeConfig.color})`, borderRadius: '999px' }} />
+
+        {/* ── Section 3: current value + allocation bar ── */}
+        <div style={{ flex: 1.4 }}>
+          <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '13px' }}>
+            {nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}
+          </div>
+          <div style={{ color: '#424242', fontSize: '11px', marginTop: '1px' }}>
+            {nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px' }}>
+            <div style={{ width: '52px', height: '2px', backgroundColor: '#111F35', borderRadius: '999px', overflow: 'hidden' }}>
+              <div style={{ width: `${Math.min(parseFloat(pct), 100)}%`, height: '100%', background: `linear-gradient(90deg, ${typeConfig.color}55, ${typeConfig.color})`, borderRadius: '999px' }} />
             </div>
-            <span style={{ fontSize: '10px', color: '#444', fontWeight: 600 }}>{pct}%</span>
+            <span style={{ fontSize: '10px', color: '#383838', fontWeight: 600 }}>{pct}%</span>
           </div>
         </div>
-        <div style={{ flex: 1.5 }}>
+
+        {/* ── Section 4: unrealized PnL ── */}
+        <div style={{ flex: 1.3 }}>
           {!isStable && !isCashIDR && pnl !== null ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
-              <div style={{ color: profit ? '#4ade80' : '#f87171', fontWeight: 700, fontSize: '13px', letterSpacing: '-0.3px' }}>{profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}</div>
+              <div style={{ color: profit ? '#10B981' : '#EF4444', fontWeight: 700, fontSize: '13px', letterSpacing: '-0.3px' }}>
+                {profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}
+              </div>
               <span className={profit ? 'badge-up' : 'badge-down'} style={{ fontSize: '10px', padding: '1px 7px' }}>
                 {profit ? '↑' : '↓'} {Math.abs(pnlPersen).toFixed(2)}%
               </span>
             </div>
-          ) : <span style={{ color: '#2a2a2a', fontSize: '13px' }}>—</span>}
+          ) : <span style={{ color: '#242424', fontSize: '13px' }}>—</span>}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: '32px', color: '#303030', fontSize: '16px' }}>⋯</div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: '24px', color: '#2e2e2e', fontSize: '16px' }}>⋯</div>
       </div>
 
       <div className="asset-row-mobile" onClick={handleClick}>
         <div className="asset-row-mobile-top">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden', border: `1px solid ${typeConfig.color}22` }}>
-              {asset.thumb ? <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : asset.ticker.substring(0, 4)}
+              <AssetIcon asset={asset} />
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ color: '#fff', fontWeight: 700, fontSize: '14px' }}>{asset.ticker}</div>
@@ -312,27 +348,27 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '14px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
-            <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
+            <div style={{ color: '#475569', fontSize: '11px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
           </div>
         </div>
         <div className="asset-row-mobile-bottom">
           <div className="asset-row-mobile-stats">
             {!isCashIDR && (
               <div>
-                <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{t('price_live')}</div>
+                <div style={{ color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{t('price_live')}</div>
                 <div style={{ color: '#e5e5e5', fontSize: '12px', fontWeight: 500 }}>{hargaAcuan ? (isSaham ? formatIDR(hargaAcuan) : formatUSD(hargaAcuan)) : '—'}</div>
               </div>
             )}
             <div>
-              <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{t('holdings')}</div>
+              <div style={{ color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>{t('holdings')}</div>
               <div style={{ color: '#e5e5e5', fontSize: '12px', fontWeight: 500 }}>{isCashIDR ? formatIDR(asset.jumlah) : `${(isSaham ? asset.jumlah / 100 : asset.jumlah).toLocaleString()} ${isSaham ? t('sheet') : asset.ticker}`}</div>
             </div>
             {/* FIX TASK 2: sebelumnya cuma render nilai dollar/rupiah PNL tanpa persentase.
                 Sekarang disamakan dengan desktop: nilai + baris persen ▲/▼ X.XX% di bawahnya. */}
             {!isStable && !isCashIDR && pnl !== null && (
               <div>
-                <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>PNL</div>
-                <div style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '12px', fontWeight: 600 }}>{profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}</div>
+                <div style={{ color: '#475569', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>PNL</div>
+                <div style={{ color: profit ? '#10B981' : '#EF4444', fontSize: '12px', fontWeight: 600 }}>{profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}</div>
                 <span className={profit ? 'badge-up' : 'badge-down'} style={{ marginTop: '2px', fontSize: '10px', padding: '1px 7px' }}>
                   {profit ? '↑' : '↓'} {Math.abs(pnlPersen).toFixed(2)}%
                 </span>
@@ -353,9 +389,9 @@ function ConfirmDeleteModal({ asset, onConfirm, onCancel, t }) {
       <div style={{ backgroundColor: '#111215', border: '1px solid #1e2026', borderRadius: '18px', padding: '28px 28px 24px', width: '340px', boxShadow: '0 24px 64px rgba(0,0,0,0.8)' }}>
         <div style={{ width: '52px', height: '52px', borderRadius: '14px', backgroundColor: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', fontSize: '24px' }}>🗑</div>
         <h3 style={{ color: '#ffffff', fontSize: '20px', fontWeight: 800, margin: '0 0 10px' }}>{t('delete')} {asset.ticker}?</h3>
-        <p style={{ color: '#a3a3a3', fontSize: '14px', margin: '0 0 6px', lineHeight: 1.6 }}>Aset <span style={{ fontWeight: 700 }}>{asset.nama}</span> akan dihapus permanen.</p>
+        <p style={{ color: '#94A3B8', fontSize: '14px', margin: '0 0 6px', lineHeight: 1.6 }}>Aset <span style={{ fontWeight: 700 }}>{asset.nama}</span> akan dihapus permanen.</p>
         <div style={{ display: 'flex', gap: '8px', marginTop: '24px' }}>
-          <button onClick={onCancel} style={{ flex: 1, backgroundColor: '#1a1a22', color: '#737373', border: '1px solid #242430', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
+          <button onClick={onCancel} style={{ flex: 1, backgroundColor: '#1a1a22', color: '#64748B', border: '1px solid #242430', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
           <button onClick={onConfirm} style={{ flex: 1, backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '9px', padding: '12px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>{t('delete')}</button>
         </div>
       </div>
@@ -389,15 +425,15 @@ function AccountSettingsModal({ username, profilePic, email, onSave, onClose, t 
     onSave({ username: nameDraft.trim(), email: emailDraft.trim(), profilePic: picDraft });
   };
 
-  const labelStyle = { color: '#606060', fontSize: '11px', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.6px' };
+  const labelStyle = { color: '#475569', fontSize: '11px', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.6px' };
   const inputStyle = { width: '100%', backgroundColor: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 16px', color: '#e5e5e5', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontWeight: 500 };
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '20px', width: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
+      <div style={{ backgroundColor: '#0F1929', border: '1px solid #262626', borderRadius: '20px', width: '420px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
         <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid #1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ color: '#fff', fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('account_settings')}</h2>
-          <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', color: '#606060', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: 'rgba(15,25,41,0.8)', border: '1px solid #2a2a2a', color: '#475569', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
 
         <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -405,18 +441,18 @@ function AccountSettingsModal({ username, profilePic, email, onSave, onClose, t 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div
               onClick={handleImageClick}
-              style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#262626', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', border: '2px solid #333', flexShrink: 0 }}
+              style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden', border: '2px solid #333', flexShrink: 0 }}
               title={t('change_profile_pic')}
             >
               {picDraft ? (
                 <img src={picDraft} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span style={{ color: '#737373', fontSize: '22px', fontWeight: 'bold' }}>{nameDraft ? nameDraft[0].toUpperCase() : 'U'}</span>
+                <span style={{ color: '#64748B', fontSize: '22px', fontWeight: 'bold' }}>{nameDraft ? nameDraft[0].toUpperCase() : 'U'}</span>
               )}
             </div>
             <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" style={{ display: 'none' }} />
             <div>
-              <button onClick={handleImageClick} style={{ backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '8px 14px', color: '#a3a3a3', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('change_profile_pic')}</button>
+              <button onClick={handleImageClick} style={{ backgroundColor: 'rgba(15,25,41,0.8)', border: '1px solid #2a2a2a', borderRadius: '8px', padding: '8px 14px', color: '#94A3B8', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>{t('change_profile_pic')}</button>
             </div>
           </div>
 
@@ -432,7 +468,7 @@ function AccountSettingsModal({ username, profilePic, email, onSave, onClose, t 
         </div>
 
         <div style={{ padding: '0 28px 28px', display: 'flex', gap: '10px' }}>
-          <button onClick={onClose} style={{ flex: 1, backgroundColor: '#1a1a1a', color: '#737373', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
+          <button onClick={onClose} style={{ flex: 1, backgroundColor: '#111F35', color: '#64748B', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
           <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>{t('save')}</button>
         </div>
       </div>
@@ -448,16 +484,16 @@ function SearchResultItem({ item, onSelect }) {
     <div
       onClick={() => onSelect(item)}
       style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #1a1a1a', transition: 'background 0.15s' }}
-      onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+      onMouseEnter={e => e.currentTarget.style.background = '#111F35'}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
       {item.thumb ? <img src={item.thumb} alt="" style={{ width: 22, height: 22, borderRadius: '50%', objectFit: 'cover' }} /> : <div style={{ width: 22, height: 22, borderRadius: '50%', backgroundColor: typeColor + '33', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: typeColor, fontWeight: 800 }}>{item.symbol?.substring(0, 2)}</div>}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ color: '#fff', fontWeight: 700, fontSize: '13px' }}>{item.symbol}</div>
-        <div style={{ color: '#555', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+        <div style={{ color: '#475569', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
       </div>
       <span style={{ fontSize: '10px', fontWeight: 700, color: typeColor, backgroundColor: typeColor + '22', padding: '2px 7px', borderRadius: '4px', flexShrink: 0 }}>{typeLabel}</span>
-      {item.market_cap_rank && <span style={{ fontSize: '10px', color: '#555' }}>#{item.market_cap_rank}</span>}
+      {item.market_cap_rank && <span style={{ fontSize: '10px', color: '#475569' }}>#{item.market_cap_rank}</span>}
     </div>
   );
 }
@@ -569,17 +605,17 @@ function AddAssetModal({ onSave, onClose, t }) {
   };
 
   const typeMap = [['crypto', t('cat_crypto'), '#f59e0b'], ['saham', t('cat_saham_idx'), '#3b82f6'], ['saham_us', t('cat_saham_us'), '#ec4899'], ['komoditas', t('cat_komoditas'), '#eab308'], ['stable', t('stablecoin'), '#10b981'], ['cash_idr', t('cash_idr'), '#8b5cf6']];
-  const labelStyle = { color: '#606060', fontSize: '11px', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.6px' };
+  const labelStyle = { color: '#475569', fontSize: '11px', fontWeight: 700, display: 'block', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.6px' };
   const inputStyle = { width: '100%', backgroundColor: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 16px', color: '#e5e5e5', fontSize: '14px', outline: 'none', boxSizing: 'border-box', fontWeight: 500 };
 
   return (
     <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '20px', width: '520px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
+      <div style={{ backgroundColor: '#0F1929', border: '1px solid #262626', borderRadius: '20px', width: '520px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 32px 80px rgba(0,0,0,0.8)' }}>
         <div style={{ padding: '24px 28px 20px', borderBottom: '1px solid #1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h2 style={{ color: '#fff', fontSize: '19px', fontWeight: 800, margin: 0, letterSpacing: '-0.3px' }}>{t('add_asset')}</h2>
           </div>
-          <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', color: '#606060', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+          <button onClick={onClose} style={{ width: '34px', height: '34px', borderRadius: '10px', backgroundColor: 'rgba(15,25,41,0.8)', border: '1px solid #2a2a2a', color: '#475569', fontSize: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
 
         <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -599,12 +635,12 @@ function AddAssetModal({ onSave, onClose, t }) {
               <label style={labelStyle}>{t('ticker')}</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <input value={form.ticker} onChange={e => handleTickerInput(e.target.value)} onFocus={() => searchResults.length > 0 && setShowDropdown(true)} placeholder="PUMP / AAPL" style={{ ...inputStyle, textTransform: 'uppercase', flex: 1 }} autoComplete="off" />
-                <button onClick={cekHargaLive} disabled={loadingHarga} style={{ backgroundColor: '#1e1e1e', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '0 12px', color: loadingHarga ? '#383838' : '#4ade80', cursor: loadingHarga ? 'default' : 'pointer', fontWeight: 'bold', flexShrink: 0, fontSize: '14px' }}>{loadingHarga ? '⏳' : '🔎'}</button>
+                <button onClick={cekHargaLive} disabled={loadingHarga} style={{ backgroundColor: 'rgba(15,25,41,0.8)', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '0 12px', color: loadingHarga ? '#383838' : '#10B981', cursor: loadingHarga ? 'default' : 'pointer', fontWeight: 'bold', flexShrink: 0, fontSize: '14px' }}>{loadingHarga ? '⏳' : '🔎'}</button>
               </div>
 
               {showDropdown && searchResults.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#141414', border: '1px solid #2a2a2a', borderRadius: '12px', marginTop: '4px', zIndex: 999, maxHeight: '260px', overflowY: 'auto', boxShadow: '0 16px 40px rgba(0,0,0,0.7)' }}>
-                  {searching && <div style={{ padding: '10px 14px', color: '#555', fontSize: '12px' }}>{t('searching_market')}</div>}
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: '#0F1929', border: '1px solid #2a2a2a', borderRadius: '12px', marginTop: '4px', zIndex: 999, maxHeight: '260px', overflowY: 'auto', boxShadow: '0 16px 40px rgba(0,0,0,0.7)' }}>
+                  {searching && <div style={{ padding: '10px 14px', color: '#475569', fontSize: '12px' }}>{t('searching_market')}</div>}
                   {searchResults.map((item, i) => <SearchResultItem key={`${item.type}:${item.symbol}:${i}`} item={item} onSelect={handleSelectResult} />)}
                 </div>
               )}
@@ -617,7 +653,7 @@ function AddAssetModal({ onSave, onClose, t }) {
           </div>
 
           {infoHarga && (
-            <div style={{ color: infoHarga.startsWith('✅') ? '#4ade80' : '#f87171', fontSize: '12px', fontWeight: 'bold', padding: '8px 12px', backgroundColor: infoHarga.startsWith('✅') ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', borderRadius: '6px', marginTop: '-10px' }}>{infoHarga}</div>
+            <div style={{ color: infoHarga.startsWith('✅') ? '#10B981' : '#EF4444', fontSize: '12px', fontWeight: 'bold', padding: '8px 12px', backgroundColor: infoHarga.startsWith('✅') ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', borderRadius: '6px', marginTop: '-10px' }}>{infoHarga}</div>
           )}
 
           {['saham', 'saham_us', 'komoditas'].includes(form.type) && (
@@ -642,7 +678,7 @@ function AddAssetModal({ onSave, onClose, t }) {
         </div>
 
         <div style={{ padding: '0 28px 28px', display: 'flex', gap: '10px' }}>
-          <button onClick={onClose} style={{ flex: 1, backgroundColor: '#1a1a1a', color: '#737373', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
+          <button onClick={onClose} style={{ flex: 1, backgroundColor: '#111F35', color: '#64748B', border: '1px solid #262626', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
           <button onClick={handleSubmit} style={{ flex: 2, backgroundColor: '#16a34a', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '13px', fontSize: '14px', fontWeight: 800, cursor: 'pointer' }}>{t('add_asset')}</button>
         </div>
       </div>
@@ -698,10 +734,10 @@ function MarketNewsPage({ assets, t }) {
 
   if (assets.filter(a => ['crypto', 'saham', 'saham_us', 'komoditas'].includes(a.type)).length === 0) {
     return (
-      <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#141414', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '20px' }}>
+      <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#0F1929', borderRadius: '16px', border: '1px solid rgba(59,130,246,0.07)', marginTop: '20px' }}>
         <div style={{ fontSize: '40px', marginBottom: '16px' }}>📰</div>
         <div style={{ color: '#fff', fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>{t('no_news_found')}</div>
-        <div style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500 }}>{t('no_assets_news')}</div>
+        <div style={{ color: '#94A3B8', fontSize: '14px', fontWeight: 500 }}>{t('no_assets_news')}</div>
       </div>
     );
   }
@@ -721,7 +757,7 @@ function MarketNewsPage({ assets, t }) {
                 border: '1px solid',
                 borderColor: activeTab === tab.id ? '#16a34a' : 'rgba(255,255,255,0.1)',
                 backgroundColor: activeTab === tab.id ? 'rgba(22, 163, 74, 0.1)' : 'transparent',
-                color: activeTab === tab.id ? '#4ade80' : '#a3a3a3',
+                color: activeTab === tab.id ? '#10B981' : '#a3a3a3',
                 fontSize: '13px',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -753,40 +789,40 @@ function MarketNewsPage({ assets, t }) {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                backgroundColor: '#141414',
-                border: '1px solid rgba(255,255,255,0.06)',
+                backgroundColor: '#0F1929',
+                border: '1px solid rgba(59,130,246,0.08)',
                 borderRadius: '16px',
                 overflow: 'hidden',
                 textDecoration: 'none',
                 transition: 'transform 0.2s, borderColor 0.2s'
               }}
               onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'rgba(59,130,246,0.08)'; }}
             >
               {item.thumbnail ? (
                 <img src={item.thumbnail} alt="" style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
               ) : (
-                <div style={{ width: '100%', height: '160px', backgroundColor: '#1f1f1f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>
+                <div style={{ width: '100%', height: '160px', backgroundColor: 'rgba(59,130,246,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px' }}>
                   📰
                 </div>
               )}
               <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <span style={{ backgroundColor: 'rgba(255,255,255,0.05)', color: '#e5e5e5', fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>{item.ticker}</span>
-                  <span style={{ color: '#737373', fontSize: '11px', fontWeight: 500 }}>{new Date(item.published_at * 1000).toLocaleDateString()}</span>
+                  <span style={{ backgroundColor: 'rgba(59,130,246,0.07)', color: '#e5e5e5', fontSize: '11px', fontWeight: 700, padding: '4px 8px', borderRadius: '6px' }}>{item.ticker}</span>
+                  <span style={{ color: '#64748B', fontSize: '11px', fontWeight: 500 }}>{new Date(item.published_at * 1000).toLocaleDateString()}</span>
                 </div>
                 <h3 style={{ color: '#fff', fontSize: '15px', fontWeight: 700, margin: '0 0 8px', lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                   {item.title}
                 </h3>
-                <span style={{ color: '#a3a3a3', fontSize: '12px', marginTop: 'auto', fontWeight: 500 }}>{item.publisher}</span>
+                <span style={{ color: '#94A3B8', fontSize: '12px', marginTop: 'auto', fontWeight: 500 }}>{item.publisher}</span>
               </div>
             </a>
           ))}
         </div>
       ) : (
-        <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#141414', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ padding: '60px 20px', textAlign: 'center', backgroundColor: '#0F1929', borderRadius: '16px', border: '1px solid rgba(59,130,246,0.07)' }}>
           <div style={{ fontSize: '32px', marginBottom: '12px' }}>📰</div>
-          <div style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 500 }}>{t('no_news_found')}</div>
+          <div style={{ color: '#94A3B8', fontSize: '14px', fontWeight: 500 }}>{t('no_news_found')}</div>
         </div>
       )}
     </div>
@@ -838,10 +874,10 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
   const isWelcome = messages.length === 1;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#141414', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: '20px', border: '1px solid rgba(59,130,246,0.15)', backgroundColor: '#0F1929', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(74,222,128,0.3)', flexShrink: 0 }}>✦</div>
+          <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(6,182,212,0.3)', flexShrink: 0 }}>✦</div>
           <div>
             <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '15px' }}>TotalFund AI</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
@@ -854,7 +890,7 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
       <div style={{ flex: 1, overflowY: 'auto', padding: '24px' }}>
         {isWelcome && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60%', textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 8px 28px rgba(74,222,128,0.25)', marginBottom: 20 }}>✦</div>
+            <div style={{ width: 72, height: 72, borderRadius: '20px', background: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', boxShadow: '0 8px 28px rgba(6,182,212,0.25)', marginBottom: 20 }}>✦</div>
             <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '22px', marginBottom: 8 }}>TotalFund AI</div>
             <div style={{ color: '#6b7280', fontSize: '14px', marginBottom: 28, maxWidth: 420, lineHeight: 1.6 }}>{t('ai_consultant')}</div>
           </div>
@@ -863,17 +899,17 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {messages.map((msg, i) => (
               <div key={i} style={{ display: 'flex', gap: '10px', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-start' }}>
-                {msg.role === 'ai' && <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #4ade80, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>✦</div>}
-                <div style={{ maxWidth: '74%', padding: '13px 17px', borderRadius: msg.role === 'ai' ? '2px 14px 14px 14px' : '14px 2px 14px 14px', background: msg.role === 'ai' ? '#1a1a1a' : 'linear-gradient(135deg, #166534, #14532d)', border: msg.role === 'ai' ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(74,222,128,0.2)', color: '#e5e5e5', fontSize: '14px', lineHeight: '1.7' }}>
+                {msg.role === 'ai' && <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #06B6D4, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>✦</div>}
+                <div style={{ maxWidth: '74%', padding: '13px 17px', borderRadius: msg.role === 'ai' ? '2px 14px 14px 14px' : '14px 2px 14px 14px', background: msg.role === 'ai' ? '#111F35' : 'linear-gradient(135deg, #0E2847, #122255)', border: msg.role === 'ai' ? '1px solid rgba(59,130,246,0.08)' : '1px solid rgba(16,185,129,0.2)', color: '#e5e5e5', fontSize: '14px', lineHeight: '1.7' }}>
                   {msg.role === 'ai' ? <div dangerouslySetInnerHTML={{ __html: renderAIText(msg.text) }} /> : <span style={{ fontWeight: 500 }}>{msg.text}</span>}
                 </div>
               </div>
             ))}
             {loading && (
               <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #4ade80, #06b6d4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>✦</div>
-                <div style={{ padding: '13px 17px', borderRadius: '2px 14px 14px 14px', background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '5px', alignItems: 'center' }}>
-                  {[0,1,2].map(j => <div key={j} style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#4ade80', animation: `bounce 1.2s ease-in-out ${j*0.2}s infinite` }} />)}
+                <div style={{ width: 30, height: 30, borderRadius: '9px', background: 'linear-gradient(135deg, #06B6D4, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0 }}>✦</div>
+                <div style={{ padding: '13px 17px', borderRadius: '2px 14px 14px 14px', background: '#111F35', border: '1px solid rgba(59,130,246,0.08)', display: 'flex', gap: '5px', alignItems: 'center' }}>
+                  {[0,1,2].map(j => <div key={j} style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10B981', animation: `bounce 1.2s ease-in-out ${j*0.2}s infinite` }} />)}
                 </div>
               </div>
             )}
@@ -882,11 +918,197 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
         )}
       </div>
       <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
-        <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', background: '#111F35', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '12px' }}>
           <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()} placeholder="..." disabled={loading} style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e5e5e5', fontSize: '14px', fontFamily: 'inherit' }} />
-          <button onClick={() => send()} disabled={loading || !input.trim()} style={{ width: '36px', height: '36px', borderRadius: '9px', background: input.trim() ? 'linear-gradient(135deg, #4ade80, #06b6d4)' : 'rgba(255,255,255,0.05)', border: 'none', color: input.trim() ? '#000' : '#4b5563', fontSize: '15px', fontWeight: 700, cursor: input.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▶</button>
+          <button onClick={() => send()} disabled={loading || !input.trim()} style={{ width: '36px', height: '36px', borderRadius: '9px', background: input.trim() ? 'linear-gradient(135deg, #06B6D4, #3B82F6)' : 'rgba(59,130,246,0.07)', border: 'none', color: input.trim() ? '#000' : '#4b5563', fontSize: '15px', fontWeight: 700, cursor: input.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>▶</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Mini sparkline SVG (trend-based, no real history needed) ─────────────────
+function MiniSparkline({ change, color, w = 80, h = 28 }) {
+  const steps = 10;
+  const pts = Array.from({ length: steps }, (_, i) => {
+    const t = i / (steps - 1);
+    const trend = t * change * 2;
+    const wave  = Math.sin(i * 1.7 + Math.abs(change)) * Math.abs(change) * 0.5;
+    return { x: t * w, y: h / 2 - trend - wave };
+  });
+  const minY = Math.min(...pts.map(p => p.y));
+  const maxY = Math.max(...pts.map(p => p.y));
+  const range = maxY - minY || 1;
+  const norm = pts.map(p => ({ x: p.x, y: 3 + ((p.y - minY) / range) * (h - 6) }));
+  const d = norm.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+      <path d={d} stroke={color} strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={0.85} />
+    </svg>
+  );
+}
+
+// ── Macro Pulse ───────────────────────────────────────────────────────────────
+function MacroPulseCard({ marketData }) {
+  const score = (change, scale = 12) => Math.round(Math.max(5, Math.min(95, 50 + change * scale)));
+  const sentiment = (s) =>
+    s >= 62 ? { label: 'Bullish', color: '#10B981', bg: 'rgba(16,185,129,0.1)'  }
+    : s >= 40 ? { label: 'Neutral', color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' }
+    :            { label: 'Bearish', color: '#EF4444', bg: 'rgba(239,68,68,0.1)'  };
+
+  const sectors = [
+    { icon: '₿',  label: 'Crypto',     s: score(((marketData.BTC?.change ?? 0) + (marketData.ETH?.change ?? 0)) / 2, 8) },
+    { icon: '🇺🇸', label: 'US Stocks',  s: score(marketData.SPX500?.change ?? 0, 18) },
+    { icon: '🇮🇩', label: 'IDX Stocks', s: score(marketData.IHSG?.change ?? 0,   18) },
+    { icon: '🥇',  label: 'Commodity',  s: score(((marketData.GOLD?.change ?? 0) + (marketData.XAG?.change ?? 0)) / 2, 12) },
+  ];
+
+  const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <div style={{ background: '#0F1929', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '16px', padding: '18px 20px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+        <div>
+          <div style={{ color: '#E2E8F0', fontSize: '14px', fontWeight: 700, letterSpacing: '-0.2px' }}>Macro Pulse</div>
+          <div style={{ color: '#334155', fontSize: '10px', marginTop: '2px' }}>Updated {now}</div>
+        </div>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#06B6D4', boxShadow: '0 0 6px rgba(6,182,212,0.7)', marginTop: 4 }} />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0', flex: 1 }}>
+        {sectors.map(({ icon, label, s }) => {
+          const sent = sentiment(s);
+          return (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid rgba(59,130,246,0.06)' }}>
+              <span style={{ fontSize: '16px', width: '22px', textAlign: 'center', lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+              <span style={{ color: '#94A3B8', fontSize: '12px', fontWeight: 500, flex: 1 }}>{label}</span>
+              <span style={{ color: sent.color, fontSize: '9px', fontWeight: 700, background: sent.bg, padding: '2px 6px', borderRadius: '4px', letterSpacing: '0.3px', flexShrink: 0 }}>{sent.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                <div style={{ width: '44px', height: '3px', background: 'rgba(59,130,246,0.1)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${s}%`, background: `linear-gradient(90deg, ${sent.color}55, ${sent.color})`, borderRadius: '99px', transition: 'width 0.6s ease' }} />
+                </div>
+                <span style={{ color: '#E2E8F0', fontSize: '13px', fontWeight: 800, fontFamily: 'monospace', minWidth: '20px', textAlign: 'right' }}>
+                  {s}<span style={{ color: '#334155', fontSize: '9px', fontWeight: 400 }}>/100</span>
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Asset Class Performance 24H ───────────────────────────────────────────────
+function AssetClassPerformanceCard({ marketData }) {
+  const classes = [
+    { key: 'Crypto',     icon: '₿',  accentColor: '#06B6D4', change: ((marketData.BTC?.change ?? 0) + (marketData.ETH?.change ?? 0)) / 2 },
+    { key: 'US Stocks',  icon: '🇺🇸', accentColor: '#8B5CF6', change: marketData.SPX500?.change ?? 0 },
+    { key: 'IDX Stocks', icon: '🇮🇩', accentColor: '#10B981', change: marketData.IHSG?.change ?? 0 },
+    { key: 'Commodity',  icon: '🥇',  accentColor: '#F59E0B', change: ((marketData.GOLD?.change ?? 0) + (marketData.XAG?.change ?? 0)) / 2 },
+  ];
+
+  const maxAbs = Math.max(...classes.map(c => Math.abs(c.change)), 0.01);
+
+  return (
+    <div style={{ background: '#0F1929', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '16px', padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ color: '#64748B', fontSize: '10px', fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: '16px' }}>Asset Class Performance (24H)</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {classes.map(({ key, icon, accentColor, change }) => {
+          const isUp = change >= 0;
+          const pnlColor = isUp ? '#10B981' : '#EF4444';
+          const barPct = (Math.abs(change) / maxAbs) * 100;
+          return (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: `${accentColor}18`, border: `1px solid ${accentColor}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', flexShrink: 0 }}>
+                {icon}
+              </div>
+              <span style={{ color: '#94A3B8', fontSize: '12px', fontWeight: 600, width: '74px', flexShrink: 0 }}>{key}</span>
+              <div style={{ flex: 1, height: '4px', background: 'rgba(59,130,246,0.08)', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${barPct}%`, background: `linear-gradient(90deg, ${pnlColor}55, ${pnlColor})`, borderRadius: '99px', transition: 'width 0.6s cubic-bezier(0.23,1,0.32,1)' }} />
+              </div>
+              <span style={{ color: pnlColor, fontSize: '12px', fontWeight: 800, minWidth: '56px', textAlign: 'right', letterSpacing: '-0.2px', flexShrink: 0 }}>
+                {isUp ? '+' : ''}{change.toFixed(2)}%
+              </span>
+              <MiniSparkline change={change} color={pnlColor} w={48} h={18} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Portfolio Movers Today ─────────────────────────────────────────────────────
+function PortfolioMoversCard({ assets, hargaMap, hargaSaham, marketData }) {
+  const movers = useMemo(() => {
+    return assets
+      .filter(a => !['stable', 'cash_idr'].includes(a.type))
+      .map(a => {
+        let change = 0;
+        const key = a.simbol || a.ticker;
+        if (a.type === 'crypto')         change = hargaMap[key]?.change || hargaMap[a.ticker]?.change || 0;
+        else if (a.type === 'komoditas') change = a.simbol === 'GC=F' ? (marketData.GOLD?.change || 0) : a.simbol === 'SI=F' ? (marketData.XAG?.change || 0) : 0;
+        else if (a.type === 'saham_us')  change = marketData.SPX500?.change || 0;
+        else if (a.type === 'saham')     change = marketData.IHSG?.change || 0;
+        return { ticker: a.ticker, change };
+      })
+      .filter(m => m.change !== 0)
+      .sort((a, b) => b.change - a.change);
+  }, [assets, hargaMap, marketData]);
+
+  const gainers = movers.filter(m => m.change >= 0).slice(0, 4);
+  const losers  = [...movers].filter(m => m.change < 0).slice(0, 4);
+  const now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <div style={{ background: '#0F1929', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '16px', padding: '18px 20px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+        <div>
+          <div style={{ color: '#E2E8F0', fontSize: '14px', fontWeight: 700, letterSpacing: '-0.2px' }}>Portfolio Movers</div>
+          <div style={{ color: '#334155', fontSize: '10px', marginTop: '2px' }}>Updated {now}</div>
+        </div>
+        <span style={{ color: '#475569', fontSize: '9px', fontWeight: 700, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.15)', padding: '2px 7px', borderRadius: '4px', letterSpacing: '0.5px' }}>TODAY</span>
+      </div>
+
+      {movers.length === 0 ? (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 6 }}>
+          <span style={{ fontSize: '22px' }}>📊</span>
+          <span style={{ color: '#334155', fontSize: '12px', fontWeight: 500 }}>Add assets to see movers</span>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', flex: 1 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
+              <span style={{ color: '#10B981', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Gainers</span>
+            </div>
+            {gainers.length === 0
+              ? <div style={{ color: '#334155', fontSize: '11px', padding: '6px 0' }}>—</div>
+              : gainers.map(m => (
+                <div key={m.ticker} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(59,130,246,0.06)' }}>
+                  <span style={{ color: '#94A3B8', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace' }}>{m.ticker}</span>
+                  <span style={{ color: '#10B981', fontSize: '11px', fontWeight: 700, background: 'rgba(16,185,129,0.1)', padding: '1px 7px', borderRadius: '4px' }}>+{m.change.toFixed(2)}%</span>
+                </div>
+              ))
+            }
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '8px' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#EF4444', flexShrink: 0 }} />
+              <span style={{ color: '#EF4444', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Losers</span>
+            </div>
+            {losers.length === 0
+              ? <div style={{ color: '#334155', fontSize: '11px', padding: '6px 0' }}>—</div>
+              : losers.map(m => (
+                <div key={m.ticker} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(59,130,246,0.06)' }}>
+                  <span style={{ color: '#94A3B8', fontSize: '12px', fontWeight: 700, fontFamily: 'monospace' }}>{m.ticker}</span>
+                  <span style={{ color: '#EF4444', fontSize: '11px', fontWeight: 700, background: 'rgba(239,68,68,0.1)', padding: '1px 7px', borderRadius: '4px' }}>{m.change.toFixed(2)}%</span>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -929,6 +1151,9 @@ function App() {
   const [email, setEmail]                 = useLocalStorage('totalfund_email', '');
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [showAiChat, setShowAiChat]                   = useState(false);
+  const [showNotifs, setShowNotifs]                   = useState(false);
+  const [showLangPicker, setShowLangPicker]           = useState(false);
+  const [hideBalance, setHideBalance]                 = useState(false);
 
   const [marketData, setMarketData] = useState({
     BTC:    { price: 0, change: 0, isUp: true,  type: 'usd' },
@@ -1023,8 +1248,71 @@ function App() {
     } catch (err) {}
   }, [nonCryptoSymbols]);
 
-  useEffect(() => { fetchCryptoPrices(); const i = setInterval(fetchCryptoPrices, 60000); return () => clearInterval(i); }, [fetchCryptoPrices]);
+  // One-time initial fetch to seed prices (handles stablecoins + non-Binance coins too)
+  useEffect(() => { fetchCryptoPrices(); }, [fetchCryptoPrices]);
   useEffect(() => { fetchMarketData(); const i = setInterval(fetchMarketData, 60000); return () => clearInterval(i); }, [fetchMarketData]);
+
+  // Binance WebSocket — real-time crypto prices, zero backend calls, no rate limits
+  const _wsAssetsRef = useRef(cryptoAssets);
+  useEffect(() => { _wsAssetsRef.current = cryptoAssets; }, [cryptoAssets]);
+
+  const _wsTickers = useMemo(() =>
+    [...new Set(['BTC', 'ETH', ...cryptoAssets.map(a => a.ticker?.toUpperCase()).filter(Boolean)])].sort().join(','),
+    [cryptoAssets]
+  );
+
+  useEffect(() => {
+    const PAIRS = {
+      BTC:'btcusdt', ETH:'ethusdt', SOL:'solusdt', BNB:'bnbusdt', XRP:'xrpusdt',
+      ADA:'adausdt', DOGE:'dogeusdt', AVAX:'avaxusdt', TON:'tonusdt', HYPE:'hypeusdt',
+      LINK:'linkusdt', SUI:'suiusdt', DOT:'dotusdt', UNI:'uniusdt', NEAR:'nearusdt',
+      ARB:'arbusdt', OP:'opusdt', APT:'aptusdt', ATOM:'atomusdt', LTC:'ltcusdt',
+      BCH:'bchusdt', TRX:'trxusdt', INJ:'injusdt', SHIB:'shibusdt',
+    };
+    const pairs = _wsTickers.split(',').filter(s => PAIRS[s]).map(s => PAIRS[s]);
+    if (!pairs.length) return;
+
+    const streams = pairs.map(p => `${p}@ticker`).join('/');
+    const latest = {};
+    let ws, reconnTimer, flushTimer;
+
+    const connect = () => {
+      ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+      ws.onmessage = (e) => {
+        const msg = JSON.parse(e.data);
+        if (!msg?.data?.s) return;
+        const d = msg.data;
+        latest[d.s.replace('USDT', '')] = { price: parseFloat(d.c), change: parseFloat(d.P) };
+      };
+      ws.onerror = () => ws.close();
+      ws.onclose  = () => { reconnTimer = setTimeout(connect, 5000); };
+    };
+
+    connect();
+
+    // Batch state updates every 3s — avoids excessive re-renders
+    flushTimer = setInterval(() => {
+      if (!Object.keys(latest).length) return;
+      const cas = _wsAssetsRef.current;
+      setHargaMap(prev => {
+        const m = { ...prev };
+        cas.forEach(a => {
+          const t = a.ticker?.toUpperCase();
+          if (t && latest[t]) m[a.simbol || a.ticker] = { usd: latest[t].price, change: latest[t].change };
+        });
+        return m;
+      });
+      setMarketData(prev => {
+        const u = {};
+        ['BTC', 'ETH'].forEach(s => {
+          if (latest[s]) u[s] = { price: latest[s].price, change: latest[s].change, isUp: latest[s].change >= 0, type: 'usd' };
+        });
+        return Object.keys(u).length ? { ...prev, ...u } : prev;
+      });
+    }, 3000);
+
+    return () => { clearTimeout(reconnTimer); clearInterval(flushTimer); ws?.close(); };
+  }, [_wsTickers]);
 
   const getLivePrice = useCallback((asset) => {
     const key = asset.simbol || asset.ticker;
@@ -1134,26 +1422,12 @@ function App() {
         }
       } catch (e) {}
 
-      try {
-        const results = await Promise.all(cryptos.map(a => {
-          const targetUrl = `https://api.coingecko.com/api/v3/coins/${a.simbol.toLowerCase()}/market_chart?vs_currency=usd&days=${fetchDays}`;
-          return fetchWithRetry(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`).then(r => r.json()).catch(() => null);
-        }));
-        if (results.some(r => r && r.prices)) {
-          const combined = process(results);
-          if (combined?.length >= 2) {
-            setChartData(combined); const diff = combined[combined.length-1][1] - combined[0][1];
-            setPnlChart({ selisih: diff, persen: (diff / combined[0][1]) * 100 }); return;
-          }
-        }
-      } catch (e) {}
-
       setChartData(createDummyData(grandTotalUSD)); setPnlChart({ selisih: 0, persen: 0 }); setChartError(true);
     };
     fetchChart();
   }, [assets, grandTotalUSD, hargaMap]);
 
-  const chartColor = pnlChart?.selisih >= 0 ? '#16a34a' : '#ef4444';
+  const chartColor = pnlChart?.selisih >= 0 ? '#10B981' : '#EF4444';
 
   const handleAddAsset = useCallback((newAsset, livePrice) => {
     setAssets(prev => [...prev, { ...newAsset, id: Date.now() }]);
@@ -1206,13 +1480,28 @@ function App() {
     const isCrypto = key === 'BTC' || key === 'ETH';
     const loaded   = isCrypto ? cryptoLoaded : marketLoaded;
     const hasData  = data.price > 0;
+    const color    = data.isUp ? '#10B981' : '#EF4444';
     return (
       <div style={styles.marketCardMini} key={key}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ color: '#a3a3a3', fontWeight: 700, fontSize: '13px' }}>{displayName}</span>
-          {!loaded ? <div className="skeleton" style={{ width: 42, height: 16 }} /> : hasData ? <span style={{ color: data.isUp ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, background: data.isUp ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '4px' }}>{data.isUp ? '+' : ''}{data.change.toFixed(2)}%</span> : <span style={{ color: '#555', fontSize: '11px' }}>—</span>}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+          <span style={{ color: '#64748B', fontWeight: 700, fontSize: '11px', letterSpacing: '0.2px' }}>{displayName}</span>
+          {loaded && hasData && (
+            <span style={{ color, fontSize: '9px', fontWeight: 700, background: data.isUp ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '1px 5px', borderRadius: '4px' }}>
+              {data.isUp ? '+' : ''}{data.change.toFixed(2)}%
+            </span>
+          )}
+          {!loaded && <div className="skeleton" style={{ width: 34, height: 12 }} />}
         </div>
-        {!loaded ? <div style={{ marginTop: '8px' }}><div className="skeleton" style={{ width: '80%', height: 20 }} /></div> : hasData ? <div style={{ color: 'white', fontWeight: 800, fontSize: '18px', marginTop: '6px', letterSpacing: '-0.5px' }}>{data.type === 'usd' ? '$' : ''}{data.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div> : <div style={{ color: '#555', fontWeight: 800, fontSize: '18px', marginTop: '6px' }}>—</div>}
+        {!loaded
+          ? <div className="skeleton" style={{ width: '70%', height: 17, margin: '3px 0' }} />
+          : hasData
+            ? <div style={{ color: '#E2E8F0', fontWeight: 800, fontSize: '14px', letterSpacing: '-0.3px', margin: '1px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {data.type === 'usd' ? '$' : ''}{data.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+              </div>
+            : <div style={{ color: '#334155', fontWeight: 800, fontSize: '14px', margin: '1px 0' }}>—</div>
+        }
+        {hasData && <MiniSparkline change={data.change} color={color} w={100} h={20} />}
+        {!hasData && loaded && <div style={{ height: 20 }} />}
       </div>
     );
   };
@@ -1221,83 +1510,163 @@ function App() {
     <div className="app-wrapper">
       <div className={`sidebar-overlay${sidebarOpen ? ' sidebar-open' : ''}`} onClick={() => setSidebarOpen(false)} />
       
-      <Sidebar activePage={activePage} setActivePage={setActivePage} onClose={() => setSidebarOpen(false)} isOpen={sidebarOpen} username={username} setUsername={setUsername} profilePic={profilePic} setProfilePic={setProfilePic} onOpenAccountSettings={() => setShowAccountSettings(true)} t={t} />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} onClose={() => setSidebarOpen(false)} isOpen={sidebarOpen} t={t} />
 
       <div className="app-main">
         <div className="max-container">
           
-          <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', width: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style={{ width: '34px', height: '34px', flexShrink: 0 }}>
-                  <rect width="120" height="120" rx="28" fill="#0A0A0A" />
-                  <rect width="120" height="120" rx="28" fill="none" stroke="#262626" strokeWidth="3" />
-                  <path d="M 20 35 H 55 V 47 H 43.5 V 80 H 31.5 V 47 H 20 V 35 Z" fill="#F5F5F5" />
-                  <circle cx="62" cy="74" r="6" fill="#F5F5F5" />
-                  <path d="M 72 35 H 100 V 47 H 84 V 53 H 96 V 63 H 84 V 80 H 72 V 35 Z" fill="#F5F5F5" />
-                </svg>
-                <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '22px', letterSpacing: '-0.6px', display: 'flex', alignItems: 'center' }}>TOTAL<span style={{ color: '#16a34a' }}>FUND</span></span>
-              </div>
+          <div className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+            <button className="hamburger-btn" onClick={() => setSidebarOpen(true)}>☰</button>
+
+            <div className="header-search" style={{ flex: 1, maxWidth: '420px' }}>
+              <svg className="header-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input placeholder="Search coins, stocks, ETFs..." onFocus={() => setActivePage('market-explorer')} readOnly />
+              <span style={{ color: '#1E3A5F', fontSize: '11px', fontWeight: 600, background: '#0F1929', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '5px', padding: '2px 5px' }}>/</span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ display: 'flex', gap: '4px', background: '#1a1a1a', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <button onClick={() => setLang('id')} style={{ background: lang.includes('id') ? '#333' : 'transparent', color: lang.includes('id') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>ID</button>
-                <button onClick={() => setLang('en')} style={{ background: lang.includes('en') ? '#333' : 'transparent', color: lang.includes('en') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>EN</button>
-                <button onClick={() => setLang('zh')} style={{ background: lang.includes('zh') ? '#333' : 'transparent', color: lang.includes('zh') ? '#fff' : '#737373', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', transition: '0.2s' }}>ZH</button>
+            <div className="header-right" style={{ marginLeft: 'auto' }}>
+              {/* Globe — language picker */}
+              <div className="header-icon-btn" style={{ position: 'relative' }} onClick={() => { setShowLangPicker(p => !p); setShowNotifs(false); }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               </div>
 
-              {activePage !== 'portfolio' && (
-                <div style={{ color: '#737373', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', display: width < 600 ? 'none' : 'block' }}>
-                  {activePage === 'networth-detail' ? 'Portfolio Analytics' : activePage === 'market-explorer' ? t('market_explorer') : activePage === 'market-overview' ? t('market_overview') : activePage === 'watchlist' ? 'Top Movers' : activePage === 'multi-chart' ? 'Multi Chart' : t('market_news')}
+              {/* Bell — notifications */}
+              <div className="header-icon-btn" style={{ position: 'relative' }} onClick={() => { setShowNotifs(p => !p); setShowLangPicker(false); }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+
+              {/* Profile chip */}
+              <div className="header-profile" onClick={() => setShowAccountSettings(true)}>
+                <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg, #06B6D4, #3B82F6)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
+                  {profilePic ? <img src={profilePic} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ color: '#000', fontWeight: 800, fontSize: '11px' }}>{(username||'U')[0].toUpperCase()}</span>}
                 </div>
-              )}
+                <div className="header-profile-text">
+                  <div className="header-profile-name">{username || 'User'}</div>
+                  <div className="header-profile-role">Investor</div>
+                </div>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
             </div>
           </div>
+
+          {/* ── Language Picker Panel ── */}
+          {showLangPicker && (
+            <>
+              <div onClick={() => setShowLangPicker(false)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
+              <div style={{ position: 'fixed', top: '68px', right: '96px', background: '#0F1929', border: '1px solid rgba(59,130,246,0.18)', borderRadius: '14px', boxShadow: '0 16px 48px rgba(0,0,0,0.55)', zIndex: 200, overflow: 'hidden', minWidth: '160px' }}>
+                <div style={{ padding: '10px 14px 8px', borderBottom: '1px solid rgba(59,130,246,0.08)' }}>
+                  <span style={{ color: '#475569', fontSize: '10px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase' }}>Language</span>
+                </div>
+                {[
+                  { code: 'id', label: 'Indonesia', flag: '🇮🇩' },
+                  { code: 'en', label: 'English',   flag: '🇬🇧' },
+                  { code: 'zh', label: '中文',       flag: '🇨🇳' },
+                ].map(l => (
+                  <div
+                    key={l.code}
+                    onClick={() => { setLang(l.code); setShowLangPicker(false); }}
+                    style={{ padding: '11px 16px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', background: lang.includes(l.code) ? 'rgba(6,182,212,0.07)' : 'transparent', transition: 'background 0.12s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(59,130,246,0.07)'}
+                    onMouseLeave={e => e.currentTarget.style.background = lang.includes(l.code) ? 'rgba(6,182,212,0.07)' : 'transparent'}
+                  >
+                    <span style={{ fontSize: '17px' }}>{l.flag}</span>
+                    <span style={{ color: lang.includes(l.code) ? '#06B6D4' : '#94A3B8', fontSize: '13px', fontWeight: 600, flex: 1 }}>{l.label}</span>
+                    {lang.includes(l.code) && (
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* ── Notification Panel ── */}
+          {showNotifs && (
+            <>
+              <div onClick={() => setShowNotifs(false)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />
+              <div style={{ position: 'fixed', top: '68px', right: '56px', width: '300px', background: '#0F1929', border: '1px solid rgba(59,130,246,0.18)', borderRadius: '16px', boxShadow: '0 20px 60px rgba(0,0,0,0.55)', zIndex: 200, overflow: 'hidden' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(59,130,246,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#E2E8F0', fontWeight: 700, fontSize: '14px' }}>Notifications</span>
+                  <button onClick={() => setShowNotifs(false)} style={{ background: 'none', border: 'none', color: '#334155', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '2px' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+                <div style={{ padding: '36px 20px 32px', textAlign: 'center' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  </div>
+                  <div style={{ color: '#64748B', fontSize: '13px', fontWeight: 600 }}>No notifications yet</div>
+                  <div style={{ color: '#334155', fontSize: '11px', marginTop: '6px', lineHeight: 1.5 }}>Portfolio alerts and updates will appear here</div>
+                </div>
+              </div>
+            </>
+          )}
 
           {activePage === 'portfolio' && (
             <>
               <div className="summary-cards">
                 <div style={styles.summaryCard}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>{t('total_net_worth')}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ color: '#94A3B8', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>{t('total_net_worth')}</span>
+                      <button onClick={() => setHideBalance(h => !h)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#334155', padding: '2px', display: 'flex', alignItems: 'center', lineHeight: 1, transition: 'color 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.color='#64748B'} onMouseLeave={e => e.currentTarget.style.color='#334155'}>
+                        {hideBalance ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                     {isMobileViewport ? (
-                      <button
-                        onClick={scrollToHoldings}
-                        style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#4ade80', fontSize: '11px', fontWeight: 700, backgroundColor: 'rgba(74,222,128,0.1)', border: 'none', padding: '4px 9px', borderRadius: '6px', cursor: 'pointer' }}
-                      >
+                      <button onClick={scrollToHoldings} style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#06B6D4', fontSize: '11px', fontWeight: 700, backgroundColor: 'rgba(6,182,212,0.1)', border: 'none', padding: '4px 9px', borderRadius: '6px', cursor: 'pointer' }}>
                         {t('view_assets')} <span style={{ fontSize: '12px' }}>›</span>
                       </button>
                     ) : (
-                      <span style={{ color: '#4ade80', fontSize: '11px', backgroundColor: 'rgba(74,222,128,0.1)', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
+                      <span style={{ color: '#06B6D4', fontSize: '11px', backgroundColor: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.15)', padding: '3px 8px', borderRadius: '6px', fontWeight: 600 }}>IDR: {kursIdr.toLocaleString('id-ID')}</span>
                     )}
                   </div>
                   {cryptoLoaded ? (
                     <>
-                      <div style={{ color: 'white', fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px' }}>{formatUSD(grandTotalUSD)}</div>
-                      <div style={{ color: '#737373', fontSize: '14px', fontWeight: 500, marginTop: '2px' }}>{formatIDR(grandTotalIDR)}</div>
+                      <div style={{ color: '#E2E8F0', fontSize: '32px', fontWeight: 800, letterSpacing: '-0.8px', lineHeight: 1.1 }}>
+                        {hideBalance ? <span style={{ color: '#1E293B', letterSpacing: '4px' }}>••••••</span> : formatUSD(grandTotalUSD)}
+                      </div>
+                      <div style={{ color: '#475569', fontSize: '13px', fontWeight: 500, marginTop: '3px' }}>
+                        {hideBalance ? <span style={{ color: '#1E293B', letterSpacing: '3px' }}>••••••</span> : formatIDR(grandTotalIDR)}
+                      </div>
                       {isMobileViewport && (
-                        <div style={{ color: '#454545', fontSize: '10px', fontWeight: 600, marginTop: '4px' }}>IDR: {kursIdr.toLocaleString('id-ID')}</div>
+                        <div style={{ color: '#334155', fontSize: '10px', fontWeight: 600, marginTop: '4px' }}>IDR: {kursIdr.toLocaleString('id-ID')}</div>
                       )}
-                      <div style={{ margin: '14px 0', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                      <div style={{ margin: '14px 0', height: '1px', background: 'rgba(59,130,246,0.1)' }} />
                       <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{ flex: 1 }}>
-                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>{t('overall_pnl')}</span>
+                          <span style={{ color: '#64748B', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>{t('overall_pnl')}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>{isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}</span>
-                            <span style={{ color: isOverallProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isOverallProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%</span>
+                            <span style={{ color: isOverallProfit ? '#10B981' : '#EF4444', fontSize: '16px', fontWeight: 800 }}>
+                              {hideBalance ? <span style={{ letterSpacing: '3px', fontSize: '13px' }}>••••</span> : <>{isOverallProfit ? '+' : ''}{formatUSD(overallPnlUSD)}</>}
+                            </span>
+                            {!hideBalance && <span style={{ color: isOverallProfit ? '#10B981' : '#EF4444', fontSize: '11px', fontWeight: 700, backgroundColor: isOverallProfit ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{isOverallProfit ? '+' : ''}{overallPnlPersen.toFixed(2)}%</span>}
                           </div>
-                          <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}</div>
+                          <div style={{ color: '#475569', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>
+                            {hideBalance ? '' : <>{isOverallProfit ? '+' : ''}{formatIDR(overallPnlIDR)}</>}
+                          </div>
                         </div>
-                        <div style={{ width: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                        <div style={{ width: '1px', background: 'rgba(59,130,246,0.1)' }} />
                         <div style={{ flex: 1 }}>
-                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>{t('day_pnl')}</span>
+                          <span style={{ color: '#64748B', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>{t('day_pnl')}</span>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800 }}>{isDailyProfit ? '+' : ''}{formatUSD(dailyPnlUSD)}</span>
-                            <span style={{ color: isDailyProfit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 700, backgroundColor: isDailyProfit ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{isDailyProfit ? '+' : ''}{dailyPnlPersen.toFixed(2)}%</span>
+                            <span style={{ color: isDailyProfit ? '#10B981' : '#EF4444', fontSize: '16px', fontWeight: 800 }}>
+                              {hideBalance ? <span style={{ letterSpacing: '3px', fontSize: '13px' }}>••••</span> : <>{isDailyProfit ? '+' : ''}{formatUSD(dailyPnlUSD)}</>}
+                            </span>
+                            {!hideBalance && <span style={{ color: isDailyProfit ? '#10B981' : '#EF4444', fontSize: '11px', fontWeight: 700, backgroundColor: isDailyProfit ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '6px' }}>{isDailyProfit ? '+' : ''}{dailyPnlPersen.toFixed(2)}%</span>}
                           </div>
-                          <div style={{ color: '#555', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>{isDailyProfit ? '+' : ''}{formatIDR(dailyPnlUSD * kursIdr)}</div>
+                          <div style={{ color: '#475569', fontSize: '11px', marginTop: '4px', fontWeight: 500 }}>
+                            {hideBalance ? '' : <>{isDailyProfit ? '+' : ''}{formatIDR(dailyPnlUSD * kursIdr)}</>}
+                          </div>
                         </div>
                       </div>
                     </>
@@ -1305,7 +1674,7 @@ function App() {
                     <>
                       <div className="skeleton" style={{ width: '70%', height: 32, marginBottom: 6 }} />
                       <div className="skeleton" style={{ width: '50%', height: 16 }} />
-                      <div style={{ margin: '14px 0', height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                      <div style={{ margin: '14px 0', height: '1px', background: 'rgba(59,130,246,0.08)' }} />
                       <div style={{ display: 'flex', gap: '16px' }}>
                         <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
                         <div className="skeleton" style={{ flex: 1, height: 32, borderRadius: 8 }} />
@@ -1315,7 +1684,7 @@ function App() {
                 </div>
 
                 <div style={styles.summaryCard}>
-                  <span style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px', display: 'block', marginBottom: '14px' }}>{t('pnl_breakdown')}</span>
+                  <span style={{ color: '#94A3B8', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px', display: 'block', marginBottom: '14px' }}>{t('pnl_breakdown')}</span>
                   {cryptoLoaded ? (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', flex: 1 }}>
                       {[
@@ -1324,10 +1693,10 @@ function App() {
                         { label: t('stock_idx_idr'),   val: pnlSahamIDX_IDR, sub: formatUSD(pnlSahamIDX_IDR / kursIdr), fmt: formatIDR },
                         { label: t('stock_us_usd'),    val: pnlSahamUS_USD,  sub: formatIDR(pnlSahamUS_USD * kursIdr),  fmt: formatUSD },
                       ].map(({ label, val, sub, fmt }, idx) => (
-                        <div key={label} style={{ padding: `${idx >= 2 ? '12px' : '0'} ${idx % 2 === 0 ? '12px' : '0'} ${idx < 2 ? '12px' : '0'} ${idx % 2 === 1 ? '12px' : '0'}`, borderRight: idx % 2 === 0 ? '1px solid rgba(255,255,255,0.06)' : 'none', borderBottom: idx < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                          <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>{label}</span>
-                          <span style={{ color: val >= 0 ? '#4ade80' : '#f87171', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>{val >= 0 ? '+' : ''}{fmt(val)}</span>
-                          <span style={{ color: '#555', fontSize: '11px', fontWeight: 500 }}>{val >= 0 ? '+' : ''}{sub}</span>
+                        <div key={label} style={{ padding: `${idx >= 2 ? '12px' : '0'} ${idx % 2 === 0 ? '12px' : '0'} ${idx < 2 ? '12px' : '0'} ${idx % 2 === 1 ? '12px' : '0'}`, borderRight: idx % 2 === 0 ? '1px solid rgba(59,130,246,0.08)' : 'none', borderBottom: idx < 2 ? '1px solid rgba(59,130,246,0.08)' : 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                          <span style={{ color: '#64748B', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>{label}</span>
+                          <span style={{ color: val >= 0 ? '#10B981' : '#EF4444', fontSize: '16px', fontWeight: 800, margin: '4px 0 2px' }}>{val >= 0 ? '+' : ''}{fmt(val)}</span>
+                          <span style={{ color: '#475569', fontSize: '11px', fontWeight: 500 }}>{val >= 0 ? '+' : ''}{sub}</span>
                         </div>
                       ))}
                     </div>
@@ -1342,52 +1711,55 @@ function App() {
               </div>
 
               <div className="market-section">
-                <div className="market-mini-grid">
-                  {renderSingleCard('BTC',    'BTC')}
-                  {renderSingleCard('GOLD',   'Gold XAU')}
-                  {renderSingleCard('SPX500', 'S&P 500')}
-                  {renderSingleCard('ETH',    'ETH')}
-                  {renderSingleCard('XAG',    'Silver XAG')}
-                  {renderSingleCard('IHSG',   'IHSG')}
+                {/* Row 2: 6 price cards + Asset Allocation + Positions */}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobileViewport ? '1fr' : '1fr 0.9fr 0.9fr', gap: '14px', alignItems: 'stretch' }}>
+                  <div className="market-mini-grid" style={{ minWidth: 0 }}>
+                    {renderSingleCard('BTC',    'BTC')}
+                    {renderSingleCard('ETH',    'ETH')}
+                    {renderSingleCard('GOLD',   'Gold XAU')}
+                    {renderSingleCard('XAG',    'Silver XAG')}
+                    {renderSingleCard('SPX500', 'S&P 500')}
+                    {renderSingleCard('IHSG',   'IHSG')}
+                  </div>
+                  <AssetClassCard assets={assets} getLivePrice={getLivePrice} grandTotalUSD={grandTotalUSD} kursIdr={kursIdr} />
+                  <PositionsCard  assets={assets} getLivePrice={getLivePrice} grandTotalUSD={grandTotalUSD} kursIdr={kursIdr} />
                 </div>
 
-                <AssetClassCard assets={assets} getLivePrice={getLivePrice} grandTotalUSD={grandTotalUSD} kursIdr={kursIdr} />
-                <PositionsCard  assets={assets} getLivePrice={getLivePrice} grandTotalUSD={grandTotalUSD} kursIdr={kursIdr} />
+                {/* Row 3: Asset Perf 24H + Macro Pulse + Portfolio Movers */}
+                <div style={{ display: 'grid', gridTemplateColumns: isMobileViewport ? '1fr' : '1.25fr 1fr 1fr', gap: '14px', alignItems: 'stretch' }}>
+                  <AssetClassPerformanceCard marketData={marketData} />
+                  <MacroPulseCard marketData={marketData} />
+                  <PortfolioMoversCard assets={assets} hargaMap={hargaMap} hargaSaham={hargaSaham} marketData={marketData} kursIdr={kursIdr} />
+                </div>
               </div>
 
-              <div ref={holdingsRef} style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}>
-                <div className="holdings-header" style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div ref={holdingsRef} style={{ borderRadius: '16px', border: '1px solid rgba(59,130,246,0.15)', overflow: 'hidden', background: '#0F1929', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }}>
+                <div className="holdings-header" style={{ padding: '16px 24px', borderBottom: '1px solid rgba(59,130,246,0.08)' }}>
                   <div>
-                    <h3 style={{ color: '#fff', fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '-0.2px' }}>{t('holdings')}</h3>
-                    <span style={{ color: '#3a3a3a', fontSize: '11px', marginTop: '3px', display: 'block' }}>{assets.length} {t('registered_assets')}</span>
+                    <h3 style={{ color: '#E2E8F0', fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '-0.2px' }}>{t('holdings')}</h3>
+                    <span style={{ color: '#334155', fontSize: '11px', marginTop: '3px', display: 'block' }}>{assets.length} {t('registered_assets')}</span>
                   </div>
-                  <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(34, 197, 94, 0.2)', letterSpacing: '0.01em' }}>+ {t('add_asset')}</button>
-                </div>
-                <div className="col-headers" style={{ alignItems: 'center', padding: '8px 24px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: '#0d0d0d' }}>
-                  {[[t('asset'), 2], [t('price_live'), 1.5], [t('holdings_avg'), 1.5], [t('asset_value'), 1.5], [t('unrealized_pnl'), 1.5]].map(([h, f]) => (
-                    <div key={h} style={{ flex: f, color: '#383838', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{h}</div>
-                  ))}
-                  <div style={{ flexShrink: 0, width: '32px' }} />
+                  <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #06B6D4, #3B82F6)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(6,182,212,0.25)', letterSpacing: '0.3px' }}>+ Add Asset</button>
                 </div>
                 <div style={{ paddingBottom: '18px' }}>
                   {[
-                    { type: 'crypto',     label: t('cat_crypto'),    color: '#f59e0b', list: assets.filter(a => a.type === 'crypto') },
-                    { type: 'saham_us',   label: t('cat_saham_us'),  color: '#ec4899', list: assets.filter(a => a.type === 'saham_us') },
-                    { type: 'saham',      label: t('cat_saham_idx'), color: '#3b82f6', list: assets.filter(a => a.type === 'saham') },
-                    { type: 'komoditas',  label: t('cat_komoditas'), color: '#eab308', list: assets.filter(a => a.type === 'komoditas') },
-                    { type: 'cashstable', label: t('cash_stable'),   color: '#10b981', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
+                    { type: 'crypto',     label: t('cat_crypto'),    color: '#F59E0B', list: assets.filter(a => a.type === 'crypto') },
+                    { type: 'saham_us',   label: t('cat_saham_us'),  color: '#EC4899', list: assets.filter(a => a.type === 'saham_us') },
+                    { type: 'saham',      label: t('cat_saham_idx'), color: '#3B82F6', list: assets.filter(a => a.type === 'saham') },
+                    { type: 'komoditas',  label: t('cat_komoditas'), color: '#EAB308', list: assets.filter(a => a.type === 'komoditas') },
+                    { type: 'cashstable', label: t('cash_stable'),   color: '#10B981', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
                   ].map(({ type, label, color, list }) => (
                     <div key={type}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '20px 24px 6px' }}>
-                        <div style={{ width: '3px', height: '13px', borderRadius: '2px', backgroundColor: color, flexShrink: 0 }} />
-                        <span style={{ color: '#4a4a4a', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
-                        <span style={{ color: '#282828', fontSize: '10px', fontWeight: 600, marginLeft: 'auto' }}>{list.length} {t('assets_count')}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '14px 20px 4px' }}>
+                        <div style={{ width: '3px', height: '12px', borderRadius: '2px', backgroundColor: color, flexShrink: 0 }} />
+                        <span style={{ color: color, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.8 }}>{label}</span>
+                        <span style={{ color: '#1E293B', fontSize: '10px', fontWeight: 600, marginLeft: 'auto' }}>{list.length}</span>
                       </div>
                       {list.length > 0 ? list.map((asset, idx) => (
                         <DataRow key={asset.id} asset={asset} isLast={idx === list.length - 1} hargaLiveUSD={['crypto', 'komoditas', 'saham_us'].includes(asset.type) ? getLivePrice(asset) : undefined} hargaLiveIDR={asset.type === 'saham' ? getLivePrice(asset) : undefined} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onRowClick={handleRowClick} t={t} />
                       )) : (
                         <div style={{ padding: '10px 28px 20px' }}>
-                          <div style={{ padding: '16px', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: '10px', textAlign: 'center', color: '#555', fontSize: '11px', fontWeight: 500 }}>{t('no_assets')} {label}</div>
+                          <div style={{ padding: '16px', border: '1px dashed rgba(59,130,246,0.1)', borderRadius: '10px', textAlign: 'center', color: '#334155', fontSize: '11px', fontWeight: 500 }}>{t('no_assets')} {label}</div>
                         </div>
                       )}
                     </div>
@@ -1453,22 +1825,22 @@ function App() {
 
       {editingAsset && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: '16px', padding: '32px', width: '360px', boxShadow: '0 20px 40px rgba(0,0,0,0.5)' }}>
-            <h2 style={{ color: 'white', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>{t('top_up')} {editingAsset.ticker}</h2>
-            <p style={{ color: '#a3a3a3', fontSize: '13px', margin: '0 0 24px' }}>{t('your_current_avg')} <b style={{ color: 'white' }}>{editingAsset.type === 'saham' ? 'Rp' : '$'}{editingAsset.avg}</b></p>
+          <div style={{ backgroundColor: '#0F1929', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '16px', padding: '32px', width: '360px', boxShadow: '0 20px 60px rgba(0,0,0,0.6)' }}>
+            <h2 style={{ color: '#E2E8F0', fontSize: '20px', fontWeight: 700, margin: '0 0 8px' }}>{t('top_up')} {editingAsset.ticker}</h2>
+            <p style={{ color: '#64748B', fontSize: '13px', margin: '0 0 24px' }}>{t('your_current_avg')} <b style={{ color: '#E2E8F0' }}>{editingAsset.type === 'saham' ? 'Rp' : '$'}{editingAsset.avg}</b></p>
             {editingAsset.type !== 'cash_idr' && (
               <>
-                <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500 }}>{t('new_buy_price')} ({editingAsset.type === 'saham' ? 'IDR' : 'USD'})</label>
+                <label style={{ color: '#94A3B8', fontSize: '13px', fontWeight: 500 }}>{t('new_buy_price')} ({editingAsset.type === 'saham' ? 'IDR' : 'USD'})</label>
                 <input type="number" placeholder="0" value={editForm.harga} onChange={e => setEditForm(p => ({ ...p, harga: e.target.value }))} style={styles.modalInput} />
               </>
             )}
-            <label style={{ color: '#a3a3a3', fontSize: '13px', fontWeight: 500, marginTop: '16px', display: 'block' }}>
+            <label style={{ color: '#94A3B8', fontSize: '13px', fontWeight: 500, marginTop: '16px', display: 'block' }}>
               {t('amount_added')} ({editingAsset.type === 'saham' ? t('sheet') : editingAsset.type === 'cash_idr' ? t('rupiah') : t('coin')})
             </label>
             <input type="number" placeholder="0" value={editForm.jumlah} onChange={e => setEditForm(p => ({ ...p, jumlah: e.target.value }))} style={styles.modalInput} />
             <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
-              <button onClick={() => setEditingAsset(null)} style={{ flex: 1, backgroundColor: '#262626', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
-              <button onClick={() => handleSave(editingAsset.id, parseFloat(editForm.harga || 0), parseFloat(editForm.jumlah || 0))} style={{ flex: 1, backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>{t('save')}</button>
+              <button onClick={() => setEditingAsset(null)} style={{ flex: 1, backgroundColor: 'rgba(59,130,246,0.08)', color: '#94A3B8', border: '1px solid rgba(59,130,246,0.15)', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>{t('cancel')}</button>
+              <button onClick={() => handleSave(editingAsset.id, parseFloat(editForm.harga || 0), parseFloat(editForm.jumlah || 0))} style={{ flex: 1, background: 'linear-gradient(135deg,#06B6D4,#3B82F6)', color: 'white', border: 'none', borderRadius: '8px', padding: '12px', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}>{t('save')}</button>
             </div>
           </div>
         </div>
@@ -1512,36 +1884,44 @@ function App() {
           position: 'fixed',
           bottom: '24px',
           right: '24px',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
+          width: '52px',
+          height: '52px',
+          borderRadius: '16px',
           background: showAiChat
-            ? 'rgba(30,30,30,1)'
-            : 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)',
-          border: showAiChat ? '1px solid rgba(255,255,255,0.12)' : 'none',
+            ? '#0F1929'
+            : 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)',
+          border: showAiChat ? '1px solid rgba(59,130,246,0.25)' : 'none',
           cursor: 'pointer',
           zIndex: 260,
           boxShadow: showAiChat
             ? '0 4px 20px rgba(0,0,0,0.5)'
-            : '0 8px 28px rgba(74,222,128,0.45)',
+            : '0 8px 28px rgba(6,182,212,0.4), 0 2px 8px rgba(59,130,246,0.3)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '20px',
-          color: showAiChat ? '#737373' : '#000',
-          transition: 'background 0.2s, box-shadow 0.2s, color 0.2s',
+          transition: 'all 0.22s cubic-bezier(0.23,1,0.32,1)',
         }}
       >
-        {showAiChat ? '✕' : '✦'}
+        {showAiChat ? (
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        ) : (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3L13.4 9.6L20 11L13.4 12.4L12 19L10.6 12.4L4 11L10.6 9.6L12 3Z" fill="white" opacity="0.95"/>
+            <path d="M5.5 4.5L6.1 7.1L8.5 7.5L6.1 7.9L5.5 10.5L4.9 7.9L2.5 7.5L4.9 7.1L5.5 4.5Z" fill="white" opacity="0.5"/>
+            <path d="M19 15L19.4 17L21 17.5L19.4 18L19 20L18.6 18L17 17.5L18.6 17L19 15Z" fill="white" opacity="0.35"/>
+          </svg>
+        )}
       </button>
     </div>
   );
 }
 
 const styles = {
-  summaryCard:      { backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '14px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' },
-  marketCardMini:   { backgroundColor: '#141414', borderRadius: '12px', padding: '12px 16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' },
-  modalInput:       { width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '10px', padding: '12px 16px', color: 'white', fontSize: '16px', outline: 'none', marginTop: '8px', boxSizing: 'border-box', fontWeight: 500 },
+  summaryCard:    { backgroundColor: '#0F1929', border: '1px solid rgba(59,130,246,0.14)', borderRadius: '16px', padding: '16px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' },
+  marketCardMini: { backgroundColor: '#0F1929', borderRadius: '11px', padding: '9px 12px', border: '1px solid rgba(59,130,246,0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 4px 16px rgba(0,0,0,0.2)', minHeight: '68px', minWidth: 0, overflow: 'hidden' },
+  modalInput:     { width: '100%', backgroundColor: '#0F1929', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', padding: '12px 16px', color: '#E2E8F0', fontSize: '16px', outline: 'none', marginTop: '8px', boxSizing: 'border-box', fontWeight: 500 },
 };
 
 export default App;

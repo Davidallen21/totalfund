@@ -14,25 +14,29 @@ html, body, #root {
 }
 
 :root {
-  --green:   #4ade80;
-  --red:     #f87171;
-  --blue:    #3b82f6;
-  --gold:    #f59e0b;
-  --purple:  #8b5cf6;
-  --teal:    #06b6d4;
-  --bg:      #060608;
-  --card:    #0f1014;
-  --border:  rgba(255,255,255,0.06);
-  --text:    #e5e5e5;
-  --muted:   #6b7280;
-  --subtle:  #374151;
+  --cyan:    #06B6D4;
+  --blue:    #3B82F6;
+  --green:   #10B981;
+  --red:     #EF4444;
+  --gold:    #F59E0B;
+  --purple:  #8B5CF6;
+  --bg:      #0B1220;
+  --bg2:     #0F1929;
+  --card:    #111927;
+  --card2:   #162035;
+  --border:  rgba(59,130,246,0.12);
+  --border2: rgba(6,182,212,0.1);
+  --text:    #E2E8F0;
+  --text2:   #94A3B8;
+  --muted:   #64748B;
+  --subtle:  #1E293B;
 }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2d2d2d; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #404040; }
+::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #2563EB44; }
 
 /* =========================================
    APP LAYOUT
@@ -44,8 +48,8 @@ html, body, #root {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background-color: var(--bg);
   background-image:
-    radial-gradient(ellipse 70% 40% at 10% 0%, rgba(74,222,128,0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 30% at 90% 100%, rgba(59,130,246,0.04) 0%, transparent 60%);
+    radial-gradient(ellipse 70% 40% at 10% 0%, rgba(6,182,212,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 30% at 90% 100%, rgba(59,130,246,0.07) 0%, transparent 60%);
   overflow-x: hidden;
 }
 
@@ -54,8 +58,8 @@ html, body, #root {
    ========================================= */
 .app-sidebar {
   width: 230px;
-  background: linear-gradient(180deg, #0c0e12 0%, #080a0d 100%);
-  border-right: 1px solid rgba(255,255,255,0.05);
+  background: linear-gradient(180deg, #0A1628 0%, #081020 100%);
+  border-right: 1px solid rgba(59,130,246,0.1);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -65,7 +69,7 @@ html, body, #root {
 
 .sidebar-logo-area {
   padding: 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(59,130,246,0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -75,7 +79,7 @@ html, body, #root {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #4ade80 0%, #06b6d4 100%);
+  background: linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,7 +87,7 @@ html, body, #root {
   font-size: 18px;
   color: #000;
   flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(74,222,128,0.25);
+  box-shadow: 0 4px 14px rgba(6,182,212,0.3);
 }
 
 .sidebar-logo-text {
@@ -93,13 +97,13 @@ html, body, #root {
   letter-spacing: -0.3px;
 }
 
-.sidebar-logo-text span { color: #4ade80; }
+.sidebar-logo-text span { color: #06B6D4; }
 
 .sidebar-nav {
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   flex: 1;
 }
 
@@ -107,26 +111,26 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 11px 14px;
+  padding: 10px 14px;
   border-radius: 10px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: #64748B;
   transition: all 0.15s ease;
   position: relative;
   border: 1px solid transparent;
 }
 
 .nav-item:hover {
-  color: #d1d5db;
-  background: rgba(255,255,255,0.04);
+  color: #CBD5E1;
+  background: rgba(6,182,212,0.05);
 }
 
 .nav-item.active {
-  color: #fff;
-  background: rgba(255,255,255,0.07);
-  border-color: rgba(255,255,255,0.08);
+  color: #E2E8F0;
+  background: rgba(6,182,212,0.08);
+  border-color: rgba(6,182,212,0.15);
   font-weight: 600;
 }
 
@@ -138,7 +142,7 @@ html, body, #root {
   transform: translateY(-50%);
   width: 3px;
   height: 60%;
-  background: linear-gradient(180deg, #4ade80, #06b6d4);
+  background: linear-gradient(180deg, #06B6D4, #3B82F6);
   border-radius: 0 2px 2px 0;
 }
 
@@ -149,9 +153,37 @@ html, body, #root {
   opacity: 0.8;
 }
 
+/* Upgrade to Pro card */
+.upgrade-pro-card {
+  margin: 0 12px 12px;
+  background: linear-gradient(135deg, rgba(6,182,212,0.12) 0%, rgba(59,130,246,0.12) 100%);
+  border: 1px solid rgba(6,182,212,0.2);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+.upgrade-pro-card .pro-icon { font-size: 28px; margin-bottom: 8px; }
+.upgrade-pro-card .pro-title { color: #E2E8F0; font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.upgrade-pro-card .pro-desc { color: #64748B; font-size: 11px; line-height: 1.5; margin-bottom: 12px; }
+.upgrade-pro-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #06B6D4, #3B82F6);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 12px rgba(6,182,212,0.25);
+}
+.upgrade-pro-btn:hover { opacity: 0.9; }
+
 .sidebar-footer {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 14px 20px;
+  border-top: 1px solid rgba(59,130,246,0.08);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -161,14 +193,14 @@ html, body, #root {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 6px rgba(74,222,128,0.6);
+  background: #06B6D4;
+  box-shadow: 0 0 6px rgba(6,182,212,0.7);
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
 @keyframes pulse-dot {
-  0%, 100% { box-shadow: 0 0 6px rgba(74,222,128,0.6); }
-  50% { box-shadow: 0 0 12px rgba(74,222,128,0.9); }
+  0%, 100% { box-shadow: 0 0 6px rgba(6,182,212,0.7); }
+  50% { box-shadow: 0 0 12px rgba(6,182,212,1); }
 }
 
 /* =========================================
@@ -176,7 +208,7 @@ html, body, #root {
    ========================================= */
 .app-main {
   flex: 1;
-  padding: 32px 40px;
+  padding: 24px 32px;
   overflow-y: auto;
   overflow-x: hidden;
   max-height: 100vh;
@@ -198,15 +230,98 @@ html, body, #root {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .page-title {
   font-size: 26px;
   font-weight: 800;
-  color: #fff;
+  color: #E2E8F0;
   letter-spacing: -0.5px;
 }
+
+/* Header search bar */
+.header-search {
+  flex: 1;
+  max-width: 360px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15,25,41,0.8);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 10px;
+  padding: 8px 14px;
+  backdrop-filter: blur(8px);
+}
+.header-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #E2E8F0;
+  font-size: 13px;
+  font-family: inherit;
+}
+.header-search input::placeholder { color: #475569; }
+.header-search-icon { color: #475569; flex-shrink: 0; }
+
+/* Header right side */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+.header-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(15,25,41,0.8);
+  border: 1px solid rgba(59,130,246,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748B;
+  transition: all 0.15s;
+  position: relative;
+}
+.header-icon-btn:hover { color: #E2E8F0; border-color: rgba(6,182,212,0.3); }
+.header-notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #06B6D4;
+  color: #000;
+  font-size: 9px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.header-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(15,25,41,0.8);
+  border: 1px solid rgba(59,130,246,0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.header-profile:hover { border-color: rgba(6,182,212,0.3); }
+.header-profile img {
+  width: 28px; height: 28px;
+  border-radius: 50%; object-fit: cover;
+  border: 1px solid rgba(6,182,212,0.3);
+}
+.header-profile-text { line-height: 1.2; }
+.header-profile-name { color: #E2E8F0; font-size: 12px; font-weight: 600; }
+.header-profile-role { color: #475569; font-size: 10px; }
 
 /* =========================================
    SIDEBAR OVERLAY (mobile)
@@ -227,16 +342,15 @@ html, body, #root {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(15,25,41,0.8);
+  border: 1px solid rgba(59,130,246,0.12);
   cursor: pointer;
-  color: #9ca3af;
+  color: #64748B;
   font-size: 18px;
   flex-shrink: 0;
   transition: all 0.15s;
 }
-
-.hamburger-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.hamburger-btn:hover { border-color: rgba(6,182,212,0.3); color: #E2E8F0; }
 
 /* =========================================
    SUMMARY CARDS
@@ -244,33 +358,30 @@ html, body, #root {
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 16px;
+  margin-bottom: 16px;
   align-items: stretch;
 }
 
 /* =========================================
-   MARKET SECTION
+   MARKET SECTION — column of rows
    ========================================= */
 .market-section {
   display: flex;
-  gap: 20px;
-  margin-bottom: 28px;
-  flex-wrap: nowrap;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .market-mini-grid {
-  flex: 1;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, auto);
+  gap: 8px;
+  min-width: 0;
 }
 
 .donut-card {
-  flex: 1.6;
-  min-width: 320px;
   background: var(--card);
   border-radius: 14px;
   padding: 16px 20px;
@@ -283,9 +394,7 @@ html, body, #root {
 /* =========================================
    HOLDINGS TABLE
    ========================================= */
-.col-headers {
-  display: flex;
-}
+.col-headers { display: flex; }
 
 .holdings-header {
   display: flex;
@@ -296,22 +405,19 @@ html, body, #root {
 .asset-row-desktop { display: flex; cursor: pointer; }
 .asset-row-mobile { display: none; }
 
-/* Area row jadi tappable (task 3: row click membuka floating menu) */
-.asset-row-desktop:hover,
-.asset-row-mobile:active {
-  background: rgba(255,255,255,0.04);
-}
+.asset-row-desktop:hover { background: rgba(6,182,212,0.03); }
+.asset-row-mobile:active { background: rgba(6,182,212,0.05); }
 
 /* =========================================
-   UTILITY
+   UTILITY / BADGES
    ========================================= */
 .badge-up {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: rgba(74,222,128,0.1);
-  color: #4ade80;
-  border: 1px solid rgba(74,222,128,0.15);
+  background: rgba(16,185,129,0.1);
+  color: #10B981;
+  border: 1px solid rgba(16,185,129,0.15);
   border-radius: 20px;
   padding: 3px 9px;
   font-size: 11px;
@@ -322,9 +428,9 @@ html, body, #root {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: rgba(248,113,113,0.1);
-  color: #f87171;
-  border: 1px solid rgba(248,113,113,0.15);
+  background: rgba(239,68,68,0.1);
+  color: #EF4444;
+  border: 1px solid rgba(239,68,68,0.15);
   border-radius: 20px;
   padding: 3px 9px;
   font-size: 11px;
@@ -346,33 +452,30 @@ html, body, #root {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%);
+  background: linear-gradient(90deg, #0F1929 25%, #162035 50%, #0F1929 75%);
   background-size: 400px 100%;
   animation: shimmer 1.4s ease-in-out infinite;
   border-radius: 6px;
 }
 
 /* =========================================
-   FLOATING ACTION MENU (task 3)
+   FLOATING ACTION MENU
    ========================================= */
-
-/* Backdrop di belakang sheet/dropdown */
 .action-menu-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.6);
   backdrop-filter: blur(3px);
   z-index: 150;
   animation: fadeUp 0.18s ease both;
 }
 
-/* Desktop: dropdown kecil nempel di posisi klik */
 .action-menu-dropdown {
   position: fixed;
   z-index: 151;
   min-width: 180px;
-  background: #16171c;
-  border: 1px solid rgba(255,255,255,0.1);
+  background: #0F1929;
+  border: 1px solid rgba(59,130,246,0.15);
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(0,0,0,0.5);
   overflow: hidden;
@@ -386,16 +489,15 @@ html, body, #root {
   padding: 13px 16px;
   font-size: 14px;
   font-weight: 600;
-  color: #e5e5e5;
+  color: #E2E8F0;
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.action-menu-item:hover { background: rgba(255,255,255,0.06); }
-.action-menu-item.danger { color: #f87171; }
-.action-menu-item.danger:hover { background: rgba(248,113,113,0.08); }
+.action-menu-item:hover { background: rgba(6,182,212,0.06); }
+.action-menu-item.danger { color: #EF4444; }
+.action-menu-item.danger:hover { background: rgba(239,68,68,0.08); }
 
-/* Mobile: bottom sheet slide-up */
 @keyframes slideUpSheet {
   from { transform: translateY(100%); }
   to   { transform: translateY(0); }
@@ -405,8 +507,8 @@ html, body, #root {
   position: fixed;
   left: 0; right: 0; bottom: 0;
   z-index: 151;
-  background: #16171c;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  background: #0F1929;
+  border-top: 1px solid rgba(59,130,246,0.12);
   border-radius: 20px 20px 0 0;
   padding: 8px 0 max(20px, env(safe-area-inset-bottom));
   box-shadow: 0 -16px 50px rgba(0,0,0,0.5);
@@ -417,82 +519,45 @@ html, body, #root {
   width: 36px;
   height: 4px;
   border-radius: 99px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(59,130,246,0.2);
   margin: 8px auto 14px;
 }
 
 .action-menu-sheet-title {
   padding: 0 20px 14px;
-  color: #6b7280;
+  color: #475569;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(59,130,246,0.08);
   margin-bottom: 4px;
 }
 
-.action-menu-sheet .action-menu-item {
-  padding: 16px 20px;
-  font-size: 15px;
-}
+.action-menu-sheet .action-menu-item { padding: 16px 20px; font-size: 15px; }
 
 /* =========================================
-   SISTEM RESPONSIVITY (MEDIA QUERIES)
+   RESPONSIVE
    ========================================= */
-
-/* 1. LAYAR LEBAR / ULTRA-WIDE (> 1440px) */
 @media (min-width: 1441px) {
-  .max-container { 
-    max-width: 1600px; /* Melebarkan kontainer untuk monitor besar */
-  }
-  .summary-cards { 
-    gap: 24px; 
-  }
-  .market-section {
-    gap: 24px;
-  }
+  .max-container { max-width: 1600px; }
+  .summary-cards { gap: 20px; }
+  .market-section { gap: 20px; }
 }
 
-/* 2. LAPTOP SEMPIT / TABLET LANDSCAPE (max-width: 1100px) */
 @media (max-width: 1100px) {
-  .app-main { padding: 24px 28px; }
-
-  .summary-cards {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-  /* Chart turun jadi full-width di baris kedua */
-  .summary-cards > *:nth-child(3) {
-    grid-column: 1 / -1;
-  }
-
-  .market-mini-grid {
-    grid-template-columns: repeat(3, 1fr); /* 3 Kolom biar gak terlalu dempet */
-  }
+  .app-main { padding: 20px 24px; }
+  .summary-cards { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .summary-cards > *:nth-child(3) { grid-column: 1 / -1; }
+  .header-search { max-width: 240px; }
 }
 
-/* 3. TABLET PORTRAIT (max-width: 992px) */
 @media (max-width: 992px) {
-  .market-section { 
-    flex-wrap: wrap; 
-  }
-  .market-mini-grid {
-    grid-template-columns: repeat(4, 1fr);
-    flex: none;
-    width: 100%;
-  }
-  /* Donut Card turun ke bawah Market Grid */
-  .donut-card { 
-    flex: none; 
-    width: 100%; 
-    justify-content: space-around;
-  }
+  .market-mini-grid { grid-template-columns: repeat(3, 1fr); }
+  .header-profile-text { display: none; }
 }
 
-/* 4. MOBILE / SMARTPHONE (max-width: 768px) */
 @media (max-width: 768px) {
-  /* Sidebar sembunyi di kiri */
   .app-sidebar {
     position: fixed;
     left: 0; top: 0; bottom: 0;
@@ -506,53 +571,26 @@ html, body, #root {
   }
   .sidebar-overlay.sidebar-open { display: block; }
   .hamburger-btn { display: flex; }
+  .header-search { display: none; }
 
-  .app-main {
-    padding: 16px;
-    max-height: none;
-    overflow-y: visible;
-    overflow-x: hidden;
-  }
-
+  .app-main { padding: 16px; max-height: none; overflow-y: visible; }
   .page-header { margin-bottom: 16px; }
 
-  /* Kartu ringkasan bertumpuk 1 kolom */
-  .summary-cards {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .summary-cards > *:nth-child(3) {
-    grid-column: 1;
-  }
+  .summary-cards { grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+  .summary-cards > *:nth-child(3) { grid-column: 1; }
 
-  .market-section {
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
+  .market-section { gap: 12px; margin-bottom: 16px; }
 
-  /* Kartu harga koin jadi 2 kolom */
   .market-mini-grid {
-    width: 100%;
-    flex: none;
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(4, auto);
+    grid-template-rows: repeat(3, auto);
     gap: 8px;
   }
 
-  .donut-card { width: 100%; justify-content: flex-start; }
-
-  /* Ganti tabel holdings jadi desain card mobile */
   .col-headers { display: none !important; }
   .holdings-header { flex-wrap: wrap; gap: 10px; }
   .asset-row-desktop { display: none !important; }
 
-  /* FIX TASK 1: padding dikompres. Sebelumnya CSS class (padding 16px,
-     margin-bottom 8px) ditumpuk dengan inline style App.js (padding 12px 16px)
-     pada elemen yang sama, plus margin/padding tambahan di -top dan -bottom.
-     Sekarang: hanya CSS class ini yang mengatur padding/margin row;
-     App.js tidak lagi mengirim inline padding/margin yang konflik. */
   .asset-row-mobile {
     display: block;
     padding: 12px 14px;
@@ -575,16 +613,13 @@ html, body, #root {
     justify-content: space-between;
     margin-top: 10px;
     padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    border-top: 1px solid rgba(59,130,246,0.08);
     gap: 8px;
   }
   .asset-row-mobile-stats { display: flex; gap: 14px; flex-wrap: wrap; }
 }
 
-/* 5. HP KECIL (max-width: 480px) */
 @media (max-width: 480px) {
   .app-main { padding: 12px; }
   .market-mini-grid { gap: 6px; }
-  .donut-card { flex-direction: column; align-items: stretch; }
-  .donut-card > div:first-child { align-self: center; } /* Memposisikan teks/judul agar tetap rapi */
 }

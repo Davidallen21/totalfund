@@ -247,9 +247,10 @@ const BENCHMARK_RETURNS = {
   'S&P500': { annual: 0.105, volatility: 0.18 },
 };
 const COMPARE_COLORS  = { IHSG: '#f59e0b', 'S&P500': '#a855f7' };
+const API_BASE_NW = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 const BENCHMARK_ENDPOINTS = {
-  IHSG:     'http://localhost:8000/api/market/ihsg',
-  'S&P500': 'http://localhost:8000/api/market/sp500',
+  IHSG:     `${API_BASE_NW}/api/market/ihsg`,
+  'S&P500': `${API_BASE_NW}/api/market/sp500`,
 };
 
 const generateBenchmarkSim = (points, key, returnMode) => {
@@ -397,7 +398,7 @@ const calcVolatility = (points) => {
 
 const getVolLabel = (vol, tL) => {
   if (vol === null) return null;
-  if (vol < 15)  return { label: tL('low_vol'),    color: '#16a34a', bg: '#16a34a18' };
+  if (vol < 15)  return { label: tL('low_vol'),    color: '#10B981', bg: '#16a34a18' };
   if (vol < 30)  return { label: tL('med_vol'),    color: '#f59e0b', bg: '#f59e0b18' };
   return               { label: tL('high_vol'),    color: '#ef4444', bg: '#ef444418' };
 };
@@ -507,7 +508,7 @@ const DailyMovers = ({ assets, t }) => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 160, opacity: 0.5 }}>
         <TrendingUp size={28} color="#3b82f6" />
-        <p style={{ margin: 0, fontSize: 13, color: '#737373', textAlign: 'center' }}>
+        <p style={{ margin: 0, fontSize: 13, color: '#64748B', textAlign: 'center' }}>
           {tL('add_holdings_movers')}
         </p>
       </div>
@@ -518,7 +519,7 @@ const DailyMovers = ({ assets, t }) => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, minHeight: 160, opacity: 0.5 }}>
         <Activity size={28} color="#737373" />
-        <p style={{ margin: 0, fontSize: 13, color: '#737373', textAlign: 'center' }}>
+        <p style={{ margin: 0, fontSize: 13, color: '#64748B', textAlign: 'center' }}>
           {tL('no_live_data')}
         </p>
       </div>
@@ -526,7 +527,7 @@ const DailyMovers = ({ assets, t }) => {
   }
 
   const MoverRow = ({ asset, isGainer }) => {
-    const c = isGainer ? '#4ade80' : '#f87171';
+    const c = isGainer ? '#10B981' : '#EF4444';
     const typeColor = TYPE_COLOR[asset.type] || '#737373';
 
     const typeLabel = asset.type === 'crypto' ? (t ? t('cat_crypto') : 'Crypto') :
@@ -549,7 +550,7 @@ const DailyMovers = ({ assets, t }) => {
           <div style={{ fontSize: 13, fontWeight: 800, color: c }}>{isGainer ? '+' : ''}{asset.dayChangePct.toFixed(2)}%</div>
           <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>{isGainer ? '+' : ''}{formatCurrency(asset.dayUSD)}</div>
         </div>
-        <div style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: isGainer ? '#4ade8010' : '#f8717110', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: isGainer ? '#10B98110' : '#EF444410', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           {isGainer ? <TrendingUp size={11} color={c} /> : <TrendingDown size={11} color={c} />}
         </div>
       </div>
@@ -560,8 +561,8 @@ const DailyMovers = ({ assets, t }) => {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#4ade80' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#4ade80', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{tL('top_gainers')}</span>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{tL('top_gainers')}</span>
           <span style={{ fontSize: 10, color: '#555', marginLeft: 'auto' }}>1D</span>
         </div>
         {gainers.length > 0 ? (
@@ -573,8 +574,8 @@ const DailyMovers = ({ assets, t }) => {
       <div style={{ position: 'relative' }}>
         <div style={{ position: 'absolute', left: -10, top: 0, bottom: 0, width: 1, backgroundColor: '#1e1e1e' }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#f87171' }} />
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{tL('top_losers')}</span>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#EF4444' }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#EF4444', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{tL('top_losers')}</span>
           <span style={{ fontSize: 10, color: '#555', marginLeft: 'auto' }}>1D</span>
         </div>
         {losers.length > 0 ? (
@@ -604,18 +605,18 @@ export function NetWorthTrendCard({
   const CustomTooltip = ({ active, payload }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 8, padding: '10px 12px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
-        <p style={{ color: '#a3a3a3', fontSize: 11, margin: '0 0 4px' }}>{payload[0].payload?.date || '—'}</p>
+      <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 8, padding: '10px 12px', boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
+        <p style={{ color: '#94A3B8', fontSize: 11, margin: '0 0 4px' }}>{payload[0].payload?.date || '—'}</p>
         <p style={{ color: '#fff', fontSize: 15, fontWeight: 700, margin: 0 }}>{formatCurrency(payload[0].value)}</p>
       </div>
     );
   };
 
   return (
-    <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: '14px 20px', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 16, padding: '14px 20px', display: 'flex', flexDirection: 'column' }}>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-        <span style={{ color: '#a3a3a3', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px', flexShrink: 0 }}>{tL('nw_trend')}</span>
+        <span style={{ color: '#94A3B8', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px', flexShrink: 0 }}>{tL('nw_trend')}</span>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, backgroundColor: '#1a1a1a', padding: '3px 4px', borderRadius: 8, overflowX: 'auto', flexShrink: 1, minWidth: 0 }}>
           {periodsList.map((p) => (
@@ -631,7 +632,7 @@ export function NetWorthTrendCard({
             </button>
           ))}
           <div style={{ width: 1, height: 14, backgroundColor: '#333', margin: '0 2px', flexShrink: 0 }} />
-          <button onClick={onDetailClick} style={{ backgroundColor: 'transparent', color: '#a3a3a3', border: 'none', cursor: 'pointer', padding: '4px 4px', display: 'flex', alignItems: 'center', borderRadius: 6, flexShrink: 0 }}>
+          <button onClick={onDetailClick} style={{ backgroundColor: 'transparent', color: '#94A3B8', border: 'none', cursor: 'pointer', padding: '4px 4px', display: 'flex', alignItems: 'center', borderRadius: 6, flexShrink: 0 }}>
             <span style={{ marginRight: '4px', fontSize: '11px', fontWeight: 'bold' }}>{tL('detail')}</span>
             <ChevronRight size={15} />
           </button>
@@ -716,7 +717,7 @@ export function NetWorthDetailPage({
 
   const metrics = useMemo(() => [
     { label: tL('curr_nw'), value: formatCurrency(safeNW), icon: DollarSign, color: '#3b82f6' },
-    { label: tL('tot_gain'), value: formatCurrency(safePnl), subValue: formatPct(safePct), icon: safePnl >= 0 ? TrendingUp : TrendingDown, color: safePnl >= 0 ? '#16a34a' : '#ef4444' },
+    { label: tL('tot_gain'), value: formatCurrency(safePnl), subValue: formatPct(safePct), icon: safePnl >= 0 ? TrendingUp : TrendingDown, color: safePnl >= 0 ? '#10B981' : '#ef4444' },
     { label: tL('day_pnl'), value: formatCurrency(safeDaily), subValue: 'Live', icon: safeDaily >= 0 ? TrendingUp : TrendingDown, color: safeDaily >= 0 ? '#f59e0b' : '#ef4444' },
     {
       label: 'CAGR',
@@ -793,9 +794,9 @@ export function NetWorthDetailPage({
     if (pct == null) return '#1e1e1e';
     if (pct >  20) return '#14532d';
     if (pct >  10) return '#15803d';
-    if (pct >   5) return '#16a34a';
+    if (pct >   5) return '#10B981';
     if (pct >   0) return '#22c55e';
-    if (pct > - 5) return '#f87171';
+    if (pct > - 5) return '#EF4444';
     if (pct > -10) return '#ef4444';
     if (pct > -20) return '#dc2626';
     return '#7f1d1d';
@@ -822,15 +823,15 @@ export function NetWorthDetailPage({
 
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>{tL('analytics_title')}</h1>
-        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#737373', fontWeight: 500 }}>{tL('analytics_desc')}</p>
+        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B', fontWeight: 500 }}>{tL('analytics_desc')}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
         {metrics.map((m, i) => (
-          <div key={i} style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 14, padding: 16 }}>
+          <div key={i} style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 14, padding: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <p style={{ margin: 0, fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{m.label}</p>
+                <p style={{ margin: 0, fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>{m.label}</p>
                 <h3 style={{ margin: '6px 0 4px', fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>{m.value}</h3>
                 {m.subValue && <span style={{ fontSize: 11, fontWeight: 600, color: m.color, backgroundColor: `${m.color}15`, padding: '2px 7px', borderRadius: 4 }}>{m.subValue}</span>}
               </div>
@@ -843,8 +844,8 @@ export function NetWorthDetailPage({
       {/* ── Risk Metrics ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
         {/* Volatility */}
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('volatility')}</p>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, padding: 14 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('volatility')}</p>
           {volInfo ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>{volatility.toFixed(1)}%</span>
@@ -855,13 +856,13 @@ export function NetWorthDetailPage({
         </div>
 
         {/* Sharpe */}
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('sharpe')}</p>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, padding: 14 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('sharpe')}</p>
           {sharpe !== null ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>{sharpe.toFixed(2)}</span>
               <span style={{ fontSize: 10, fontWeight: 700,
-                color: sharpe >= 1 ? '#16a34a' : sharpe >= 0 ? '#f59e0b' : '#ef4444',
+                color: sharpe >= 1 ? '#10B981' : sharpe >= 0 ? '#f59e0b' : '#ef4444',
                 backgroundColor: sharpe >= 1 ? '#16a34a18' : sharpe >= 0 ? '#f59e0b18' : '#ef444418',
                 padding: '2px 7px', borderRadius: 4 }}>
                 {sharpe >= 1 ? tL('good') : sharpe >= 0 ? tL('fair') : tL('bad')}
@@ -872,8 +873,8 @@ export function NetWorthDetailPage({
         </div>
 
         {/* Max Drawdown */}
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('max_dd')}</p>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, padding: 14 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('max_dd')}</p>
           <span style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: maxDrawdown > 20 ? '#ef4444' : maxDrawdown > 10 ? '#f59e0b' : '#fff' }}>
             -{maxDrawdown.toFixed(1)}%
           </span>
@@ -881,18 +882,18 @@ export function NetWorthDetailPage({
         </div>
 
         {/* Win Rate */}
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Win Rate</p>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, padding: 14 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Win Rate</p>
           {winRate !== null ? (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>{winRate.toFixed(0)}%</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: winRate >= 55 ? '#16a34a' : winRate >= 45 ? '#f59e0b' : '#ef4444', backgroundColor: winRate >= 55 ? '#16a34a18' : winRate >= 45 ? '#f59e0b18' : '#ef444418', padding: '2px 7px', borderRadius: 4 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: winRate >= 55 ? '#10B981' : winRate >= 45 ? '#f59e0b' : '#ef4444', backgroundColor: winRate >= 55 ? '#16a34a18' : winRate >= 45 ? '#f59e0b18' : '#ef444418', padding: '2px 7px', borderRadius: 4 }}>
                   {winRate >= 55 ? 'Solid' : winRate >= 45 ? 'Neutral' : 'Weak'}
                 </span>
               </div>
-              <div style={{ marginTop: 8, height: 4, backgroundColor: '#262626', borderRadius: 2, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${winRate}%`, borderRadius: 2, background: 'linear-gradient(90deg, #16a34a, #4ade80)', transition: 'width 0.4s' }} />
+              <div style={{ marginTop: 8, height: 4, backgroundColor: 'rgba(59,130,246,0.12)', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${winRate}%`, borderRadius: 2, background: 'linear-gradient(90deg, #16a34a, #10B981)', transition: 'width 0.4s' }} />
               </div>
               <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>% hari portofolio naik</p>
             </>
@@ -900,19 +901,19 @@ export function NetWorthDetailPage({
         </div>
 
         {/* Best Day */}
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Day</p>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, padding: 14 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Day</p>
           {bestWorst.best !== null
-            ? <span style={{ fontSize: 18, fontWeight: 800, color: '#4ade80', fontFamily: 'monospace' }}>+{bestWorst.best.toFixed(2)}%</span>
+            ? <span style={{ fontSize: 18, fontWeight: 800, color: '#10B981', fontFamily: 'monospace' }}>+{bestWorst.best.toFixed(2)}%</span>
             : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
           <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>hari terbaik (1D)</p>
         </div>
 
         {/* Worst Day */}
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Worst Day</p>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 12, padding: 14 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Worst Day</p>
           {bestWorst.worst !== null
-            ? <span style={{ fontSize: 18, fontWeight: 800, color: '#f87171', fontFamily: 'monospace' }}>{bestWorst.worst.toFixed(2)}%</span>
+            ? <span style={{ fontSize: 18, fontWeight: 800, color: '#EF4444', fontFamily: 'monospace' }}>{bestWorst.worst.toFixed(2)}%</span>
             : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
           <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>hari terburuk (1D)</p>
         </div>
@@ -921,8 +922,8 @@ export function NetWorthDetailPage({
       <div
         ref={chartWrapperRef}
         style={{
-          backgroundColor: '#141414',
-          border: isFullscreen ? 'none' : '1px solid #262626',
+          backgroundColor: '#0F1929',
+          border: isFullscreen ? 'none' : '1px solid rgba(59,130,246,0.12)',
           borderRadius: isFullscreen ? '0' : 16, 
           padding: '20px 16px', 
           marginBottom: 16, 
@@ -945,7 +946,7 @@ export function NetWorthDetailPage({
                   </button>
                 ))}
               </div>
-              <button onClick={() => setShowDrawdown((v) => !v)} style={{ backgroundColor: showDrawdown ? '#ef444418' : 'transparent', color: showDrawdown ? '#f87171' : '#737373', border: `1px solid ${showDrawdown ? '#ef4444' : '#333'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button onClick={() => setShowDrawdown((v) => !v)} style={{ backgroundColor: showDrawdown ? '#ef444418' : 'transparent', color: showDrawdown ? '#EF4444' : '#737373', border: `1px solid ${showDrawdown ? '#ef4444' : '#333'}`, borderRadius: 6, padding: '4px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                 <BarChart2 size={13} />DD
               </button>
 
@@ -990,7 +991,7 @@ export function NetWorthDetailPage({
                   <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: active ? c : '#555', flexShrink: 0 }} />
                   vs {key}
                   {active && status && status !== 'loading' && (
-                    <span style={{ fontSize: 9, fontWeight: 700, color: status === 'realtime' ? '#4ade80' : '#f59e0b', backgroundColor: status === 'realtime' ? '#4ade8018' : '#f59e0b18', padding: '1px 4px', borderRadius: 3 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: status === 'realtime' ? '#10B981' : '#f59e0b', backgroundColor: status === 'realtime' ? '#10B98118' : '#f59e0b18', padding: '1px 4px', borderRadius: 3 }}>
                       {status === 'realtime' ? 'LIVE' : 'SIM'}
                     </span>
                   )}
@@ -1002,7 +1003,7 @@ export function NetWorthDetailPage({
         </div>
 
         {(activeCompares.length > 0 || showDrawdown) && (
-          <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 11, color: '#a3a3a3', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 14, marginBottom: 10, fontSize: 11, color: '#94A3B8', flexWrap: 'wrap' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={{ display: 'inline-block', width: 20, height: 2, backgroundColor: '#3b82f6' }} />{tL('portfolio')}
             </span>
@@ -1036,11 +1037,11 @@ export function NetWorthDetailPage({
                     </linearGradient>
                   ))}
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#262626" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(59,130,246,0.12)" vertical={false} />
                 <XAxis dataKey="date" stroke="#555" tick={{ fill: '#737373', fontSize: 10 }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis yAxisId="main" domain={['auto', 'auto']} stroke="#555" tick={{ fill: '#737373', fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={yFormatter} width={returnMode === 'pct' ? 50 : 75} />
                 {showDrawdown && <YAxis yAxisId="dd" orientation="right" domain={['auto', 0]} tick={{ fill: '#ef4444', fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v.toFixed(0)}%`} width={36} />}
-                <Tooltip contentStyle={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 8, fontSize: 12 }} itemStyle={{ fontWeight: 'bold' }} formatter={tooltipFormatter} />
+                <Tooltip contentStyle={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 8, fontSize: 12 }} itemStyle={{ fontWeight: 'bold' }} formatter={tooltipFormatter} />
                 <Area yAxisId="main" type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#gradMain)" dot={false} />
                 {activeCompares.map((key) => (
                   <Area key={key} yAxisId="main" type="monotone" dataKey={key} stroke={COMPARE_COLORS[key]} strokeWidth={2} strokeDasharray="6 3" fillOpacity={1} fill={`url(#gradBench_${key})`} dot={false} activeDot={{ r: 4 }} />
@@ -1051,9 +1052,9 @@ export function NetWorthDetailPage({
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '1px dashed #262626', borderRadius: 12, gap: 8 }}>
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '1px dashed rgba(59,130,246,0.12)', borderRadius: 12, gap: 8 }}>
               <Info color="#737373" size={22} />
-              <p style={{ color: '#737373', margin: 0, fontSize: 13, textAlign: 'center', padding: '0 16px' }}>{tL('loading_hist')}</p>
+              <p style={{ color: '#64748B', margin: 0, fontSize: 13, textAlign: 'center', padding: '0 16px' }}>{tL('loading_hist')}</p>
             </div>
           )}
         </div>
@@ -1061,13 +1062,13 @@ export function NetWorthDetailPage({
 
       {/* ── Portfolio Heatmap ── */}
       {heatmapData.length > 0 && (
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 14, padding: 18, marginBottom: 16 }}>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 14, padding: 18, marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ color: '#f59e0b', fontSize: 15 }}>▦</span> Portfolio Heatmap
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {[{ v: '< -10%', c: '#dc2626' }, { v: '< 0%', c: '#f87171' }, { v: '> 0%', c: '#22c55e' }, { v: '> 10%', c: '#15803d' }].map(s => (
+              {[{ v: '< -10%', c: '#dc2626' }, { v: '< 0%', c: '#EF4444' }, { v: '> 0%', c: '#22c55e' }, { v: '> 10%', c: '#15803d' }].map(s => (
                 <div key={s.v} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: s.c }} />
                   <span style={{ color: '#555', fontSize: 9, fontFamily: 'monospace' }}>{s.v}</span>
@@ -1085,7 +1086,7 @@ export function NetWorthDetailPage({
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20 }}>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 16, padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ color: '#f59e0b' }}><Zap size={16} /></span>{tL('daily_movers')}
@@ -1095,14 +1096,14 @@ export function NetWorthDetailPage({
           <DailyMovers assets={assets} t={t} />
         </div>
 
-        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20 }}>
+        <div style={{ backgroundColor: '#0F1929', border: "1px solid rgba(59,130,246,0.12)", borderRadius: 16, padding: 20 }}>
           <h2 style={{ margin: '0 0 18px', fontSize: 15, fontWeight: 700, color: '#fff' }}>{tL('recent_hist')}</h2>
           {historyRows.length > 0 ? (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #262626' }}>
+                <tr style={{ borderBottom: '1px solid rgba(59,130,246,0.12)' }}>
                   {[tL('date'), 'Net Worth', tL('change')].map((h) => (
-                    <th key={h} style={{ textAlign: h === tL('date') ? 'left' : 'right', paddingBottom: 10, color: '#737373', fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
+                    <th key={h} style={{ textAlign: h === tL('date') ? 'left' : 'right', paddingBottom: 10, color: '#64748B', fontSize: 10, fontWeight: 600, textTransform: 'uppercase' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1113,10 +1114,10 @@ export function NetWorthDetailPage({
                     <td style={{ padding: '10px 0', fontSize: 12, color: '#fff', fontWeight: 600, textAlign: 'right' }}>{formatCurrency(row.nw)}</td>
                     <td style={{ padding: '10px 0', fontSize: 12, textAlign: 'right' }}>
                       {i === historyRows.length - 1 ? (
-                        <span style={{ color: '#737373' }}>—</span>
+                        <span style={{ color: '#64748B' }}>—</span>
                       ) : (
                         <>
-                          <div style={{ color: row.chg >= 0 ? '#4ade80' : '#f87171', fontWeight: 700 }}>{row.chg >= 0 ? '+' : ''}{formatCurrency(row.chg)}</div>
+                          <div style={{ color: row.chg >= 0 ? '#10B981' : '#EF4444', fontWeight: 700 }}>{row.chg >= 0 ? '+' : ''}{formatCurrency(row.chg)}</div>
                           <div style={{ color: '#555', fontSize: 10, marginTop: 2 }}>{row.pct >= 0 ? '+' : ''}{row.pct.toFixed(2)}%</div>
                         </>
                       )}
@@ -1126,7 +1127,7 @@ export function NetWorthDetailPage({
               </tbody>
             </table>
           ) : (
-            <div style={{ padding: 16, textAlign: 'center', color: '#555', fontSize: 13, border: '1px dashed #262626', borderRadius: 8 }}>
+            <div style={{ padding: 16, textAlign: 'center', color: '#555', fontSize: 13, border: '1px dashed rgba(59,130,246,0.12)', borderRadius: 8 }}>
               {tL('no_hist')}
             </div>
           )}
