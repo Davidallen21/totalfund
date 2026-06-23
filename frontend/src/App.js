@@ -2,11 +2,14 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './App.css';
 
 import { useLocalStorage } from './hooks/useLocalstorage';
-import { formatUSD, formatIDR, COLORS, renderAIText } from './utils/helpers';
+import { formatUSD, formatIDR, renderAIText } from './utils/helpers';
 import { NetWorthTrendCard, NetWorthDetailPage } from './networthtrend';
 import Sidebar from './components/Sidebar';
-import MarketExplorerPage from './components/MarketExplorerPage'; // Mengambil file terpisah
-import MarketOverviewPage from './components/MarketOverviewPage'; // Menambahkan halaman baru
+import MarketExplorerPage from './components/MarketExplorerPage';
+import MarketOverviewPage from './components/MarketOverviewPage';
+import WatchlistPage from './components/WatchlistPage';
+import { AssetClassCard, PositionsCard } from './components/CurrentAllocationCard';
+import MultiChartPage from './components/MultiChartPage';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -143,56 +146,6 @@ const PERIODS = [
   { label: 'All', days: null },
 ];
 
-function DonutChart({ data, hoveredPie, onHover }) {
-  let cum = 0;
-  const coords = (p) => [Math.cos(2 * Math.PI * p), Math.sin(2 * Math.PI * p)];
-  const activeData = data.find(d => d.ticker === hoveredPie);
-
-  return (
-    <div style={{ position: 'relative', width: '130px', height: '130px' }}>
-      <svg viewBox="-1 -1 2 2" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)', overflow: 'visible' }}>
-        {data.map(slice => {
-          if (slice.pct <= 0) return null;
-          if (slice.pct >= 99.9) return <circle key={slice.ticker} r="0.8" fill="transparent" stroke={slice.color} strokeWidth="0.4" onMouseEnter={() => onHover(slice.ticker)} onMouseLeave={() => onHover(null)} style={{ cursor: 'pointer', transition: 'all 0.2s' }} />;
-          
-          const [sx, sy] = coords(cum);
-          cum += slice.pct / 100;
-          const [ex, ey] = coords(cum);
-          const large = slice.pct > 50 ? 1 : 0;
-          const isHovered = hoveredPie === slice.ticker;
-          
-          return (
-            <path
-              key={slice.ticker}
-              d={`M ${sx} ${sy} A 1 1 0 ${large} 1 ${ex} ${ey} L 0 0`}
-              fill={slice.color}
-              onMouseEnter={() => onHover(slice.ticker)}
-              onMouseLeave={() => onHover(null)}
-              style={{
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                opacity: hoveredPie && !isHovered ? 0.3 : 1,
-                transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-                transformOrigin: '0 0'
-              }}
-            />
-          );
-        })}
-        <circle r="0.65" cx="0" cy="0" fill="#141414" style={{ pointerEvents: 'none' }} />
-      </svg>
-      
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', textAlign: 'center' }}>
-        {activeData && (
-          <>
-            <span style={{ color: activeData.color, fontSize: '13px', fontWeight: 800, letterSpacing: '-0.3px' }}>{activeData.ticker}</span>
-            <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700 }}>{activeData.pct.toFixed(1)}%</span>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── FLOATING ACTION MENU (Task 3) ──────────────────────────────────────────
 // Dipanggil saat asset row di-tap/klik. Render dropdown kecil di desktop
 // (nempel di posisi klik) atau bottom sheet slide-up di mobile.
@@ -294,15 +247,15 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
       <div
         className="asset-row-desktop"
         onClick={handleClick}
-        style={{ alignItems: 'center', padding: '12px 28px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)', gap: '16px', transition: 'background 0.2s' }}
+        style={{ alignItems: 'center', padding: '14px 24px', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)', gap: '16px', transition: 'background 0.2s' }}
       >
         <div style={{ flex: 2, display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
+          <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden', border: `1px solid ${typeConfig.color}22` }}>
             {asset.thumb ? <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : asset.ticker.substring(0, 4)}
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ color: '#ffffff', fontWeight: 600, fontSize: '14px', letterSpacing: '-0.2px' }}>{asset.ticker}</div>
-            <div style={{ color: '#737373', fontSize: '11px', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.nama}</div>
+            <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', letterSpacing: '-0.2px' }}>{asset.ticker}</div>
+            <div style={{ color: '#525252', fontSize: '11px', marginTop: '1px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.nama}</div>
           </div>
         </div>
         <div style={{ flex: 1.5 }}>
@@ -326,34 +279,35 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
         <div style={{ flex: 1.5 }}>
           <div style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '13px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatIDR(nilaiSekarang) : formatUSD(nilaiSekarang)) : '—'}</div>
           <div style={{ color: '#555', fontSize: '11px', marginTop: '2px' }}>{nilaiSekarang ? (isSaham || isCashIDR ? formatUSD(nilaiSekarang / kursIdr) : formatIDR(nilaiSekarang * kursIdr)) : ''}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '6px' }}>
-            <div style={{ width: '60px', height: '2px', backgroundColor: '#252525', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ width: `${Math.min(parseFloat(pct), 100)}%`, height: '100%', backgroundColor: typeConfig.color }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+            <div style={{ width: '56px', height: '3px', backgroundColor: '#1e1e1e', borderRadius: '999px', overflow: 'hidden' }}>
+              <div style={{ width: `${Math.min(parseFloat(pct), 100)}%`, height: '100%', background: `linear-gradient(90deg, ${typeConfig.color}88, ${typeConfig.color})`, borderRadius: '999px' }} />
             </div>
-            <span style={{ fontSize: '10px', color: '#555', fontWeight: 600 }}>{pct}%</span>
+            <span style={{ fontSize: '10px', color: '#444', fontWeight: 600 }}>{pct}%</span>
           </div>
         </div>
         <div style={{ flex: 1.5 }}>
           {!isStable && !isCashIDR && pnl !== null ? (
-            <>
-              <div style={{ color: profit ? '#4ade80' : '#f87171', fontWeight: 600, fontSize: '13px', letterSpacing: '-0.3px' }}>{profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}</div>
-              <div style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 600, marginTop: '2px' }}>{profit ? '▲' : '▼'} {Math.abs(pnlPersen).toFixed(2)}%</div>
-            </>
-          ) : <span style={{ color: '#383838', fontSize: '16px' }}>—</span>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+              <div style={{ color: profit ? '#4ade80' : '#f87171', fontWeight: 700, fontSize: '13px', letterSpacing: '-0.3px' }}>{profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}</div>
+              <span className={profit ? 'badge-up' : 'badge-down'} style={{ fontSize: '10px', padding: '1px 7px' }}>
+                {profit ? '↑' : '↓'} {Math.abs(pnlPersen).toFixed(2)}%
+              </span>
+            </div>
+          ) : <span style={{ color: '#2a2a2a', fontSize: '13px' }}>—</span>}
         </div>
-        {/* Inline Edit/Delete button dihapus (Task 3) — aksi sekarang lewat floating menu saat row diklik. */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: '32px', color: '#454545', fontSize: '16px' }}>⋯</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: '32px', color: '#303030', fontSize: '16px' }}>⋯</div>
       </div>
 
       <div className="asset-row-mobile" onClick={handleClick}>
         <div className="asset-row-mobile-top">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: typeConfig.bg, color: typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '10px', flexShrink: 0, overflow: 'hidden', border: `1px solid ${typeConfig.color}22` }}>
               {asset.thumb ? <img src={asset.thumb} alt={asset.ticker} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : asset.ticker.substring(0, 4)}
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>{asset.ticker}</div>
-              <div style={{ color: '#737373', fontSize: '11px', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.nama}</div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: '14px' }}>{asset.ticker}</div>
+              <div style={{ color: '#525252', fontSize: '11px', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.nama}</div>
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -379,7 +333,9 @@ function DataRow({ asset, hargaLiveUSD, hargaLiveIDR, kursIdr, totalNetWorthUSD,
               <div>
                 <div style={{ color: '#555', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: '2px' }}>PNL</div>
                 <div style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '12px', fontWeight: 600 }}>{profit ? '+' : ''}{isSaham ? formatIDR(pnl) : formatUSD(pnl)}</div>
-                <div style={{ color: profit ? '#4ade80' : '#f87171', fontSize: '11px', fontWeight: 600, marginTop: '1px' }}>{profit ? '▲' : '▼'} {Math.abs(pnlPersen).toFixed(2)}%</div>
+                <span className={profit ? 'badge-up' : 'badge-down'} style={{ marginTop: '2px', fontSize: '10px', padding: '1px 7px' }}>
+                  {profit ? '↑' : '↓'} {Math.abs(pnlPersen).toFixed(2)}%
+                </span>
               </div>
             )}
           </div>
@@ -882,7 +838,7 @@ function AIConsultant({ assets, hargaMap, hargaSaham, kursIdr, grandTotalUSD, gr
   const isWelcome = messages.length === 1;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#141414', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#141414', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
       <div style={{ display: 'flex', alignItems: 'center', padding: '18px 24px', borderBottom: '1px solid rgba(255,255,255,0.04)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 4px 14px rgba(74,222,128,0.3)', flexShrink: 0 }}>✦</div>
@@ -964,8 +920,6 @@ function App() {
   const [cryptoLoaded, setCryptoLoaded]   = useState(false);
   const [marketLoaded, setMarketLoaded]   = useState(false);
   
-  const [hoveredPie, setHoveredPie]       = useState(null);
-
   // Task 3: state untuk floating action menu (dropdown desktop / bottom sheet mobile)
   const [actionMenuAsset, setActionMenuAsset] = useState(null);
   const [actionMenuPos, setActionMenuPos]     = useState({ x: 0, y: 0 });
@@ -974,6 +928,7 @@ function App() {
   const [profilePic, setProfilePic]       = useLocalStorage('totalfund_profile_pic', '');
   const [email, setEmail]                 = useLocalStorage('totalfund_email', '');
   const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [showAiChat, setShowAiChat]                   = useState(false);
 
   const [marketData, setMarketData] = useState({
     BTC:    { price: 0, change: 0, isUp: true,  type: 'usd' },
@@ -1200,30 +1155,6 @@ function App() {
 
   const chartColor = pnlChart?.selisih >= 0 ? '#16a34a' : '#ef4444';
 
-  const pieData = useMemo(() => assets.map((a, i) => {
-    let valUSD = 0;
-    if (['crypto', 'komoditas', 'saham_us'].includes(a.type)) valUSD = getLivePrice(a) * a.jumlah;
-    if (a.type === 'saham')    valUSD = (getLivePrice(a) * a.jumlah) / kursIdr;
-    if (a.type === 'stable')   valUSD = a.avg * a.jumlah;
-    if (a.type === 'cash_idr') valUSD = a.jumlah / kursIdr;
-
-    const modalUSD = a.type === 'saham' ? (a.avg * a.jumlah) / kursIdr : (a.type === 'cash_idr' ? a.jumlah / kursIdr : a.avg * a.jumlah);
-    const pnlUSD = !['stable', 'cash_idr'].includes(a.type) ? valUSD - modalUSD : null;
-
-    return { 
-      ticker: a.ticker, 
-      val: valUSD, 
-      pct: grandTotalUSD > 0 ? (valUSD / grandTotalUSD) * 100 : 0, 
-      color: COLORS[i % COLORS.length],
-      avg: a.avg,
-      jumlah: a.jumlah,
-      type: a.type,
-      pnl: pnlUSD
-    };
-  }).filter(d => d.val > 0).sort((a, b) => b.val - a.val), [assets, getLivePrice, kursIdr, grandTotalUSD]);
-
-  const activePieData = pieData.find(d => d.ticker === hoveredPie);
-
   const handleAddAsset = useCallback((newAsset, livePrice) => {
     setAssets(prev => [...prev, { ...newAsset, id: Date.now() }]);
     setShowAddModal(false);
@@ -1319,7 +1250,7 @@ function App() {
 
               {activePage !== 'portfolio' && (
                 <div style={{ color: '#737373', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', display: width < 600 ? 'none' : 'block' }}>
-                  {activePage === 'networth-detail' ? t('analytics') : activePage === 'market-explorer' ? t('market_explorer') : activePage === 'market-overview' ? t('market_overview') : activePage === 'news' ? t('market_news') : t('ai_chat')}
+                  {activePage === 'networth-detail' ? 'Portfolio Analytics' : activePage === 'market-explorer' ? t('market_explorer') : activePage === 'market-overview' ? t('market_overview') : activePage === 'watchlist' ? 'Top Movers' : activePage === 'multi-chart' ? 'Multi Chart' : t('market_news')}
                 </div>
               )}
             </div>
@@ -1388,10 +1319,10 @@ function App() {
                   {cryptoLoaded ? (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', flex: 1 }}>
                       {[
-                        { label: t('crypto_usd'),    val: pnlCryptoUSD,    sub: formatIDR(pnlCryptoUSD * kursIdr),    fmt: formatUSD },
+                        { label: t('crypto_usd'),      val: pnlCryptoUSD,    sub: formatIDR(pnlCryptoUSD * kursIdr),    fmt: formatUSD },
                         { label: t('commodities_usd'), val: pnlKomoditasUSD, sub: formatIDR(pnlKomoditasUSD * kursIdr), fmt: formatUSD },
-                        { label: t('stock_idx_idr'), val: pnlSahamIDX_IDR, sub: formatUSD(pnlSahamIDX_IDR / kursIdr), fmt: formatIDR },
-                        { label: t('stock_us_usd'),  val: pnlSahamUS_USD,  sub: formatIDR(pnlSahamUS_USD * kursIdr),  fmt: formatUSD },
+                        { label: t('stock_idx_idr'),   val: pnlSahamIDX_IDR, sub: formatUSD(pnlSahamIDX_IDR / kursIdr), fmt: formatIDR },
+                        { label: t('stock_us_usd'),    val: pnlSahamUS_USD,  sub: formatIDR(pnlSahamUS_USD * kursIdr),  fmt: formatUSD },
                       ].map(({ label, val, sub, fmt }, idx) => (
                         <div key={label} style={{ padding: `${idx >= 2 ? '12px' : '0'} ${idx % 2 === 0 ? '12px' : '0'} ${idx < 2 ? '12px' : '0'} ${idx % 2 === 1 ? '12px' : '0'}`, borderRight: idx % 2 === 0 ? '1px solid rgba(255,255,255,0.06)' : 'none', borderBottom: idx < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                           <span style={{ color: '#737373', fontSize: '10px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>{label}</span>
@@ -1415,47 +1346,26 @@ function App() {
                   {renderSingleCard('BTC',    'BTC')}
                   {renderSingleCard('GOLD',   'Gold XAU')}
                   {renderSingleCard('SPX500', 'S&P 500')}
-                  {renderSingleCard('IHSG',   'IHSG')}
                   {renderSingleCard('ETH',    'ETH')}
                   {renderSingleCard('XAG',    'Silver XAG')}
-                  {renderSingleCard('NASDAQ', 'Nasdaq')}
-                  {renderSingleCard('BRENT',  'Oil Brent')}
+                  {renderSingleCard('IHSG',   'IHSG')}
                 </div>
-                
-                <div className="donut-card" style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', top: 14, left: 18, color: '#a3a3a3', fontSize: '13px', fontWeight: 600, letterSpacing: '0.5px' }}>
-                    {activePieData ? t('asset_value') : t('current_allocation')}
-                  </div>
-                  
-                  <div style={{ width: '130px', height: '130px', flexShrink: 0, marginTop: '20px' }}>
-                    <DonutChart data={pieData} hoveredPie={hoveredPie} onHover={setHoveredPie} />
-                  </div>
-                  
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '140px', paddingRight: '4px', marginTop: '20px', overflowY: 'auto' }}>
-                    {pieData.map(d => (
-                      <div key={d.ticker} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: d.color }} />
-                          <span style={{ color: 'white', fontSize: '13px', fontWeight: 600 }}>{d.ticker}</span>
-                        </div>
-                        <span style={{ color: '#a3a3a3', fontSize: '12px', fontWeight: 500 }}>{d.pct.toFixed(1)}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
+                <AssetClassCard assets={assets} getLivePrice={getLivePrice} grandTotalUSD={grandTotalUSD} kursIdr={kursIdr} />
+                <PositionsCard  assets={assets} getLivePrice={getLivePrice} grandTotalUSD={grandTotalUSD} kursIdr={kursIdr} />
               </div>
 
               <div ref={holdingsRef} style={{ borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', overflow: 'hidden', background: '#0a0a0a', boxShadow: '0 12px 40px rgba(0,0,0,0.4)' }}>
-                <div className="holdings-header" style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%)' }}>
+                <div className="holdings-header" style={{ padding: '16px 24px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <div>
-                    <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 800, margin: 0 }}>{t('holdings')}</h3>
-                    <span style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px', display: 'block' }}>{assets.length} {t('registered_assets')}</span>
+                    <h3 style={{ color: '#fff', fontSize: '15px', fontWeight: 800, margin: 0, letterSpacing: '-0.2px' }}>{t('holdings')}</h3>
+                    <span style={{ color: '#3a3a3a', fontSize: '11px', marginTop: '3px', display: 'block' }}>{assets.length} {t('registered_assets')}</span>
                   </div>
-                  <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '10px 16px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 16px rgba(34, 197, 94, 0.25)' }}>{t('add_asset')}</button>
+                  <button onClick={() => setShowAddModal(true)} style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(34, 197, 94, 0.2)', letterSpacing: '0.01em' }}>+ {t('add_asset')}</button>
                 </div>
-                <div className="col-headers" style={{ alignItems: 'center', padding: '12px 28px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: '#0f0f0f' }}>
+                <div className="col-headers" style={{ alignItems: 'center', padding: '8px 24px', gap: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: '#0d0d0d' }}>
                   {[[t('asset'), 2], [t('price_live'), 1.5], [t('holdings_avg'), 1.5], [t('asset_value'), 1.5], [t('unrealized_pnl'), 1.5]].map(([h, f]) => (
-                    <div key={h} style={{ flex: f, color: '#4b5563', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.7px' }}>{h}</div>
+                    <div key={h} style={{ flex: f, color: '#383838', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px' }}>{h}</div>
                   ))}
                   <div style={{ flexShrink: 0, width: '32px' }} />
                 </div>
@@ -1468,11 +1378,10 @@ function App() {
                     { type: 'cashstable', label: t('cash_stable'),   color: '#10b981', list: assets.filter(a => a.type === 'stable' || a.type === 'cash_idr') },
                   ].map(({ type, label, color, list }) => (
                     <div key={type}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '16px 28px 8px' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color }} />
-                        <span style={{ color: '#a3a3a3', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</span>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(255,255,255,0.05), transparent)' }} />
-                        <span style={{ color: '#4b5563', fontSize: '10px', fontWeight: 600 }}>{list.length} {t('assets_count')}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '20px 24px 6px' }}>
+                        <div style={{ width: '3px', height: '13px', borderRadius: '2px', backgroundColor: color, flexShrink: 0 }} />
+                        <span style={{ color: '#4a4a4a', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</span>
+                        <span style={{ color: '#282828', fontSize: '10px', fontWeight: 600, marginLeft: 'auto' }}>{list.length} {t('assets_count')}</span>
                       </div>
                       {list.length > 0 ? list.map((asset, idx) => (
                         <DataRow key={asset.id} asset={asset} isLast={idx === list.length - 1} hargaLiveUSD={['crypto', 'komoditas', 'saham_us'].includes(asset.type) ? getLivePrice(asset) : undefined} hargaLiveIDR={asset.type === 'saham' ? getLivePrice(asset) : undefined} kursIdr={kursIdr} totalNetWorthUSD={grandTotalUSD} onRowClick={handleRowClick} t={t} />
@@ -1492,13 +1401,12 @@ function App() {
             <MarketExplorerPage t={t} />
           )}
 
-          {/* Menambahkan kondisi untuk memunculkan Market Overview Page */}
           {activePage === 'market-overview' && (
             <MarketOverviewPage t={t} />
           )}
 
-          {activePage === 'ai' && (
-            <AIConsultant assets={assets} hargaMap={hargaMap} hargaSaham={hargaSaham} kursIdr={kursIdr} grandTotalUSD={grandTotalUSD} grandTotalIDR={grandTotalIDR} overallPnlUSD={overallPnlUSD} overallPnlPersen={overallPnlPersen} marketData={marketData} t={t} />
+          {activePage === 'watchlist' && (
+            <WatchlistPage />
           )}
 
           {activePage === 'networth-detail' && (
@@ -1507,6 +1415,10 @@ function App() {
           
           {activePage === 'news' && (
             <MarketNewsPage assets={assets} t={t} />
+          )}
+
+          {activePage === 'multi-chart' && (
+            <MultiChartPage />
           )}
         </div>
       </div>
@@ -1561,12 +1473,73 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* ── Floating AI Chat Panel ── */}
+      {showAiChat && (
+        <div style={{
+          position: 'fixed',
+          bottom: isMobileViewport ? 0 : '92px',
+          right: isMobileViewport ? 0 : '24px',
+          left: isMobileViewport ? 0 : 'auto',
+          width: isMobileViewport ? '100%' : '400px',
+          height: isMobileViewport ? '82vh' : '580px',
+          zIndex: 250,
+          borderRadius: isMobileViewport ? '20px 20px 0 0' : '20px',
+          overflow: 'hidden',
+          boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
+          animation: 'aiPanelIn 0.22s cubic-bezier(0.34,1.56,0.64,1)',
+        }}>
+          <AIConsultant
+            assets={assets}
+            hargaMap={hargaMap}
+            hargaSaham={hargaSaham}
+            kursIdr={kursIdr}
+            grandTotalUSD={grandTotalUSD}
+            grandTotalIDR={grandTotalIDR}
+            overallPnlUSD={overallPnlUSD}
+            overallPnlPersen={overallPnlPersen}
+            marketData={marketData}
+            t={t}
+          />
+        </div>
+      )}
+
+      {/* ── AI FAB Button ── */}
+      <button
+        onClick={() => setShowAiChat(prev => !prev)}
+        title={t('ai_consultant')}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: showAiChat
+            ? 'rgba(30,30,30,1)'
+            : 'linear-gradient(135deg, #4ade80 0%, #06b6d4 100%)',
+          border: showAiChat ? '1px solid rgba(255,255,255,0.12)' : 'none',
+          cursor: 'pointer',
+          zIndex: 260,
+          boxShadow: showAiChat
+            ? '0 4px 20px rgba(0,0,0,0.5)'
+            : '0 8px 28px rgba(74,222,128,0.45)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '20px',
+          color: showAiChat ? '#737373' : '#000',
+          transition: 'background 0.2s, box-shadow 0.2s, color 0.2s',
+        }}
+      >
+        {showAiChat ? '✕' : '✦'}
+      </button>
     </div>
   );
 }
 
 const styles = {
-  summaryCard:      { backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' },
+  summaryCard:      { backgroundColor: '#141414', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '14px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.2)' },
   marketCardMini:   { backgroundColor: '#141414', borderRadius: '12px', padding: '12px 16px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' },
   modalInput:       { width: '100%', backgroundColor: '#0a0a0a', border: '1px solid #333', borderRadius: '10px', padding: '12px 16px', color: 'white', fontSize: '16px', outline: 'none', marginTop: '8px', boxSizing: 'border-box', fontWeight: 500 },
 };

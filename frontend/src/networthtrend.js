@@ -4,12 +4,12 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ComposedChart, Area, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
-  AreaChart,
+  CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Treemap,
 } from 'recharts';
 import {
-  ChevronRight, ArrowLeft, TrendingUp, TrendingDown, Activity,
-  DollarSign, PieChart, Info, Target, BarChart2, Zap,
+  ChevronRight, TrendingUp, TrendingDown, Activity,
+  DollarSign, PieChart, Info, BarChart2, Zap,
 } from 'lucide-react';
 
 // ==========================================
@@ -434,6 +434,42 @@ const calcDrawdownSeries = (points) => {
   });
 };
 
+const calcCAGR = (points) => {
+  if (points.length < 10) return null;
+  const first = points[0].value, last = points[points.length - 1].value;
+  if (first <= 0) return null;
+  const days = (points[points.length - 1].rawDate - points[0].rawDate) / 86400000;
+  if (days < 14) return null;
+  const years = days / 365;
+  return (Math.pow(last / first, 1 / years) - 1) * 100;
+};
+
+const calcWinRate = (points) => {
+  if (points.length < 5) return null;
+  let wins = 0, total = 0;
+  for (let i = 1; i < points.length; i++) {
+    if (points[i].value > points[i - 1].value) wins++;
+    total++;
+  }
+  return total > 0 ? (wins / total) * 100 : null;
+};
+
+const calcBestWorstDay = (points) => {
+  if (points.length < 2) return { best: null, worst: null };
+  let best = -Infinity, worst = Infinity;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1].value;
+    if (prev === 0) continue;
+    const pct = ((points[i].value - prev) / prev) * 100;
+    if (pct > best)  best  = pct;
+    if (pct < worst) worst = pct;
+  }
+  return {
+    best:  best  > -Infinity ? best  : null,
+    worst: worst <  Infinity ? worst : null,
+  };
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // DAILY MOVERS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -576,9 +612,9 @@ export function NetWorthTrendCard({
   };
 
   return (
-    <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+    <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: '14px 20px', display: 'flex', flexDirection: 'column' }}>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
         <span style={{ color: '#a3a3a3', fontSize: 13, fontWeight: 600, letterSpacing: '0.5px', flexShrink: 0 }}>{tL('nw_trend')}</span>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, backgroundColor: '#1a1a1a', padding: '3px 4px', borderRadius: 8, overflowX: 'auto', flexShrink: 1, minWidth: 0 }}>
@@ -602,7 +638,7 @@ export function NetWorthTrendCard({
         </div>
       </div>
       
-      <div style={{ height: 120, width: '100%' }}>
+      <div style={{ height: 100, width: '100%' }}>
         {isError && chartPoints.length === 0 ? (
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span style={{ fontSize: 18 }}>📡</span>
@@ -649,12 +685,8 @@ export function NetWorthDetailPage({
   const [activeCompares, setActiveCompares] = useState([]);
   const [returnMode, setReturnMode]         = useState('abs');
   const [showDrawdown, setShowDrawdown]     = useState(false);
-  const [targetNW, setTargetNW]             = useState('');
-  const [editingTarget, setEditingTarget]   = useState(false);
-  
   const [isFullscreen, setIsFullscreen]     = useState(false);
-  
-  const targetInputRef                      = useRef(null);
+
   const chartWrapperRef                     = useRef(null);
 
   const allChartPoints  = useMemo(() => safeChartPoints(chartData), [chartData]);
@@ -678,40 +710,54 @@ export function NetWorthDetailPage({
   const volInfo     = useMemo(() => getVolLabel(volatility, tL), [volatility, tL]);
   const sharpe      = useMemo(() => calcSharpe(chartPoints), [chartPoints]);
   const maxDrawdown = useMemo(() => calcMaxDrawdown(chartPoints), [chartPoints]);
+  const cagr        = useMemo(() => calcCAGR(chartPoints), [chartPoints]);
+  const winRate     = useMemo(() => calcWinRate(chartPoints), [chartPoints]);
+  const bestWorst   = useMemo(() => calcBestWorstDay(chartPoints), [chartPoints]);
 
-  const { cryptoCount, stockCount, stableCount } = useMemo(() => {
-    let cc = 0, sc = 0, stc = 0;
+  const portfolioByType = useMemo(() => {
+    if (!hasAssets) return [];
+    const TYPE_CFG = {
+      crypto:   { label: 'Crypto',      color: '#f59e0b' },
+      saham:    { label: 'IDX Stock',   color: '#3b82f6' },
+      saham_us: { label: 'US Stock',    color: '#a855f7' },
+      komoditas:{ label: 'Commodities', color: '#10b981' },
+      stable:   { label: 'Stablecoins', color: '#22c55e' },
+      cash_idr: { label: 'Cash IDR',    color: '#8b5cf6' },
+    };
+    const grouped = {};
+    let total = 0;
     assets.forEach((a) => {
-      if (a.type === 'crypto') cc++;
-      else if (a.type === 'saham' || a.type === 'saham_us') sc++;
-      else stc++;
+      grouped[a.type] = (grouped[a.type] || 0) + a.value;
+      total += a.value;
     });
-    return { cryptoCount: cc, stockCount: sc, stableCount: stc };
-  }, [assets]);
+    return Object.entries(grouped)
+      .map(([type, value]) => ({
+        type,
+        label: TYPE_CFG[type]?.label || type,
+        value,
+        pct: total > 0 ? (value / total) * 100 : 0,
+        color: TYPE_CFG[type]?.color || '#737373',
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [assets, hasAssets]);
 
-  const dominantAsset = useMemo(() => {
-    if (!hasAssets) return tL('empty');
-    if (cryptoCount > stockCount && cryptoCount > stableCount) return tL('cat_crypto');
-    if (stockCount  > cryptoCount && stockCount  > stableCount) return tL('stock');
-    if (stableCount > 0) return tL('stable_cash');
-    return tL('diverse');
-  }, [hasAssets, cryptoCount, stockCount, stableCount, tL]);
-
-  const targetValue    = useMemo(() => { const v = parseFloat(targetNW.replace(/[^0-9.]/g, '')); return isNaN(v) || v <= 0 ? null : v; }, [targetNW]);
-  const targetProgress = useMemo(() => { if (!targetValue || safeNW <= 0) return null; return Math.min((safeNW / targetValue) * 100, 100); }, [targetValue, safeNW]);
 
   const metrics = useMemo(() => [
     { label: tL('curr_nw'), value: formatCurrency(safeNW), icon: DollarSign, color: '#3b82f6' },
     { label: tL('tot_gain'), value: formatCurrency(safePnl), subValue: formatPct(safePct), icon: safePnl >= 0 ? TrendingUp : TrendingDown, color: safePnl >= 0 ? '#16a34a' : '#ef4444' },
     { label: tL('day_pnl'), value: formatCurrency(safeDaily), subValue: 'Live', icon: safeDaily >= 0 ? TrendingUp : TrendingDown, color: safeDaily >= 0 ? '#f59e0b' : '#ef4444' },
-    { label: tL('asset_dom'), value: dominantAsset, subValue: hasAssets ? `${assets.length} ${tL('assets_count')}` : `0 ${tL('assets_count')}`, icon: PieChart, color: '#ec4899' },
-  ], [safeNW, safePnl, safePct, safeDaily, dominantAsset, hasAssets, assets.length, tL]);
-
-  useEffect(() => { if (editingTarget && targetInputRef.current) targetInputRef.current.focus(); }, [editingTarget]);
+    {
+      label: 'CAGR',
+      value: cagr !== null ? `${cagr >= 0 ? '+' : ''}${cagr.toFixed(1)}%` : '—',
+      subValue: 'Annualized Return',
+      icon: Activity,
+      color: cagr === null ? '#737373' : cagr >= 0 ? '#10b981' : '#ef4444',
+    },
+  ], [safeNW, safePnl, safePct, safeDaily, cagr, tL]);
 
   const historyRows = useMemo(() => {
     if (chartPoints.length < 2) return [];
-    return [...chartPoints].reverse().slice(0, 7).map((pt, i, arr) => {
+    return [...chartPoints].reverse().slice(0, 14).map((pt, i, arr) => {
       const prev = arr[i + 1];
       const chg = prev ? pt.value - prev.value : 0;
       const pct = prev && prev.value !== 0 ? (chg / prev.value) * 100 : 0;
@@ -766,22 +812,45 @@ export function NetWorthDetailPage({
     }
   };
 
+  const heatmapData = useMemo(() => assets
+    .filter(a => a.value > 0)
+    .map(a => ({ name: a.ticker, size: a.value, pct: a.gainLossPct, pnl: a.gainLoss })),
+  [assets]);
+
+  const heatColor = (pct) => {
+    if (pct == null) return '#1e1e1e';
+    if (pct >  20) return '#14532d';
+    if (pct >  10) return '#15803d';
+    if (pct >   5) return '#16a34a';
+    if (pct >   0) return '#22c55e';
+    if (pct > - 5) return '#f87171';
+    if (pct > -10) return '#ef4444';
+    if (pct > -20) return '#dc2626';
+    return '#7f1d1d';
+  };
+
+  const HeatCell = ({ x, y, width, height, name, pct, pnl }) => {
+    const c = heatColor(pct);
+    const showText = width > 32 && height > 26;
+    return (
+      <g>
+        <rect x={x + 1} y={y + 1} width={width - 2} height={height - 2} fill={c} rx={3} opacity={0.88} />
+        {showText && (
+          <>
+            <text x={x + width / 2} y={y + height / 2 - (height > 44 ? 7 : 0)} textAnchor="middle" fill="#fff" fontSize={Math.min(11, Math.max(8, width / 5))} fontWeight={800} style={{ pointerEvents: 'none' }}>{name}</text>
+            {height > 44 && <text x={x + width / 2} y={y + height / 2 + 9} textAnchor="middle" fill="rgba(255,255,255,0.75)" fontSize={8} style={{ pointerEvents: 'none' }}>{pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%` : '—'}</text>}
+          </>
+        )}
+      </g>
+    );
+  };
+
   return (
     <div style={{ padding: '0 0 32px 0', maxWidth: 1200, margin: '0 auto', color: '#e5e5e5', boxSizing: 'border-box', width: '100%', overflowX: 'hidden' }}>
-      
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-        <button 
-          onClick={onBack} 
-          style={{ backgroundColor: '#1a1a1a', border: '1px solid #262626', color: '#a3a3a3', borderRadius: 10, padding: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0, transition: '0.2s' }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#262626'} 
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1a1a1a'}
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>{tL('analytics_title')}</h1>
-          <p style={{ margin: '2px 0 0', fontSize: 12, color: '#737373', fontWeight: 500 }}>{tL('analytics_desc')}</p>
-        </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>{tL('analytics_title')}</h1>
+        <p style={{ margin: '2px 0 0', fontSize: 12, color: '#737373', fontWeight: 500 }}>{tL('analytics_desc')}</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 16 }}>
@@ -799,68 +868,89 @@ export function NetWorthDetailPage({
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 16 }}>
+      {/* ── Risk Metrics ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 16 }}>
+        {/* Volatility */}
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{tL('volatility')}</p>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('volatility')}</p>
           {volInfo ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{volatility.toFixed(1)}%</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: volInfo.color, backgroundColor: volInfo.bg, padding: '2px 7px', borderRadius: 4 }}>{volInfo.label}</span>
+              <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>{volatility.toFixed(1)}%</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: volInfo.color, backgroundColor: volInfo.bg, padding: '2px 7px', borderRadius: 4 }}>{volInfo.label}</span>
             </div>
           ) : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{tL('annualized')}</p>
+          <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>{tL('annualized')}</p>
         </div>
 
+        {/* Sharpe */}
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{tL('sharpe')}</p>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('sharpe')}</p>
           {sharpe !== null ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 17, fontWeight: 800, color: '#fff' }}>{sharpe.toFixed(2)}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: sharpe >= 1 ? '#16a34a' : sharpe >= 0 ? '#f59e0b' : '#ef4444', backgroundColor: sharpe >= 1 ? '#16a34a18' : sharpe >= 0 ? '#f59e0b18' : '#ef444418', padding: '2px 7px', borderRadius: 4 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>{sharpe.toFixed(2)}</span>
+              <span style={{ fontSize: 10, fontWeight: 700,
+                color: sharpe >= 1 ? '#16a34a' : sharpe >= 0 ? '#f59e0b' : '#ef4444',
+                backgroundColor: sharpe >= 1 ? '#16a34a18' : sharpe >= 0 ? '#f59e0b18' : '#ef444418',
+                padding: '2px 7px', borderRadius: 4 }}>
                 {sharpe >= 1 ? tL('good') : sharpe >= 0 ? tL('fair') : tL('bad')}
               </span>
             </div>
           ) : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{tL('risk_free')}</p>
+          <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>{tL('risk_free')}</p>
         </div>
 
+        {/* Max Drawdown */}
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{tL('max_dd')}</p>
-          <span style={{ fontSize: 17, fontWeight: 800, color: maxDrawdown > 20 ? '#ef4444' : maxDrawdown > 10 ? '#f59e0b' : '#fff' }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{tL('max_dd')}</p>
+          <span style={{ fontSize: 18, fontWeight: 800, fontFamily: 'monospace', color: maxDrawdown > 20 ? '#ef4444' : maxDrawdown > 10 ? '#f59e0b' : '#fff' }}>
             -{maxDrawdown.toFixed(1)}%
           </span>
-          <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{tL('drop_from_peak')}</p>
+          <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>{tL('drop_from_peak')}</p>
         </div>
 
+        {/* Win Rate */}
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <p style={{ margin: 0, fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase' }}>{tL('target')}</p>
-            <button onClick={() => setEditingTarget((v) => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555', padding: 0 }}><Target size={14} /></button>
-          </div>
-          {editingTarget ? (
-            <input ref={targetInputRef} type="text" placeholder="cth: 50000" value={targetNW}
-              onChange={(e) => setTargetNW(e.target.value)} onBlur={() => setEditingTarget(false)}
-              style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: 6, padding: '6px 8px', color: '#fff', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
-            />
-          ) : targetValue ? (
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Win Rate</p>
+          {winRate !== null ? (
             <>
-              <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>{formatCurrency(targetValue)}</span>
-              <div style={{ marginTop: 8, height: 4, backgroundColor: '#262626', borderRadius: 2 }}>
-                <div style={{ height: '100%', borderRadius: 2, width: `${targetProgress}%`, backgroundColor: targetProgress >= 100 ? '#16a34a' : '#3b82f6', transition: 'width 0.4s ease' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: 'monospace' }}>{winRate.toFixed(0)}%</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: winRate >= 55 ? '#16a34a' : winRate >= 45 ? '#f59e0b' : '#ef4444', backgroundColor: winRate >= 55 ? '#16a34a18' : winRate >= 45 ? '#f59e0b18' : '#ef444418', padding: '2px 7px', borderRadius: 4 }}>
+                  {winRate >= 55 ? 'Solid' : winRate >= 45 ? 'Neutral' : 'Weak'}
+                </span>
               </div>
-              <p style={{ margin: '4px 0 0', fontSize: 11, color: '#555' }}>{targetProgress.toFixed(1)}% {tL('reached')}</p>
+              <div style={{ marginTop: 8, height: 4, backgroundColor: '#262626', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${winRate}%`, borderRadius: 2, background: 'linear-gradient(90deg, #16a34a, #4ade80)', transition: 'width 0.4s' }} />
+              </div>
+              <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>% hari portofolio naik</p>
             </>
-          ) : (
-            <span style={{ fontSize: 13, color: '#555', cursor: 'pointer' }} onClick={() => setEditingTarget(true)}>{tL('set_target')}</span>
-          )}
+          ) : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
+        </div>
+
+        {/* Best Day */}
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Day</p>
+          {bestWorst.best !== null
+            ? <span style={{ fontSize: 18, fontWeight: 800, color: '#4ade80', fontFamily: 'monospace' }}>+{bestWorst.best.toFixed(2)}%</span>
+            : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
+          <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>hari terbaik (1D)</p>
+        </div>
+
+        {/* Worst Day */}
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 12, padding: 14 }}>
+          <p style={{ margin: '0 0 6px', fontSize: 11, color: '#737373', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Worst Day</p>
+          {bestWorst.worst !== null
+            ? <span style={{ fontSize: 18, fontWeight: 800, color: '#f87171', fontFamily: 'monospace' }}>{bestWorst.worst.toFixed(2)}%</span>
+            : <span style={{ fontSize: 13, color: '#555' }}>{tL('not_enough_data')}</span>}
+          <p style={{ margin: '6px 0 0', fontSize: 10, color: '#555' }}>hari terburuk (1D)</p>
         </div>
       </div>
 
-      <div 
-        ref={chartWrapperRef} 
-        style={{ 
-          backgroundColor: '#141414', 
-          border: isFullscreen ? 'none' : '1px solid #262626', 
+      <div
+        ref={chartWrapperRef}
+        style={{
+          backgroundColor: '#141414',
+          border: isFullscreen ? 'none' : '1px solid #262626',
           borderRadius: isFullscreen ? '0' : 16, 
           padding: '20px 16px', 
           marginBottom: 16, 
@@ -979,9 +1069,6 @@ export function NetWorthDetailPage({
                 <YAxis yAxisId="main" domain={['auto', 'auto']} stroke="#555" tick={{ fill: '#737373', fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={yFormatter} width={returnMode === 'pct' ? 50 : 75} />
                 {showDrawdown && <YAxis yAxisId="dd" orientation="right" domain={['auto', 0]} tick={{ fill: '#ef4444', fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v.toFixed(0)}%`} width={36} />}
                 <Tooltip contentStyle={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 8, fontSize: 12 }} itemStyle={{ fontWeight: 'bold' }} formatter={tooltipFormatter} />
-                {targetValue && returnMode === 'abs' && (
-                  <ReferenceLine yAxisId="main" y={targetValue} stroke="#3b82f6" strokeDasharray="8 4" strokeWidth={1.5} label={{ value: tL('target'), fill: '#3b82f6', fontSize: 10, position: 'insideTopRight' }} />
-                )}
                 <Area yAxisId="main" type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#gradMain)" dot={false} />
                 {activeCompares.map((key) => (
                   <Area key={key} yAxisId="main" type="monotone" dataKey={key} stroke={COMPARE_COLORS[key]} strokeWidth={2} strokeDasharray="6 3" fillOpacity={1} fill={`url(#gradBench_${key})`} dot={false} activeDot={{ r: 4 }} />
@@ -999,6 +1086,31 @@ export function NetWorthDetailPage({
           )}
         </div>
       </div>
+
+      {/* ── Portfolio Heatmap ── */}
+      {heatmapData.length > 0 && (
+        <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 14, padding: 18, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <h2 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#fff', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#f59e0b', fontSize: 15 }}>▦</span> Portfolio Heatmap
+            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {[{ v: '< -10%', c: '#dc2626' }, { v: '< 0%', c: '#f87171' }, { v: '> 0%', c: '#22c55e' }, { v: '> 10%', c: '#15803d' }].map(s => (
+                <div key={s.v} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: s.c }} />
+                  <span style={{ color: '#555', fontSize: 9, fontFamily: 'monospace' }}>{s.v}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <Treemap data={heatmapData} dataKey="size" content={<HeatCell />} isAnimationActive={false} />
+            </ResponsiveContainer>
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: 10, color: '#3a3a3a', textAlign: 'center' }}>Block size = portfolio weight · Color = Unrealized PnL %</p>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
         <div style={{ backgroundColor: '#141414', border: '1px solid #262626', borderRadius: 16, padding: 20 }}>

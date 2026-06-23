@@ -3,6 +3,11 @@
    ========================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+@keyframes aiPanelIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
 html, body, #root {
   overflow-x: hidden;
   max-width: 100vw;
@@ -256,16 +261,16 @@ html, body, #root {
 }
 
 .market-mini-grid {
-  flex: 1.6;
+  flex: 1;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
   gap: 10px;
 }
 
 .donut-card {
-  flex: 1;
-  min-width: 280px;
+  flex: 1.6;
+  min-width: 320px;
   background: var(--card);
   border-radius: 14px;
   padding: 16px 20px;
@@ -294,7 +299,7 @@ html, body, #root {
 /* Area row jadi tappable (task 3: row click membuka floating menu) */
 .asset-row-desktop:hover,
 .asset-row-mobile:active {
-  background: rgba(255,255,255,0.025);
+  background: rgba(255,255,255,0.04);
 }
 
 /* =========================================
