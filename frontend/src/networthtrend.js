@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import {
   ChevronRight, TrendingUp, TrendingDown, Activity,
-  DollarSign, PieChart, Info, BarChart2, Zap,
+  DollarSign, Info, BarChart2, Zap,
 } from 'lucide-react';
 
 // ==========================================
@@ -704,8 +704,6 @@ export function NetWorthDetailPage({
   const safePnl   = Number(overallPnlUSD)   || 0;
   const safePct   = Number(overallPnlPersen) || 0;
   const safeDaily = Number(dailyPnlUSD)     || 0;
-  const hasAssets = assets.length > 0;
-
   const volatility  = useMemo(() => calcVolatility(chartPoints), [chartPoints]);
   const volInfo     = useMemo(() => getVolLabel(volatility, tL), [volatility, tL]);
   const sharpe      = useMemo(() => calcSharpe(chartPoints), [chartPoints]);
@@ -714,32 +712,6 @@ export function NetWorthDetailPage({
   const winRate     = useMemo(() => calcWinRate(chartPoints), [chartPoints]);
   const bestWorst   = useMemo(() => calcBestWorstDay(chartPoints), [chartPoints]);
 
-  const portfolioByType = useMemo(() => {
-    if (!hasAssets) return [];
-    const TYPE_CFG = {
-      crypto:   { label: 'Crypto',      color: '#f59e0b' },
-      saham:    { label: 'IDX Stock',   color: '#3b82f6' },
-      saham_us: { label: 'US Stock',    color: '#a855f7' },
-      komoditas:{ label: 'Commodities', color: '#10b981' },
-      stable:   { label: 'Stablecoins', color: '#22c55e' },
-      cash_idr: { label: 'Cash IDR',    color: '#8b5cf6' },
-    };
-    const grouped = {};
-    let total = 0;
-    assets.forEach((a) => {
-      grouped[a.type] = (grouped[a.type] || 0) + a.value;
-      total += a.value;
-    });
-    return Object.entries(grouped)
-      .map(([type, value]) => ({
-        type,
-        label: TYPE_CFG[type]?.label || type,
-        value,
-        pct: total > 0 ? (value / total) * 100 : 0,
-        color: TYPE_CFG[type]?.color || '#737373',
-      }))
-      .sort((a, b) => b.value - a.value);
-  }, [assets, hasAssets]);
 
 
   const metrics = useMemo(() => [
