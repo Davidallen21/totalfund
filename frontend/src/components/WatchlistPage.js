@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+
 const CATEGORIES = [
   { key: 'crypto',    label: 'Crypto',    color: '#f59e0b', icon: '◆',  bg: 'rgba(245,158,11,0.12)'  },
   { key: 'saham_idx', label: 'IDX Stock', color: '#3b82f6', icon: '🇮🇩', bg: 'rgba(59,130,246,0.12)'  },
@@ -258,7 +260,7 @@ export default function WatchlistPage() {
   const fetchCategory = useCallback(async (cat) => {
     setLoading(prev => ({ ...prev, [cat]: true }));
     try {
-      const res  = await fetch(`/api/market-movers?category=${cat}&limit=50`);
+      const res  = await fetch(`${API_BASE}/api/market-movers?category=${cat}&limit=50`);
       const json = await res.json();
       setData(prev => ({ ...prev, [cat]: json }));
       setLastUpdate(prev => ({ ...prev, [cat]: new Date() }));
