@@ -1,7 +1,7 @@
 // src/services/aiService.js
 // Shared AI Service - dipakai oleh AI Consultant Sidebar DAN NetWorth Detail Page
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE = process.env.REACT_APP_API_URL ?? '';
 
 // Timeout helper
 const fetchWithTimeout = (url, options, timeoutMs = 20000) => {

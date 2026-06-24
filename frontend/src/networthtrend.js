@@ -247,7 +247,7 @@ const BENCHMARK_RETURNS = {
   'S&P500': { annual: 0.105, volatility: 0.18 },
 };
 const COMPARE_COLORS  = { IHSG: '#f59e0b', 'S&P500': '#a855f7' };
-const API_BASE_NW = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_NW = process.env.REACT_APP_API_URL ?? '';
 const BENCHMARK_ENDPOINTS = {
   IHSG:     `${API_BASE_NW}/api/market/ihsg`,
   'S&P500': `${API_BASE_NW}/api/market/sp500`,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE = process.env.REACT_APP_API_URL ?? '';
 
 const CATEGORIES = [
   { key: 'crypto',    label: 'Crypto',    color: '#f59e0b', icon: '◆',  bg: 'rgba(245,158,11,0.12)'  },

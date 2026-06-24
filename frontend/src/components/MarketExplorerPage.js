@@ -11,7 +11,7 @@ function useWindowSize() {
   return width;
 }
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE = process.env.REACT_APP_API_URL ?? '';
 const WATCHLIST_KEY = 'totalfund_watchlist';
 const SEEDED_KEY = 'totalfund_watchlist_seeded';
 

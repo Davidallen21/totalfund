@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE = process.env.REACT_APP_API_URL ?? '';
 
 // ✅ FIX 1: Pakai try/finally biar clearTimeout SELALU dipanggil,
 //    bahkan kalau fetch error atau di-abort

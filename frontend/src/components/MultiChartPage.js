@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE = process.env.REACT_APP_API_URL ?? '';
 const COLORS   = ['#f59e0b', '#3b82f6', '#10b981', '#e879f9'];
 const DEFAULTS = [
   'BINANCE:BTCUSDT',
