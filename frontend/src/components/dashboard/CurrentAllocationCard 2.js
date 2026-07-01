@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { COLORS } from '../utils/helpers';
+import { COLORS } from '../../utils/helpers';
 
 // ── shared data hooks ──────────────────────────────────────────────────────
 

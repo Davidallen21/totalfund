@@ -1,6 +1,6 @@
 {
   "builds": [
-    { "src": "index.py", "use": "@vercel/python" }
+    { "src": "index.py", "use": "@vercel/python", "config": { "maxDuration": 60 } }
   ],
   "routes": [
     { "src": "/(.*)", "dest": "index.py" }

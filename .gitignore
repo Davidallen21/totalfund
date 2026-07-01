@@ -32,3 +32,4 @@ backend/__pycache__/
 
 # Claude Code
 CLAUDE.md
+.vercel

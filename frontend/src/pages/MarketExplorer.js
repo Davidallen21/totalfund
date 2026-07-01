@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import TradingViewWidget from './TradingViewWidget';
+import TradingViewWidget from '../components/common/TradingViewWidget';
 
 function useWindowSize() {
   const [width, setWidth] = useState(window.innerWidth);
@@ -32,7 +32,6 @@ const TYPE_LABEL = {
   commodity: 'Comdty',
 };
 
-// Kategori tab di atas — urutan sesuai keputusan: Crypto | Saham IDX | Saham US | Commodities
 const GROUPS = [
   { id: 'crypto',      label: 'Crypto',      icon: '◆', types: ['crypto'] },
   { id: 'saham_idx',   label: 'Saham IDX',   icon: '🇮🇩', types: ['stock_idx'] },
@@ -40,8 +39,6 @@ const GROUPS = [
   { id: 'commodities', label: 'Commodities', icon: '●', types: ['commodity'] },
 ];
 
-// Default seed — biar watchlist gak pernah kosong total di first-run.
-// tvSymbol dipakai langsung oleh TradingViewWidget.
 const DEFAULT_WATCHLIST = [
   { symbol: 'BTC',  name: 'Bitcoin',            tvSymbol: 'BINANCE:BTCUSDT', type: 'crypto' },
   { symbol: 'BBCA', name: 'Bank Central Asia',  tvSymbol: 'IDX:BBCA',        type: 'stock_idx' },
@@ -49,10 +46,10 @@ const DEFAULT_WATCHLIST = [
   { symbol: 'XAU',  name: 'Gold Spot / USD',    tvSymbol: 'OANDA:XAUUSD',    type: 'commodity' },
 ];
 
-export default function MarketExplorerPage({ t }) {
+export default function MarketExplorer({ t }) {
   const [query, setQuery]               = useState('');
   const [activeSymbol, setActiveSymbol] = useState(null);
-  const [activeAsset, setActiveAsset]   = useState(null); // { symbol, name, type }
+  const [activeAsset, setActiveAsset]   = useState(null);
   const [results, setResults]           = useState([]);
   const [isSearching, setIsSearching]   = useState(false);
   const [activeTab, setActiveTab]       = useState(GROUPS[0].id);
@@ -60,7 +57,6 @@ export default function MarketExplorerPage({ t }) {
     try {
       const saved = JSON.parse(localStorage.getItem(WATCHLIST_KEY));
       if (saved && saved.length > 0) return saved;
-      // First run / pernah dikosongkan total sebelum ada seeding — isi default.
       const alreadySeeded = localStorage.getItem(SEEDED_KEY);
       if (!alreadySeeded) return DEFAULT_WATCHLIST;
       return saved || [];
@@ -77,8 +73,6 @@ export default function MarketExplorerPage({ t }) {
     localStorage.setItem(SEEDED_KEY, '1');
   }, [watchlist]);
 
-  // Initial load saja: kalau belum ada aset aktif sama sekali, pilih default
-  // dari tab pertama yang aktif (GROUPS[0], yaitu Crypto).
   useEffect(() => {
     if (!activeSymbol && watchlist.length > 0) {
       const firstInTab = watchlist.find(w => GROUPS.find(g => g.id === activeTab)?.types.includes(w.type));
@@ -89,8 +83,6 @@ export default function MarketExplorerPage({ t }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchlist]);
 
-  // Ganti tab kategori -> chart ikut loncat ke aset pertama di kategori itu
-  // (kalau watchlist kategori itu kosong, chart dibiarkan seperti sebelumnya).
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
     const group = GROUPS.find(g => g.id === tabId);
@@ -101,7 +93,6 @@ export default function MarketExplorerPage({ t }) {
     }
   };
 
-  // Search debounce
   useEffect(() => {
     if (!query.trim()) { setResults([]); return; }
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
@@ -151,7 +142,6 @@ export default function MarketExplorerPage({ t }) {
     }
   };
 
-  // Hitung jumlah aset per grup (dipakai utk badge counter di tab)
   const groupCounts = GROUPS.reduce((acc, g) => {
     acc[g.id] = watchlist.filter(w => g.types.includes(w.type)).length;
     return acc;
@@ -164,7 +154,6 @@ export default function MarketExplorerPage({ t }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 120px)', gap: '16px', paddingBottom: '20px' }}>
 
-      {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <h2 style={{ color: '#fff', fontSize: '22px', fontWeight: 800, margin: 0, letterSpacing: '-0.5px' }}>
           {t('market_explorer') || 'Market Explorer'}
@@ -174,7 +163,6 @@ export default function MarketExplorerPage({ t }) {
         </span>
       </div>
 
-      {/* ── Search bar ── */}
       <div style={{ position: 'relative' }}>
         <input
           value={query}
@@ -182,7 +170,7 @@ export default function MarketExplorerPage({ t }) {
           placeholder="Cari aset... (BTC, AAPL, BBCA, Gold)"
           style={{
             width: '100%', padding: '13px 40px 13px 16px', borderRadius: '12px',
-            background: '#141414', border: '1px solid rgba(255,255,255,0.08)',
+            background: '#16233A', border: '1px solid rgba(79,124,255,0.12)',
             color: '#fff', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
           }}
         />
@@ -193,11 +181,10 @@ export default function MarketExplorerPage({ t }) {
           }}>✕</button>
         )}
 
-        {/* ── Dropdown search ── */}
         {query && (
           <div style={{
             position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0, zIndex: 999,
-            backgroundColor: '#141414', border: '1px solid #2a2a2a', borderRadius: '12px',
+            backgroundColor: '#16233A', border: '1px solid #2a2a2a', borderRadius: '12px',
             boxShadow: '0 16px 40px rgba(0,0,0,0.7)', maxHeight: '300px', overflowY: 'auto'
           }}>
             {isSearching ? (
@@ -206,13 +193,13 @@ export default function MarketExplorerPage({ t }) {
               <div style={{ padding: '14px 16px', color: '#555', fontSize: '13px' }}>Tidak ditemukan</div>
             ) : results.map((item, i) => {
               const alreadyAdded = !!watchlist.find(w => w.tvSymbol === item.tvSymbol);
-              const col = TYPE_COLOR[item.type] || '#737373';
+              const col = TYPE_COLOR[item.type] || '#94A3B8';
               return (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: '10px',
                   padding: '10px 14px', borderBottom: '1px solid #1a1a1a', transition: 'background 0.15s'
                 }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
+                  onMouseEnter={e => e.currentTarget.style.background = '#1A2C42'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 >
                   <div onClick={() => selectAsset(item)} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
@@ -233,7 +220,7 @@ export default function MarketExplorerPage({ t }) {
                     style={{
                       width: 28, height: 28, borderRadius: '7px', border: 'none', flexShrink: 0,
                       backgroundColor: alreadyAdded ? 'rgba(74,222,128,0.08)' : 'rgba(74,222,128,0.15)',
-                      color: '#4ade80', fontSize: '16px',
+                      color: '#22C55E', fontSize: '16px',
                       cursor: alreadyAdded ? 'default' : 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700
                     }}
@@ -248,7 +235,6 @@ export default function MarketExplorerPage({ t }) {
         )}
       </div>
 
-      {/* ── Tab kategori ── */}
       <div style={{
         display: 'flex', gap: isMobile ? '5px' : '6px', flexShrink: 0,
         overflowX: isMobile ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch',
@@ -256,9 +242,8 @@ export default function MarketExplorerPage({ t }) {
       }}>
         {GROUPS.map(g => {
           const isActive = activeTab === g.id;
-          const col = TYPE_COLOR[g.types[0]] || '#737373';
+          const col = TYPE_COLOR[g.types[0]] || '#94A3B8';
           const count = groupCounts[g.id] || 0;
-          // Label dipendekin khusus mobile biar gak numpuk/wrap
           const mobileLabel = { crypto: 'Crypto', saham_idx: 'IDX', saham_us: 'US', commodities: 'Comdty' }[g.id] || g.label;
           return (
             <button
@@ -269,9 +254,9 @@ export default function MarketExplorerPage({ t }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? '5px' : '6px',
                 padding: isMobile ? '8px 12px' : '10px 12px', borderRadius: '10px', cursor: 'pointer',
                 whiteSpace: 'nowrap',
-                border: `1px solid ${isActive ? col : 'rgba(255,255,255,0.06)'}`,
-                background: isActive ? `linear-gradient(180deg, ${col}22, ${col}0d)` : '#141414',
-                color: isActive ? '#fff' : '#737373',
+                border: `1px solid ${isActive ? col : 'rgba(79,124,255,0.1)'}`,
+                background: isActive ? `linear-gradient(180deg, ${col}22, ${col}0d)` : '#16233A',
+                color: isActive ? '#fff' : '#94A3B8',
                 fontSize: isMobile ? '12px' : '12.5px', fontWeight: 700, letterSpacing: '0.1px',
                 transition: 'all 0.18s', boxShadow: isActive ? `0 0 0 1px ${col}33, 0 4px 12px ${col}1a` : 'none'
               }}
@@ -282,7 +267,7 @@ export default function MarketExplorerPage({ t }) {
               <span style={{
                 fontSize: '10px', fontWeight: 700, minWidth: '16px', textAlign: 'center',
                 color: isActive ? col : '#444',
-                backgroundColor: isActive ? '#0a0a0a' : 'rgba(255,255,255,0.04)',
+                backgroundColor: isActive ? '#0E1A2D' : 'rgba(79,124,255,0.07)',
                 borderRadius: '5px', padding: '1px 5px'
               }}>{count}</span>
             </button>
@@ -290,19 +275,18 @@ export default function MarketExplorerPage({ t }) {
         })}
       </div>
 
-      {/* ── Watchlist tab aktif ── */}
       {currentItems.length === 0 && !query ? (
         <div style={{
-          padding: '18px', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)',
+          padding: '18px', borderRadius: '12px', border: '1px dashed rgba(79,124,255,0.12)',
           backgroundColor: '#0d0d0d', display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0
         }}>
           <span style={{ fontSize: '22px' }}>{currentGroup.icon}</span>
           <div>
-            <div style={{ color: '#e5e5e5', fontSize: '14px', fontWeight: 600 }}>
+            <div style={{ color: '#F8FAFC', fontSize: '14px', fontWeight: 600 }}>
               Belum ada aset {currentGroup.label} di watchlist
             </div>
             <div style={{ color: '#555', fontSize: '12px', marginTop: '3px' }}>
-              Cari aset di atas lalu tekan <b style={{ color: '#4ade80' }}>+</b> untuk tambahkan
+              Cari aset di atas lalu tekan <b style={{ color: '#22C55E' }}>+</b> untuk tambahkan
             </div>
           </div>
         </div>
@@ -311,7 +295,7 @@ export default function MarketExplorerPage({ t }) {
           <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }}>
             {currentItems.map((item, idx) => {
               const isActive = activeSymbol === item.tvSymbol;
-              const col = TYPE_COLOR[item.type] || '#737373';
+              const col = TYPE_COLOR[item.type] || '#94A3B8';
               const displaySymbol = item.symbol.replace('.JK', '');
               return (
                 <div
@@ -320,8 +304,8 @@ export default function MarketExplorerPage({ t }) {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     width: '130px', flexShrink: 0,
-                    background: isActive ? `linear-gradient(180deg, ${col}1f, #161616)` : '#141414',
-                    border: `1px solid ${isActive ? col : 'rgba(255,255,255,0.06)'}`,
+                    background: isActive ? `linear-gradient(180deg, ${col}1f, #161616)` : '#16233A',
+                    border: `1px solid ${isActive ? col : 'rgba(79,124,255,0.1)'}`,
                     padding: '9px 9px 9px 11px', borderRadius: '10px',
                     cursor: 'pointer', transition: 'all 0.2s',
                     boxShadow: isActive ? `0 0 0 1px ${col}33, 0 6px 16px ${col}1a` : 'none'
@@ -342,7 +326,7 @@ export default function MarketExplorerPage({ t }) {
                       cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       marginLeft: '4px', transition: 'color 0.15s'
                     }}
-                    onMouseEnter={e => e.currentTarget.style.color = '#f87171'}
+                    onMouseEnter={e => e.currentTarget.style.color = '#EF4444'}
                     onMouseLeave={e => e.currentTarget.style.color = '#383838'}
                     title="Hapus dari watchlist"
                   >✕</button>
@@ -353,16 +337,13 @@ export default function MarketExplorerPage({ t }) {
         </div>
       )}
 
-      {/* ── Chart area dengan label aset aktif ── */}
       <div style={{ flex: 1, minHeight: '400px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-
-        {/* Label aset aktif di atas chart */}
         {activeAsset && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
               width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-              backgroundColor: TYPE_COLOR[activeAsset.type] || '#737373',
-              boxShadow: `0 0 8px ${TYPE_COLOR[activeAsset.type] || '#737373'}66`
+              backgroundColor: TYPE_COLOR[activeAsset.type] || '#94A3B8',
+              boxShadow: `0 0 8px ${TYPE_COLOR[activeAsset.type] || '#94A3B8'}66`
             }} />
             <span style={{ color: '#fff', fontSize: '16px', fontWeight: 800, letterSpacing: '-0.3px' }}>
               {activeAsset.symbol.replace('.JK', '')}
@@ -372,8 +353,8 @@ export default function MarketExplorerPage({ t }) {
             </span>
             <span style={{
               fontSize: '10px', fontWeight: 700, marginLeft: '2px',
-              color: TYPE_COLOR[activeAsset.type] || '#737373',
-              backgroundColor: (TYPE_COLOR[activeAsset.type] || '#737373') + '22',
+              color: TYPE_COLOR[activeAsset.type] || '#94A3B8',
+              backgroundColor: (TYPE_COLOR[activeAsset.type] || '#94A3B8') + '22',
               padding: '3px 8px', borderRadius: '5px'
             }}>
               {TYPE_LABEL[activeAsset.type] || activeAsset.type}
@@ -388,11 +369,11 @@ export default function MarketExplorerPage({ t }) {
         ) : (
           <div style={{
             flex: 1, minHeight: '380px', borderRadius: '16px',
-            border: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#141414',
+            border: '1px solid rgba(79,124,255,0.1)', backgroundColor: '#16233A',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px'
           }}>
             <span style={{ fontSize: '40px' }}>📈</span>
-            <span style={{ color: '#a3a3a3', fontSize: '14px', fontWeight: 600 }}>
+            <span style={{ color: '#CBD5E1', fontSize: '14px', fontWeight: 600 }}>
               Tambah aset ke watchlist untuk melihat chart
             </span>
           </div>
