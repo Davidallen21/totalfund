@@ -11,22 +11,10 @@ const C = {
 };
 
 // ── Trading config pill data ──────────────────────────────────────────────────
-const STYLE_PILLS = [
-  { v:'Scalping',         l:'Scalping' },
-  { v:'Day Trading',      l:'Day'      },
-  { v:'Swing Trading',    l:'Swing'    },
-  { v:'Position Trading', l:'Pos.'     },
-  { v:'Long Term',        l:'Long'     },
-];
 const RISK_PILLS = [
   { v:'Conservative', l:'Conservative' },
   { v:'Moderate',     l:'Moderate'     },
   { v:'Aggressive',   l:'Aggressive'   },
-];
-const RR_PILLS = [
-  { v:'1:1', l:'1 : 1' },
-  { v:'1:2', l:'1 : 2' },
-  { v:'1:3', l:'1 : 3' },
 ];
 
 // ── Trading Styles ─────────────────────────────────────────────────────────────
@@ -638,14 +626,6 @@ function AnalysisGrid({ result, beginner, width }) {
     bT('Funding rate negative','Shorts overpaying — flip risk',beginner),
     bT('Low volume on down move','Weak bearish conviction',beginner),
   ];
-  const MENTOR1 = isLong
-    ? bT(`Price is near a key support zone. Waiting for a small pullback into the entry zone (${fmt(result.entry1)}–${fmt(result.entry2)}) gives a better risk-reward ratio before buying.`,`Harga mendekati zona dukungan kuat. Tunggu sedikit koreksi ke zona masuk (${fmt(result.entry1)}–${fmt(result.entry2)}) untuk R:R yang lebih baik.`,beginner)
-    : bT(`Price is near local resistance. A retest of the ${fmt(result.entry2)} area before entering short gives better risk-reward. Don't chase the move.`,`Harga mendekati resistansi kuat. Tunggu retest ${fmt(result.entry2)} sebelum masuk short. Jangan kejar pergerakan.`,beginner);
-  const MENTOR2 = bT(
-    `Place your stop loss at ${fmt(result.sl)} — just below the key ${isLong?'support':'resistance'} to avoid being stopped out by normal market noise.`,
-    `Pasang stop loss di ${fmt(result.sl)} untuk melindungi modalmu dari pergerakan tidak terduga.`,
-    beginner
-  );
   const CHECKLIST = [
     { text:bT('Price in Entry Zone','Harga di zona masuk',beginner), pass:true },
     { text:bT('Trend Confirmed','Arah tren sudah jelas',beginner), pass:true },
@@ -658,14 +638,9 @@ function AnalysisGrid({ result, beginner, width }) {
   const card = { background:C.card, border:`1px solid ${C.border}`, borderRadius:'12px', padding:'18px 16px', display:'flex', flexDirection:'column' };
   const head = { color:C.text, fontSize:'12px', fontWeight:800, marginBottom:'12px' };
 
-  const useDeepSeek = !!result.mentor;
   const chkList = (result.checklist?.length>0)
     ? result.checklist.map(c=>({text:c.item, pass:c.passed}))
     : CHECKLIST;
-
-  const SLabel = ({children, color=C.text4}) => (
-    <div style={{color,fontSize:'9px',fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:'5px'}}>{children}</div>
-  );
 
   return (
     <div style={{display:'grid',gridTemplateColumns:width<700?'1fr':'1fr 1fr 1fr',gap:'12px',marginTop:'12px',alignItems:'stretch'}}>
@@ -910,194 +885,6 @@ function AIConsensus({ result }) {
   );
 }
 
-// ── AI Insight Card (DeepSeek) ────────────────────────────────────────────────
-function AIInsightCard({ result }) {
-  const Sec = ({ label, color, icon, children }) => (
-    <div>
-      <div style={{display:'flex',alignItems:'center',gap:'5px',marginBottom:'5px'}}>
-        <span style={{color:color,display:'flex'}}>{icon}</span>
-        <span style={{color:C.text4,fontSize:'9px',fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase'}}>{label}</span>
-      </div>
-      <p style={{color:C.text2,fontSize:'11.5px',lineHeight:1.65,margin:0}}>{children}</p>
-    </div>
-  );
-
-  const iconBrain = (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
-      <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
-    </svg>
-  );
-
-  return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:'14px',overflow:'hidden',marginTop:'12px'}}>
-      {/* Header */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'11px 16px',borderBottom:`1px solid ${C.border}`,background:'rgba(167,139,250,0.04)'}}>
-        <div style={{display:'flex',alignItems:'center',gap:'7px'}}>
-          <div style={{width:'22px',height:'22px',borderRadius:'6px',background:'rgba(167,139,250,0.12)',border:'1px solid rgba(167,139,250,0.22)',display:'flex',alignItems:'center',justifyContent:'center',color:C.purple}}>
-            {iconBrain}
-          </div>
-          <span style={{color:C.text2,fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em'}}>AI Insight</span>
-        </div>
-        <span style={{fontSize:'8.5px',fontWeight:700,color:C.purple,background:'rgba(167,139,250,0.12)',border:'1px solid rgba(167,139,250,0.2)',borderRadius:'4px',padding:'2px 6px',letterSpacing:'0.04em'}}>
-          DEEPSEEK
-        </span>
-      </div>
-
-      {/* Market summary banner */}
-      {result.marketSummary && (
-        <div style={{padding:'10px 16px',borderBottom:`1px solid ${C.border}`,background:'rgba(167,139,250,0.04)'}}>
-          <span style={{color:C.text4,fontSize:'9px',fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',marginRight:'6px'}}>Market</span>
-          <span style={{color:C.text2,fontSize:'11.5px',fontStyle:'italic'}}>{result.marketSummary}</span>
-        </div>
-      )}
-
-      {/* Main body */}
-      <div style={{padding:'14px 16px',display:'flex',flexDirection:'column',gap:'14px'}}>
-        {result.mentor && (
-          <Sec label="Trade Rationale" color={C.blue}
-            icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>}>
-            {result.mentor}
-          </Sec>
-        )}
-
-        {result.executionPlan && (
-          <Sec label="Execution Plan" color={C.green}
-            icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>}>
-            {result.executionPlan}
-          </Sec>
-        )}
-
-        {result.stopLossTip && (
-          <Sec label="Stop Loss Reasoning" color={C.red}
-            icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>}>
-            {result.stopLossTip}
-          </Sec>
-        )}
-
-        {result.keyRisks?.length > 0 && (
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:'5px',marginBottom:'7px'}}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={C.yellow} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              <span style={{color:C.text4,fontSize:'9px',fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase'}}>Key Risks</span>
-            </div>
-            <div style={{display:'flex',flexDirection:'column',gap:'5px'}}>
-              {result.keyRisks.map((r,i) => (
-                <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'7px',padding:'6px 10px',background:'rgba(251,191,36,0.05)',border:'1px solid rgba(251,191,36,0.1)',borderRadius:'7px'}}>
-                  <span style={{color:C.yellow,fontSize:'10px',fontWeight:800,flexShrink:0,marginTop:'1px'}}>{i+1}</span>
-                  <span style={{color:C.text3,fontSize:'11px',lineHeight:1.55}}>{r}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Checklist */}
-      {result.checklist?.length > 0 && (
-        <div style={{padding:'11px 16px',borderTop:`1px solid ${C.border}`,background:C.card2,display:'flex',flexDirection:'column',gap:'6px'}}>
-          <span style={{color:C.text4,fontSize:'9px',fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:'3px',display:'block'}}>Pre-Trade Checklist</span>
-          {result.checklist.map((it,i) => (
-            <div key={i} style={{display:'flex',alignItems:'center',gap:'7px'}}>
-              <div style={{width:'14px',height:'14px',borderRadius:'4px',background:it.passed?'rgba(74,222,128,0.12)':'rgba(248,113,113,0.1)',border:`1px solid ${it.passed?'rgba(74,222,128,0.3)':'rgba(248,113,113,0.25)'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                {it.passed
-                  ? <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="3" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  : <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke={C.red} strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                }
-              </div>
-              <span style={{color:it.passed?C.text2:C.text3,fontSize:'10.5px'}}>{it.item}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Trading Config Card ───────────────────────────────────────────────────────
-function TradingConfigCard({ styleKey, onStyle, risk, onRisk, rrTarget, onRr }) {
-  const RISK_AC = { Conservative: C.blue, Moderate: C.gold, Aggressive: C.red };
-
-  const Seg = ({ pills, value, onChange, cols, acFn }) => (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: `repeat(${cols}, 1fr)`,
-      gap: '2px',
-      background: '#090909',
-      borderRadius: '9px',
-      padding: '2px',
-    }}>
-      {pills.map(({ v, l }) => {
-        const active = value === v;
-        const ac = acFn(v);
-        return (
-          <button key={v} onClick={() => onChange(v)} style={{
-            background: active ? '#1b1b1b' : 'transparent',
-            border: `1px solid ${active ? `${ac}40` : 'transparent'}`,
-            borderRadius: '7px',
-            padding: '7px 4px',
-            cursor: 'pointer',
-            color: active ? ac : C.text3,
-            fontSize: '10.5px',
-            fontWeight: active ? 700 : 500,
-            transition: 'all 0.14s',
-            textAlign: 'center',
-            letterSpacing: active ? '-0.01em' : '0',
-            boxShadow: active ? `0 1px 6px rgba(0,0,0,0.3)` : 'none',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-          }}
-            onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = C.text2; } }}
-            onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.text3; } }}
-          >{l}</button>
-        );
-      })}
-    </div>
-  );
-
-  const Lbl = ({ children }) => (
-    <div style={{ color: C.text4, fontSize: '9px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '5px' }}>
-      {children}
-    </div>
-  );
-
-  return (
-    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: '14px', overflow: 'hidden', marginBottom: '12px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: `1px solid ${C.border}`, gap: '7px' }}>
-        <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={C.text3} strokeWidth="2" strokeLinecap="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-          </svg>
-        </div>
-        <span style={{ color: C.text2, fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>Trading Configuration</span>
-      </div>
-
-      {/* Body */}
-      <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '13px' }}>
-        {/* Trading Style */}
-        <div>
-          <Lbl>Trading Style</Lbl>
-          <Seg pills={STYLE_PILLS} value={styleKey} onChange={onStyle} cols={5} acFn={() => C.gold} />
-        </div>
-
-        {/* Risk Profile */}
-        <div>
-          <Lbl>Risk Profile</Lbl>
-          <Seg pills={RISK_PILLS} value={risk} onChange={onRisk} cols={3} acFn={v => RISK_AC[v] || C.text} />
-        </div>
-
-        {/* Risk Reward */}
-        <div>
-          <Lbl>Risk : Reward Target</Lbl>
-          <Seg pills={RR_PILLS} value={rrTarget} onChange={onRr} cols={3} acFn={() => C.green} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Trade Execution Plan ──────────────────────────────────────────────────────
 function TradeExecutionPlanCard({ result, activeTf }) {
   const isLong = result.signal === 'LONG';
@@ -1170,94 +957,6 @@ function TradeExecutionPlanCard({ result, activeTf }) {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-// ── Multi Timeframe Confirmation ───────────────────────────────────────────────
-function MultiTFConfirmation({ result }) {
-  const trend = result?.trend;
-  const isBull = trend === 'Bullish';
-  const TFS = [
-    { tf:'1m',  signal:'Neutral',                          color:C.yellow },
-    { tf:'5m',  signal:trend?(isBull?'Bullish':'Bearish'):'Bullish', color:trend?(isBull?C.green:C.red):C.green },
-    { tf:'15m', signal:trend?(isBull?'Bullish':'Bearish'):'Neutral', color:trend?(isBull?C.green:C.red):C.yellow },
-    { tf:'1H',  signal:trend?(isBull?'Bullish':'Bearish'):'Bullish', color:trend?(isBull?C.green:C.red):C.green },
-    { tf:'4H',  signal:trend?(isBull?'Bullish':'Bearish'):'Bullish', color:trend?(isBull?C.green:C.red):C.green },
-  ];
-  return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:'12px',padding:'14px 16px',marginTop:'10px'}}>
-      <div style={{color:C.text2,fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:'12px'}}>Multi Timeframe Confirmation</div>
-      <div style={{display:'flex',gap:'8px'}}>
-        {TFS.map(({tf,signal,color})=>(
-          <div key={tf} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:'6px',padding:'10px 4px',background:C.card2,borderRadius:'9px',border:`1px solid ${C.border}`}}>
-            <span style={{color:C.text4,fontSize:'10px',fontWeight:700}}>{tf}</span>
-            <span style={{background:`${color}14`,border:`1px solid ${color}40`,color,fontSize:'8.5px',fontWeight:700,borderRadius:'5px',padding:'2px 6px',textAlign:'center',whiteSpace:'nowrap'}}>{signal}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Market Stat Cards (below chart) ──────────────────────────────────────────
-function MarketStatCards({ result }) {
-  const isBull = result?.signal === 'LONG';
-  const conf   = result?.confidence || 72;
-  const fgScore = result ? (isBull ? Math.min(90, 50+conf*0.4)|0 : Math.max(15, 50-conf*0.4)|0) : 68;
-  const fgLabel = fgScore>=75?'Extreme Greed':fgScore>=55?'Greed':fgScore>=45?'Neutral':fgScore>=25?'Fear':'Extreme Fear';
-  const fgColor = fgScore>=55?'#84cc16':fgScore>=45?C.yellow:C.red;
-  const whaleAct = result ? (isBull?'Accumulating':'Distributing') : 'Accumulating';
-  const whaleInt = result ? (conf>75?'High':'Medium') : 'High';
-  const newsSent = result ? (isBull?'Bullish':'Bearish') : 'Bullish';
-  const newsSub  = result ? (conf>80?'Strongly +':'Moderately +') : 'Positive';
-
-  const stats = [
-    {
-      icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={fgColor} strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>,
-      label:'Fear & Greed', value:`${fgScore}`, sub:`${fgLabel}`, color:fgColor,
-    },
-    {
-      icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.yellow} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-      label:'Funding Rate', value:'0.0102%', sub:'Positive', color:C.yellow,
-    },
-    {
-      icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="1.8" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
-      label:'Open Interest', value:'$27.45B', sub:'+2.31%', color:C.blue,
-    },
-    {
-      icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.purple} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>,
-      label:'Whale Activity', value:whaleInt, sub:whaleAct, color:C.purple,
-    },
-    {
-      icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={result?(isBull?C.green:C.red):C.green} strokeWidth="1.8" strokeLinecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-      label:'News Sentiment', value:newsSent, sub:newsSub, color:result?(isBull?C.green:C.red):C.green,
-    },
-    {
-      icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.yellow} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-      label:'Econ Calendar', value:'3 Events', sub:'Today', color:C.yellow,
-    },
-  ];
-
-  return (
-    <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'8px',marginTop:'10px'}}>
-      {stats.map((s,i)=>(
-        <div key={i} style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:'12px',padding:'12px 13px'}}>
-          <div style={{display:'flex',alignItems:'center',gap:'5px',marginBottom:'9px'}}>
-            {s.icon}
-            <span style={{color:C.text4,fontSize:'8.5px',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em',lineHeight:1.3}}>{s.label}</span>
-          </div>
-          <div style={{color:s.color,fontSize:'15px',fontWeight:800,marginBottom:'4px',lineHeight:1}}>{s.value}</div>
-          <div>
-            <div style={{color:C.text3,fontSize:'10px',fontWeight:600}}>{s.sub}</div>
-            {s.bar!==undefined&&(
-              <div style={{height:'3px',background:C.card3,borderRadius:'99px',marginTop:'7px',overflow:'hidden'}}>
-                <div style={{width:`${s.bar}%`,height:'100%',background:s.color,borderRadius:'99px',transition:'width 0.8s ease'}}/>
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -1507,26 +1206,6 @@ function RightPanelReady({ asset }) {
   );
 }
 
-// ── Right Panel Empty (legacy, unused) ────────────────────────────────────────
-function RightPanelEmpty() {
-  return (
-    <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:'14px',padding:'36px 22px',display:'flex',flexDirection:'column',alignItems:'center',gap:'14px',textAlign:'center',flex:1}}>
-      <div style={{width:'48px',height:'48px',borderRadius:'14px',background:'rgba(91,94,244,0.08)',border:'1px solid rgba(91,94,244,0.18)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
-      </div>
-      <div style={{color:C.text2,fontSize:'14px',fontWeight:800,letterSpacing:'-0.01em'}}>AI Summary</div>
-      <div style={{color:C.text3,fontSize:'12px',lineHeight:1.65,maxWidth:'200px'}}>Select an asset, choose your trading style, and click Analyze to see the full AI report.</div>
-      <div style={{width:'40px',height:'1px',background:C.border}}/>
-      {['AI Signal & Direction','Entry / Exit Levels','Market Insight','AI Consensus'].map(s=>(
-        <div key={s} style={{display:'flex',alignItems:'center',gap:'9px',width:'100%',maxWidth:'200px',padding:'8px 12px',background:C.card2,borderRadius:'8px'}}>
-          <div style={{width:'12px',height:'5px',borderRadius:'2px',background:C.card3,flexShrink:0}}/>
-          <div style={{color:C.text4,fontSize:'11px'}}>{s}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function AITrade() {
   const { width }  = useWindowSize();
@@ -1538,7 +1217,6 @@ export default function AITrade() {
   const [tf,       setTf]       = useState('15m');
   const [autoTf,   setAutoTf]   = useState(true);
   const [risk,     setRisk]     = useState('Moderate');
-  const [rrTarget, setRrTarget] = useState('1:2');
   const [phase,    setPhase]    = useState('idle');
   const [step,     setStep]     = useState(0);
   const [result,   setResult]   = useState(null);
